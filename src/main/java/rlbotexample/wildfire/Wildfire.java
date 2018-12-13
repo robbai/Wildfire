@@ -75,104 +75,12 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, false, true);
     	
-    	//Path drawing
-//    	for(CarData c : input.cars){
-//    		if(c == null) continue;
-//    		Vector3 start = c.position;
-//    		double scale = 0.05;
-//    		Vector2 rotation = c.velocity.scaled(scale).flatten();
-//    		for(int i = 0; i < 80; i++){
-//    			Vector2 target = input.ball.position.flatten().plus(input.ball.position.flatten().minus(Utils.enemyGoal(c.team)).scaledToMagnitude(0.5 * input.ball.position.distanceFlat(start))).confine();
-//    			
-//    			double s = (float)-Utils.aimFromPoint(start.flatten(), rotation, target) * 2F;
-//    			rotation = rotation.rotate(-Utils.clamp(s) / (0.4193 / scale));
-//    			Vector3 end = start.plus(rotation.withZ(0)).confine();
-//    			
-//    			renderer.drawLine3d(i % 2 == 0 ? (c.team == 0 ? Color.BLUE : Color.ORANGE) : Color.WHITE, start.toFramework(), end.toFramework());
-//    			if(end.distanceFlat(input.ball.position) < Utils.BALLRADIUS) break;
-//    			start = end;
-//    		}
-//    	}
-    	
-//    	//Kickoff Testing
-//    	GameState gameState = new GameState();
-//    	if(!input.ball.velocity.flatten().isZero() && carSpawn != null && carAngularSpawn != null){
-//    		RLBotDll.sendQuickChat(playerIndex, false, (byte)new Random().nextInt(20));
-//    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(0, 0, Utils.BALLRADIUS).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired())));
-//    		gameState.withCarState(this.playerIndex, new CarState().withBoostAmount(34F).withPhysics(new PhysicsState().withLocation(carSpawn.toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(carAngularSpawn.toDesired())));
-//    	}else if(input.car.velocity.isZero()){
-//    		carSpawn = input.car.position;
-//    		carAngularSpawn = input.car.orientation;
-//    	}
-//    	RLBotDll.setGameState(gameState.buildPacket());
-    	
-//    	//Recovery testing
-//    	GameState gameState = new GameState();
-//    	if(input.car.hasWheelContact && input.car.position.z < 200){
-//    		gameState.withCarState(this.playerIndex, new CarState().withPhysics(new PhysicsState().withLocation(new DesiredVector3(0F, 0F, 1000F)).withRotation(new DesiredRotation(rot(), rot(), rot())).withVelocity(new DesiredVector3(rot() * 100, rot() * 100, 200F)).withAngularVelocity(new DesiredVector3(rot() * 10, rot() * 10, rot() * 10))));
-//    	}
-//    	RLBotDll.setGameState(gameState.buildPacket());
-    	
-//    	//Freeze ball in air
-//    	GameState gameState = new GameState();
-//    	if(input.ball.position.flatten().isZero()) gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new DesiredVector3(0F, 0F, 1200F)).withVelocity(new DesiredVector3(0F, 0F, 0F))));
-////    	gameState.withCarState(1, new CarState().withPhysics(new PhysicsState().withLocation(new DesiredVector3((float)-input.car.position.x * 2, (float)input.car.position.y * 2, (float)input.car.position.z + 200)).withVelocity(new DesiredVector3(0F, 0F, 0F))));
-////    	gameState.withCarState(1, new CarState().withPhysics(new PhysicsState().withRotation(new DesiredRotation(0F, (float)Utils.aim(input.cars[1], input.car.position.flatten()), 0F))));
-//    	RLBotDll.setGameState(gameState.buildPacket());
-    	
-//    	GameState gameState = new GameState();
-//    	if(timeStarted > System.currentTimeMillis()) timeStarted = System.currentTimeMillis();
-//    	long timeDifference = (System.currentTimeMillis() - timeStarted);
-//    	double speed = input.car.velocity.flatten().magnitude();
-//    	gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new DesiredVector3(0F, 5000F, 1500F)).withVelocity(new DesiredVector3(0F, 0F, 0F))));
-//    	if(timeDifference < startupTime / 2){
-////    		maxX = 0;
-//    		gameState.withCarState(this.playerIndex, new CarState().withPhysics(new PhysicsState().withLocation(new DesiredVector3(0F, -5700F, 60F)).withRotation(new DesiredRotation(0F, (float)Math.PI / 2F, 0F)).withVelocity(new DesiredVector3(0F, 0F, 0F)).withAngularVelocity(new DesiredVector3(0F, 0F, 0F))));
-//    	}else if(speed >= 1409 || input.car.position.y > 5200){
-//    		if(speed / (double)((timeDifference - startupTime) / 1000D) >= 1) System.out.println((throttle >= 1 ? "(" + throttle + "F) " : "(" + (throttle - 1) + "F, Boost) ")+ (speed / ((double)(timeDifference - startupTime) / 1000D)) + "uu/s^2");
-//    		timeStarted = System.currentTimeMillis();
-//    		throttle = (throttle + increment) % (2F + increment);
-//    		throttle = Math.round(throttle * 1000F) / 1000F;
-//    		throttle = Math.max(Math.min(1F, throttle), increment);
-//    	}
-//		RLBotDll.setGameState(gameState.buildPacket());
-//		renderer.drawString2d("Throttle = " + throttle + "F", Color.WHITE, new Point(0, 0), 2, 2);
-//    	renderer.drawString2d("Speed = " + (int)speed + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
-//    	renderer.drawString2d("Time = " + ((double)(timeDifference - startupTime) / 1000D) + "s", Color.WHITE, new Point(0, 40), 2, 2);
-////    	maxX = Math.max(maxX, input.car.position.x);
-////    	renderer.drawString2d("Radius = " + (maxX / 2D) + "uu", Color.WHITE, new Point(0, 20), 2, 2);
-//		return new ControlsOutput().withThrottle(timeDifference > startupTime ? (throttle > 1 ? throttle - 1 : throttle) : 0F).withBoost(throttle > 1).withSteer(0F);   
-    	
-//    	//Yeet the ball
-//    	GameState gameState = new GameState();
-//    	if(((input.ball.position.z < Utils.BALLRADIUS + 5 && Math.abs(input.ball.velocity.z) < 70) || input.ball.velocity.isZero()) && input.car.hasWheelContact){
-//    		Random r = new Random();
-//    		float mag = 20000F;
-//    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withVelocity(new DesiredVector3().withZ(mag * 0.1F).withX(-0.5F * mag + mag * r.nextFloat()).withY(-0.5F * mag + mag * r.nextFloat()))));
-//    	}
-//    	RLBotDll.setGameState(gameState.buildPacket());
-    	
-//    	long timeDifference = (System.currentTimeMillis() % 5000);
-//    	if(timeDifference < 50){
-//    		Random r = new Random();
-//    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new DesiredVector3(-3000F + 6000F * r.nextFloat(), -4000F + 8000F * r.nextFloat(), 500F))));
-//        	System.out.println(System.currentTimeMillis());
-//    	}else{
-//    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withVelocity(new DesiredVector3(0F, 0F, 0F))));
-//    	}
-//    	RLBotDll.setGameState(gameState.buildPacket());
-    	
     	//Get the ball prediction
     	try{
     	    ballPrediction = RLBotDll.getBallPrediction();
     	}catch(IOException e){
     		ballPrediction = null;
     	}
-    	
-//    	//Draw the turning radius
-//    	double turningRadius = Utils.getTurnRadius(input.car.velocity.flatten().magnitude());
-//    	Utils.drawCircle(renderer, Color.PINK, input.car.position.plus(input.car.orientation.rightVector.withZ(0).scaledToMagnitude(turningRadius)).flatten(), turningRadius);
-//    	Utils.drawCircle(renderer, Color.PINK, input.car.position.plus(input.car.orientation.rightVector.withZ(0).scaledToMagnitude(-turningRadius)).flatten(), turningRadius);
     	
     	//Impact point
     	try{
@@ -185,7 +93,6 @@ public class Wildfire implements Bot {
     	//Target
     	target = Utils.getTarget(input.car, input.ball);
     	Utils.drawCrosshair(renderer, input.car, target.withZ(Utils.BALLRADIUS), Color.WHITE, 125);
-//    	renderer.drawString2d(target.toString(), Color.WHITE, new Point(200, 0), 2, 2);
     	
     	//Choose whether to continue with the active state
     	boolean expired = false;

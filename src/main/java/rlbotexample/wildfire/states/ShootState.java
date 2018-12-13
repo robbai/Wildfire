@@ -16,8 +16,6 @@ import rlbotexample.wildfire.actions.RecoveryAction;
 
 public class ShootState extends State {
 	
-	//Basic state for now
-	
 	Vector2 left, right;
 
 	public ShootState(Wildfire wildfire){
@@ -41,10 +39,8 @@ public class ShootState extends State {
 		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 80 && input.ball.position.distanceFlat(Utils.enemyGoal(wildfire.team)) > 7000) return false;
 		
 		double aimBall = Utils.aim(input.car, wildfire.impactPoint.flatten());
-		if(Math.abs(aimBall) > Math.PI * 0.75 && input.car.velocity.magnitude() > 1100) return false;
-		double aimLeft = Utils.aim(input.car, left);
-		double aimRight = Utils.aim(input.car, right);
-		return aimBall > aimLeft && aimBall < aimRight;
+		if(Math.abs(aimBall) > Math.PI * 0.8 && input.car.velocity.magnitude() > 1100) return false;
+		return Utils.canShoot(input.car, wildfire.impactPoint);
 	}
 
 	@Override

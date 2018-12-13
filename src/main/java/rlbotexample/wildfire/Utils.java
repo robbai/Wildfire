@@ -159,7 +159,7 @@ public class Utils {
 	public static Vector3 getBounce(BallPrediction ballPrediction){
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
 	    	Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-	    	if(location.z <= Utils.BALLRADIUS + 10) return location;
+	    	if(location.z <= Utils.BALLRADIUS + 15) return location;
 	    }
 	    return null;
 	}
@@ -170,7 +170,7 @@ public class Utils {
 	 */
 	public static double getBounceTime(BallPrediction ballPrediction){
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
-	    	if(Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location()).z <= Utils.BALLRADIUS + 10){
+	    	if(Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location()).z <= Utils.BALLRADIUS + 15){
 	    		return (double)i / 60D;
 	    	}
 	    }
@@ -283,6 +283,35 @@ public class Utils {
 	 */
 	public static double getTurnRadius(double speed){
 	    return 156D + 0.1D * speed + 0.000069D * Math.pow(speed, 2) + 0.000000164D * Math.pow(speed, 3) -0.0000000000562D * Math.pow(speed, 4);
+	}
+	
+	/*
+	 * Draw the turning radius
+	 */
+	public static void renderTurningRadius(Renderer renderer, CarData car){
+    	double turningRadius = Utils.getTurnRadius(car.velocity.flatten().magnitude());
+    	Utils.drawCircle(renderer, Color.PINK, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(turningRadius)).flatten(), turningRadius);
+    	Utils.drawCircle(renderer, Color.PINK, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(-turningRadius)).flatten(), turningRadius);
+	}
+	
+	public static boolean canShoot(CarData car, Vector3 ball){
+		return canShoot(car, ball, new Vector2(Utils.teamSign(car.team) * (Utils.GOALHALFWIDTH - Utils.BALLRADIUS), Utils.teamSign(car.team) * Utils.PITCHLENGTH), new Vector2(Utils.teamSign(car.team) * (-Utils.GOALHALFWIDTH + Utils.BALLRADIUS), Utils.teamSign(car.team) * Utils.PITCHLENGTH));
+	}
+	
+	public static boolean canShoot(CarData car, Vector3 ball, Vector2 left, Vector2 right){
+		double aimBall = Utils.aim(car, ball.flatten());
+		double aimLeft = Utils.aim(car, left);
+		double aimRight = Utils.aim(car, right);
+		return aimBall > aimLeft && aimBall < aimRight;
+	}
+	
+	public static boolean isOpponentBehindBall(DataPacket input){
+		for(byte i = 0; i < input.cars.length; i++){
+			CarData car = input.cars[i];
+			if(car == null || car.team == input.car.team) continue;
+			if(Math.signum(input.ball.position.y - car.position.y) == Utils.teamSign(input.car.team)) return true;
+		}
+		return false;
 	}
 
 }

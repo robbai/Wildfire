@@ -33,6 +33,15 @@ public class InterceptState extends State {
 	@Override
 	public boolean ready(DataPacket input){
 		if(Utils.isKickoff(input)) return false;
+
+		//Check if we have a shot opportunity
+		if(!Utils.isOpponentBehindBall(input) && wildfire.impactPoint.distanceFlat(input.car.position) < 2000){
+			double aimBall = Utils.aim(input.car, wildfire.impactPoint.flatten());
+			if(Math.abs(aimBall) < Math.PI * 0.4){
+				if(Utils.canShoot(input.car, wildfire.impactPoint)) return false;
+			}
+		}
+		
 		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, wildfire.team);
 		return onTarget || Utils.teamSign(wildfire.team) * input.ball.velocity.y < -1000;
 	}
@@ -117,7 +126,7 @@ public class InterceptState extends State {
 				Utils.drawCrosshair(wildfire.renderer, input.car, wildfire.impactPoint, Color.RED, 125);
 				
 				//Rush them
-				if(wildfire.impactPoint.distanceFlat(input.car.position) < 1000 || Math.abs(input.ball.position.minus(attacker.position).flatten().correctionAngle(input.car.position.minus(attacker.position).flatten())) < 0.2){
+				if(wildfire.impactPoint.distanceFlat(input.car.position) < 1400 || Math.abs(input.ball.position.minus(attacker.position).flatten().correctionAngle(input.car.position.minus(attacker.position).flatten())) < 0.25){
 					wildfire.renderer.drawString2d("Block", Color.WHITE, new Point(0, 40), 2, 2);
 					Utils.drawCrosshair(wildfire.renderer, input.car, wildfire.impactPoint, Color.MAGENTA, 125);
 					return drivePoint(input, wildfire.impactPoint.flatten(), true);

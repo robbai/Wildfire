@@ -17,7 +17,7 @@ import rlbotexample.wildfire.actions.RecoveryAction;
 public class WaitState extends State {
 	
 	/*How far we want to be from the ball's bounce*/
-	private final double desiredDistance = 30D;
+	private final double desiredDistance = 26D;
 	
 	private Vector2 bounce = null;
 	private double timeLeft = 0;
