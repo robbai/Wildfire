@@ -14,8 +14,8 @@ import rlbotexample.wildfire.Utils;
 
 public class AerialAction extends Action {
 	
-	private final double maxAngle = 1.5614006837182772D;
-	private final Vector3 offset = new Vector3(0, 0, -Utils.BALLRADIUS * 0.75);
+	/*What point of the ball we wish to hit*/
+	private final Vector3 offset = new Vector3(0, 0, Utils.BALLRADIUS * -0.6);
 	
 	private boolean startMidair;
 	private boolean doubleJump;
@@ -30,18 +30,19 @@ public class AerialAction extends Action {
 		this.doubleJump = !startMidair && doubleJump;
 		
 		this.pitchPID = new PID(state.wildfire.renderer, Color.BLUE, 4, 0, 0.4);
-		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 3.1, 0, 0.9);
+		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 4, 0, 1.8);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
+		long timeDifference = timeDifference();
+		
 		//Slight offset so we hit the centre
 		Vector3 impactPoint = state.wildfire.impactPoint.plus(offset);
-		
 		if(input.ball.velocity.flatten().isZero()){
 			target = input.ball.position.plus(offset);
 		}else if(target != null){
-			target = impactPoint.plus(target).scaled(0.5); //Smooth transition
+			if(timeDifference > 500) target = impactPoint.plus(target).scaled(0.5); //Smooth transition
 		}else{
 			target = impactPoint;
 		}
@@ -50,11 +51,10 @@ public class AerialAction extends Action {
 		Utils.drawCrosshair(state.wildfire.renderer, input.car, target, Color.YELLOW, 125);
 		
 		ControlsOutput controller = new ControlsOutput().withThrottle(1).withBoost(false);
-		long timeDifference = timeDifference();
 		
-		if(timeDifference <= 380 && !startMidair){
+		if(timeDifference <= 400 && !startMidair){
 			controller.withBoost(timeDifference >= 420 || input.car.position.z > 300);
-			controller.withJump(timeDifference < 160 || (timeDifference > 260 && doubleJump));
+			controller.withJump(timeDifference < 160 || (timeDifference > 300 && doubleJump));
 		}else{	        
 	        //Bail out
 	        if(input.car.magnitudeInDirection(target.minus(input.car.position).flatten()) < -1200 || (input.car.position.distance(target) < 200 && input.car.boost < 20)){
@@ -63,38 +63,38 @@ public class AerialAction extends Action {
 		}
 		
 		//This is the angling part
-		if(timeDifference > (doubleJump ? 340 : 200) || timeDifference < 170 || startMidair){
+		if(timeDifference > (doubleJump ? 380 : 200) || timeDifference < 170 || startMidair){
 			Vector3 targetLocal = target.minus(input.car.position);
+			
+			boolean pointStraight = (input.car.position.distance(target) / input.car.velocity.magnitude()) < 0.325D && input.car.velocity.magnitude() > 2000;
+			if(pointStraight) state.wildfire.renderer.drawString2d("Straighten", Color.WHITE, new Point(0, 40), 2, 2);
 			
 	        //Stay flat by rolling
 			controller.withRoll((float)input.car.orientation.rightVector.z * 0.85F);
 	        
 	        //The rest is pitch and yaw
-			Vector3 path = simulate(input.car, 1D / 60D).scaledToMagnitude(targetLocal.magnitude());
+			Vector3 path = pointStraight ? input.car.orientation.noseVector : simulate(input.car, 1D / 60D).scaledToMagnitude(targetLocal.magnitude());
 			
 			state.wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), targetLocal.scaledToMagnitude(2000).plus(input.car.position).toFramework());
-			if(!input.car.hasWheelContact) state.wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.toFramework(), path.scaledToMagnitude(2000).plus(input.car.position).toFramework());
+			if(!input.car.hasWheelContact && !pointStraight) state.wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.toFramework(), path.scaledToMagnitude(2000).plus(input.car.position).toFramework());
 			
+			//Get our current angles
 			Vector3 currentAngles = toPitchYawRoll(path);
 			double currentPitch = currentAngles.x;
 			double currentYaw = currentAngles.y;
 			
+			//Get the desired angles
 			Vector3 desiredAngles = toPitchYawRoll(targetLocal);
 			double desiredPitch = desiredAngles.x;
 			double desiredYaw = desiredAngles.y;
 			
-			double yawCorrection = (desiredYaw - currentYaw);
-			if(yawCorrection < -maxAngle) yawCorrection += 2 * maxAngle;
-			if(yawCorrection > maxAngle) yawCorrection -= 2 * maxAngle;
+			//It is useful to wrap our yaw angle
+			double yawCorrection = Utils.wrapAngle(desiredYaw - currentYaw);
 			
 			double pitch = pitchPID.getOutput(currentPitch, desiredPitch);
 			double yaw = yawPID.getOutput(0, yawCorrection);
 			
-			state.wildfire.renderer.drawString2d("Pitch Output: " + Utils.round(pitch), Color.white, new Point(0, 60), 2, 2);
-			state.wildfire.renderer.drawString2d("Yaw Output: " + Utils.round(yaw), Color.white, new Point(0, 80), 2, 2);
-			
-			controller.withBoost((Math.abs(pitch) < 0.9 && Math.abs(yaw) < 1.2) || input.car.position.z < 350);
-//			controller.withBoost();
+			controller.withBoost((!pointStraight && Math.abs(pitch) < 1.5 && Math.abs(yaw) < (timeDifference < 800 ? 0.24 : 1.5)) || (timeDifference < 1200 && input.car.velocity.z < -50));
 					
 			if(input.car.orientation.eularPitch + Math.min(pitch, 1) > 1){
 				controller.withPitch((float)(1 - input.car.orientation.noseVector.z));
@@ -124,7 +124,7 @@ public class AerialAction extends Action {
 		double pitch = Math.asin(direction.z);
 		
 //		double yaw = Math.asin(direction.y / Math.cos(pitch));
-		double yaw = Math.atan2(direction.y, direction.x) / Math.PI * -maxAngle;
+		double yaw = -Math.atan2(direction.y, direction.x);
 		
 		return new Vector3(pitch, yaw, 0); //Rolling has no effect
 	}

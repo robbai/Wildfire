@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Point;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Random;
 
 import rlbot.Bot;
 import rlbot.ControllerState;
@@ -43,15 +42,6 @@ public class Wildfire implements Bot {
 	public long lastDodge = 0L;
 	public Vector3 impactPoint;
 	public Vector2 target;
-	
-//	private Vector3 carSpawn;
-//	private CarOrientation carAngularSpawn;
-	
-////	private double maxX = 0;
-//	private float throttle = 1F;
-//	private long timeStarted = Long.MIN_VALUE / 2;
-//	private long startupTime = 2000L;
-//	private float increment = 0.025F;
 
     public Wildfire(int playerIndex, int team, boolean test){
         this.playerIndex = playerIndex;
@@ -66,14 +56,22 @@ public class Wildfire implements Bot {
         new InterceptState(this);
         new BoostState(this);
         new ShadowState(this);
-//      new TestState(this);
-//      new TestState2(this);        
+//        new TestState(this);
+//      	new TestState2(this);        
         fallbackState = new FallbackState(this);
     }
 
     private ControlsOutput processInput(DataPacket input){
     	//Get a renderer
-    	renderer = new WRenderer(this, false, true);
+    	renderer = new WRenderer(this, true, true);
+    	
+//    	if((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact){
+//    		GameState gameState = new GameState();
+//    		gameState.withCarState(playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(Utils.random(-3500, 3500), Utils.random(-1000, -4000), 10).toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, Utils.randomRotation(), 0).toDesired())));
+//    		double xVel = Utils.random(-3000, 3000);
+//    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(-xVel, 0, 100).toDesired()).withVelocity(new Vector3(xVel, 0, Utils.random(1200, 2000)).toDesired())));
+//    		RLBotDll.setGameState(gameState.buildPacket());
+//    	}
     	
     	//Get the ball prediction
     	try{
@@ -173,12 +171,6 @@ public class Wildfire implements Bot {
     @Override
     public int getIndex(){
         return this.playerIndex;
-    }
-    
-    @SuppressWarnings("unused")
-	private float rot(){
-    	Random r = new Random();
-    	return (float)(r.nextFloat() * Math.PI * 2 - Math.PI);
     }
     
 }

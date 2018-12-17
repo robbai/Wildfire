@@ -1,6 +1,7 @@
 package rlbotexample.wildfire;
 
 import java.awt.Color;
+import java.util.Random;
 
 import rlbot.flat.BallPrediction;
 import rlbot.render.Renderer;
@@ -312,6 +313,22 @@ public class Utils {
 			if(Math.signum(input.ball.position.y - car.position.y) == Utils.teamSign(input.car.team)) return true;
 		}
 		return false;
+	}
+	
+	public static float randomRotation(){
+    	Random r = new Random();
+    	return (float)(r.nextFloat() * Math.PI * 2 - Math.PI);
+    }
+	
+	public static float random(double min, double max){
+		Random r = new Random();
+		return (float)(r.nextFloat() * Math.abs(max - min) + Math.min(min, max));
+	}
+
+	public static double wrapAngle(double d){
+		if(d < -Math.PI) d += 2 * Math.PI;
+		if(d > Math.PI) d -= 2 * Math.PI;
+		return d;
 	}
 
 }

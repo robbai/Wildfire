@@ -36,7 +36,7 @@ public class CarOrientation {
     /**
      * All parameters are in radians.
      */
-    private static CarOrientation convert(double pitch, double yaw, double roll){
+    public static CarOrientation convert(double pitch, double yaw, double roll){
         double noseX = -1 * Math.cos(pitch) * Math.cos(yaw);
         double noseY = Math.cos(pitch) * Math.sin(yaw);
         double noseZ = Math.sin(pitch);
