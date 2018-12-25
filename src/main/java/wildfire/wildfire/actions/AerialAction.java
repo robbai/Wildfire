@@ -7,10 +7,10 @@ import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Action;
-import wildfire.wildfire.PID;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
+import wildfire.wildfire.obj.Action;
+import wildfire.wildfire.obj.PID;
+import wildfire.wildfire.obj.State;
 
 public class AerialAction extends Action {
 	
@@ -25,7 +25,7 @@ public class AerialAction extends Action {
 
 	public AerialAction(State state, DataPacket input, boolean doubleJump){
 		super("Aerial", state);
-		this.target = state.wildfire.impactPoint.plus(offset);
+		this.target = state.wildfire.impactPoint.getPosition().plus(offset);
 		this.startMidair = !input.car.hasWheelContact;
 		this.doubleJump = !startMidair && doubleJump;
 		
@@ -38,7 +38,7 @@ public class AerialAction extends Action {
 		long timeDifference = timeDifference();
 		
 		//Slight offset so we hit the centre
-		Vector3 impactPoint = state.wildfire.impactPoint.plus(offset);
+		Vector3 impactPoint = state.wildfire.impactPoint.getPosition().plus(offset);
 		if(input.ball.velocity.flatten().isZero()){
 			target = input.ball.position.plus(offset);
 		}else if(target != null){
@@ -48,7 +48,7 @@ public class AerialAction extends Action {
 		}
 		
 		//Draw the crosshair
-		Utils.drawCrosshair(state.wildfire.renderer, input.car, target, Color.YELLOW, 125);
+		state.wildfire.renderer.drawCrosshair(input.car, target, Color.YELLOW, 125);
 		
 		ControlsOutput controller = new ControlsOutput().withThrottle(1).withBoost(false);
 		
@@ -94,13 +94,13 @@ public class AerialAction extends Action {
 			double pitch = pitchPID.getOutput(currentPitch, desiredPitch);
 			double yaw = yawPID.getOutput(0, yawCorrection);
 			
-			controller.withBoost((!pointStraight && Math.abs(pitch) < 1.5 && Math.abs(yaw) < (timeDifference < 800 ? 0.24 : 1.5)) || (timeDifference < 1200 && input.car.velocity.z < -50));
-					
+			controller.withBoost((!pointStraight && Math.abs(pitch) < 1.5 && Math.abs(yaw) < (timeDifference < 800 ? 0.35 : 1.5)) || (timeDifference < 1200 && input.car.velocity.z < -50));
+
+			controller.withPitch((float)pitch);
 			if(input.car.orientation.eularPitch + Math.min(pitch, 1) > 1){
 				controller.withPitch((float)(1 - input.car.orientation.noseVector.z));
-			}else{
-				controller.withPitch((float)pitch);
 			}
+			
 			controller.withYaw((float)yaw);
 		}
 		

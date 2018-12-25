@@ -4,17 +4,21 @@ import java.awt.Color;
 import java.awt.Point;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 import rlbot.Bot;
 import rlbot.ControllerState;
 import rlbot.cppinterop.RLBotDll;
 import rlbot.flat.BallPrediction;
 import rlbot.flat.GameTickPacket;
+import rlbot.flat.QuickChatSelection;
 import wildfire.boost.BoostManager;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
-import wildfire.vector.Vector3;
+import wildfire.wildfire.obj.PredictionSlice;
+import wildfire.wildfire.obj.State;
+import wildfire.wildfire.obj.WRenderer;
 import wildfire.wildfire.states.BoostState;
 import wildfire.wildfire.states.FallbackState;
 import wildfire.wildfire.states.InterceptState;
@@ -22,15 +26,15 @@ import wildfire.wildfire.states.KickoffState;
 import wildfire.wildfire.states.ShadowState;
 import wildfire.wildfire.states.ShootState;
 import wildfire.wildfire.states.WaitState;
+import wildfire.wildfire.states.WallHitState;
 
 public class Wildfire implements Bot {
 
     public final int playerIndex;
     public final int team;
     
-    /*Whether this is a test version*/public final boolean test;
-    
-    public final double goalSafeZone = 770D;
+    /*Whether this is a test version*/
+    private final boolean test;
     
 	public WRenderer renderer;
 	public BallPrediction ballPrediction;
@@ -38,9 +42,12 @@ public class Wildfire implements Bot {
 	public ArrayList<State> states;
 	private State fallbackState;
 	private State activeState;
+	private State lastPrintedState = null;
 	
 	public long lastDodge = 0L;
-	public Vector3 impactPoint;
+	private long lastQuickChat = 0L;
+	
+	public PredictionSlice impactPoint;
 	public Vector2 target;
 
     public Wildfire(int playerIndex, int team, boolean test){
@@ -52,26 +59,20 @@ public class Wildfire implements Bot {
         states = new ArrayList<State>();
         new KickoffState(this);
         new ShootState(this);
+        new WallHitState(this);
         new WaitState(this);
         new InterceptState(this);
         new BoostState(this);
         new ShadowState(this);
 //        new TestState(this);
-//      	new TestState2(this);        
+//     	  new TestState2(this);
         fallbackState = new FallbackState(this);
+//        fallbackState = new StayStillState(this);
     }
 
     private ControlsOutput processInput(DataPacket input){
     	//Get a renderer
-    	renderer = new WRenderer(this, true, true);
-    	
-//    	if((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact){
-//    		GameState gameState = new GameState();
-//    		gameState.withCarState(playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(Utils.random(-3500, 3500), Utils.random(-1000, -4000), 10).toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, Utils.randomRotation(), 0).toDesired())));
-//    		double xVel = Utils.random(-3000, 3000);
-//    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(-xVel, 0, 100).toDesired()).withVelocity(new Vector3(xVel, 0, Utils.random(1200, 2000)).toDesired())));
-//    		RLBotDll.setGameState(gameState.buildPacket());
-//    	}
+    	renderer = new WRenderer(this, false, true);
     	
     	//Get the ball prediction
     	try{
@@ -80,20 +81,27 @@ public class Wildfire implements Bot {
     		ballPrediction = null;
     	}
     	
+    	//GG
+    	if(input.gameInfo.isMatchEnded() && lastQuickChat != -1){
+    		try{
+				RLBotDll.sendQuickChat(this.playerIndex, false, QuickChatSelection.PostGame_Gg);
+				lastQuickChat = -1;
+			}catch(Exception e){e.printStackTrace();}
+    	}
+    	
     	//Impact point
     	try{
     		impactPoint = Utils.getEarliestImpactPoint(input, ballPrediction);
     	}catch(Exception e){
     		e.printStackTrace();
-    		impactPoint = input.ball.position;
+    		impactPoint = new PredictionSlice(input.ball.position, 360);
     	}
     	
     	//Target
     	target = Utils.getTarget(input.car, input.ball);
-    	Utils.drawCrosshair(renderer, input.car, target.withZ(Utils.BALLRADIUS), Color.WHITE, 125);
+    	renderer.drawCrosshair(input.car, target.withZ(Utils.BALLRADIUS), Color.WHITE, 125);
     	
     	//Choose whether to continue with the active state
-    	boolean expired = false;
     	if(activeState != null){
     		//Expire the state's action
     		if(activeState.hasAction() && activeState.currentAction.expire(input)){
@@ -103,7 +111,6 @@ public class Wildfire implements Bot {
     		//Expire the state
     		if(!activeState.hasAction() && activeState.expire(input)){
     			activeState = null;
-    			expired = true;
     		}
     	}
     	
@@ -112,11 +119,17 @@ public class Wildfire implements Bot {
 		    for(State state : states){
 		    	 if(state.ready(input)){
 		    		activeState = state;
-		    		System.out.println(playerIndex + " [" + (10 + System.currentTimeMillis() % 90) + "]: " + activeState.getName() + (activeState.hasAction() ? " (" + activeState.currentAction.getName() + ")" : ""));
+		    		if(lastPrintedState == null || activeState.getName() != lastPrintedState.getName()){
+		    			System.out.println(playerIndex + " [" + (10 + System.currentTimeMillis() % 90) + "]: " + activeState.getName() + (activeState.hasAction() ? " (" + activeState.currentAction.getName() + ")" : ""));
+		    			lastPrintedState = activeState;
+		    		}
 		    		break;
 		    	}
 		    }
-		    if(activeState == null && expired) System.out.println(playerIndex + " [" + (10 + System.currentTimeMillis() % 90) + "]: " + fallbackState.getName() + (fallbackState.hasAction() ? " (" + fallbackState.currentAction.getName() + ")" : ""));
+		    if(activeState == null && (lastPrintedState == null || fallbackState.getName() != lastPrintedState.getName())){
+		    	System.out.println(playerIndex + " [" + (10 + System.currentTimeMillis() % 90) + "]: " + fallbackState.getName() + (fallbackState.hasAction() ? " (" + fallbackState.currentAction.getName() + ")" : ""));
+		    	lastPrintedState = fallbackState;
+		    }
     	}
     	
     	//Return the output from the state
@@ -172,5 +185,27 @@ public class Wildfire implements Bot {
     public int getIndex(){
         return this.playerIndex;
     }
+
+	public boolean isTestVersion(){
+		return test;
+	}
+	
+	/*
+	 * Intended so that the bot doesn't spam... too much
+	 */
+	public boolean sendQuickChat(byte... quickChatSelection){
+		long currentTime = System.currentTimeMillis();
+		if(currentTime > lastQuickChat + 60000 && lastQuickChat != -1){
+			Random random = new Random();
+			
+			try{
+				RLBotDll.sendQuickChat(this.playerIndex, false, quickChatSelection[random.nextInt(quickChatSelection.length)]);
+			}catch(Exception e){e.printStackTrace();}
+			
+			lastQuickChat = currentTime;
+			return true;
+		}
+		return false;
+	}
     
 }

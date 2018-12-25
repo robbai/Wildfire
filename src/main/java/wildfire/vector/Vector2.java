@@ -102,15 +102,11 @@ public class Vector2 {
 	}
 	
 	public Vector2 confineRatio(){
-		//Wider
-		if(Math.abs(x) * (Utils.PITCHWIDTH / Utils.PITCHLENGTH) > Math.abs(y)){
-			double scale = Math.abs(x) / Utils.PITCHWIDTH;
-			return this.scaled(1 / scale);
-		}else{
-			//Longer
-			double scale = Math.abs(y) / Utils.PITCHLENGTH;
-			return this.scaled(1 / scale);
-		}
+		return this.scaled(Math.min(Utils.PITCHLENGTH / Math.abs(y), Utils.PITCHWIDTH / Math.abs(x)));
+	}
+	
+	public Vector2 confineRatioX(){
+		return this.scaled(Utils.PITCHWIDTH / Math.abs(x));
 	}
 	
 	public Vector2 withX(double x){

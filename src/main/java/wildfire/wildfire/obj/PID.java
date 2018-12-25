@@ -1,4 +1,4 @@
-package wildfire.wildfire;
+package wildfire.wildfire.obj;
 
 import java.awt.Color;
 import java.awt.Point;
@@ -55,8 +55,8 @@ public class PID {
 
 	public double getOutput(double start, double target){
 		//How long since we last calculated
-		if(lastTime == -1) lastTime = System.currentTimeMillis();
 		long now = System.currentTimeMillis();
+		if(lastTime == -1) lastTime = now;
 		double timeDifference = (double)(now - lastTime) / 1000D;
 
 		//Calculate the error

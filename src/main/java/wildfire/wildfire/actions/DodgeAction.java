@@ -2,9 +2,9 @@ package wildfire.wildfire.actions;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
-import wildfire.wildfire.Action;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
+import wildfire.wildfire.obj.Action;
+import wildfire.wildfire.obj.State;
 
 public class DodgeAction extends Action {
 	

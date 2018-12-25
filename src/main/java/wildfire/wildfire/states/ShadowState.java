@@ -2,14 +2,15 @@ package wildfire.wildfire.states;
 
 import java.awt.Color;
 
+import rlbot.flat.QuickChatSelection;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
+import wildfire.wildfire.obj.State;
 
 public class ShadowState extends State {
 	
@@ -36,7 +37,7 @@ public class ShadowState extends State {
 		
 		if(Utils.isTeammateCloser(input)) return true;
 		
-		return Math.abs(Utils.aim(input.car, wildfire.impactPoint.flatten())) > Math.PI * 0.6 && Utils.teamSign(wildfire.team) * input.ball.velocity.y > -800;
+		return Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) > Math.PI * 0.6 && Utils.teamSign(wildfire.team) * input.ball.velocity.y > -800;
 	}
 	
 	@Override
@@ -45,7 +46,7 @@ public class ShadowState extends State {
 		if(avoidStoppingForever(input)) return true;
 				
 		//Aiming very close to the ball
-		if(Math.abs(Utils.aim(input.car, wildfire.impactPoint.flatten())) < 0.13) return true;
+		if(Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.13) return true;
 		
 		//Ball is close to our net
 		if(input.ball.position.flatten().distance(homeGoal) < homeZoneSize) return true;
@@ -67,14 +68,14 @@ public class ShadowState extends State {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		Vector2 target = getTarget(input);
-		Utils.drawCircle(wildfire.renderer, Color.BLACK, target, Utils.BALLRADIUS);
+		wildfire.renderer.drawCircle(Color.BLACK, target, Utils.BALLRADIUS);
 		double steerCorrectionRadians = Utils.aim(input.car, target);
 		double distance = target.distance(input.car.position.flatten());
 		
 		if(!hasAction() && input.car.hasWheelContact && distance > 2350){
 			if(input.car.velocity.magnitude() > 1000 && Math.abs(steerCorrectionRadians) < Math.PI * 0.25){
 				currentAction = new DodgeAction(this, input.ball.position.distanceFlat(input.car.position) > 600 ? steerCorrectionRadians : Utils.aim(input.car, input.ball.position.flatten()), input);
-			}else if(Math.abs(steerCorrectionRadians) > Math.PI * 0.85){
+			}else if(Math.abs(steerCorrectionRadians) > Math.PI * 0.85 && input.car.position.z < 100){
 				currentAction = new HalfFlipAction(this);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
@@ -83,8 +84,10 @@ public class ShadowState extends State {
 		float throttle;
 		if(distance < 3000 && input.car.velocity.magnitude() > distance * 2){
 			throttle = -1;
+			wildfire.sendQuickChat(QuickChatSelection.Information_AllYours);
 		}else{
 			throttle = (float)distance / 4800F;
+			if(distance > 3000) wildfire.sendQuickChat(QuickChatSelection.Information_Defending);
 		}
 		
         return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(throttle).withBoost(distance > 1500 && Math.abs(steerCorrectionRadians) < 0.2F);

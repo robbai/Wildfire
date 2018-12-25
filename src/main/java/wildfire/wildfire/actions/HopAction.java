@@ -7,10 +7,10 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Action;
-import wildfire.wildfire.PID;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
+import wildfire.wildfire.obj.Action;
+import wildfire.wildfire.obj.PID;
+import wildfire.wildfire.obj.State;
 
 public class HopAction extends Action {	
 

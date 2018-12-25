@@ -1,32 +1,34 @@
 package wildfire.input;
 
+import rlbot.flat.GameInfo;
 import rlbot.flat.GameTickPacket;
 
 public class DataPacket {
-
-    public final CarData car;
-    public final BallData ball;
-    public final int team;
-    public final int playerIndex;
-    
-    /**List of all the cars in the game*/ 
+	
+	/**List of all the cars in the game*/ 
     public final CarData[] cars;
 
+	public final GameInfo gameInfo;
+    public final CarData car;
+    public final BallData ball;
+    
+    public final int playerIndex;
+    public final float elapsedSeconds;
+
     public DataPacket(GameTickPacket request, int playerIndex){
+    	this.gameInfo = request.gameInfo();
         this.ball = new BallData(request.ball());
+        this.elapsedSeconds = request.gameInfo().secondsElapsed(); //I could totally remove this, but eh
         
-        //Get all the cars (apart from this bot)
+        //Get all the cars
         this.cars = new CarData[request.playersLength()];
         for(int i = 0; i < request.playersLength(); i++){
-//            if(i != playerIndex) this.cars[i] = new CarData(request.players(i), request.gameInfo().secondsElapsed());
-            this.cars[i] = new CarData(request.players(i), request.gameInfo().secondsElapsed());
+            this.cars[i] = new CarData(request.players(i));
         }
         
         //This bot's info
         this.playerIndex = playerIndex;
-        rlbot.flat.PlayerInfo myPlayerInfo = request.players(playerIndex);
-        this.team = myPlayerInfo.team();
-        this.car = new CarData(myPlayerInfo, request.gameInfo().secondsElapsed());
+        this.car = new CarData(request.players(playerIndex));
     }
     
 }

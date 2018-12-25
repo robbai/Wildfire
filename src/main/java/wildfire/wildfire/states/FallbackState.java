@@ -6,12 +6,12 @@ import java.awt.Point;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.obj.State;
 
 public class FallbackState extends State {
 	
@@ -32,12 +32,16 @@ public class FallbackState extends State {
 		double distance = input.ball.position.distance(input.car.position);
 		
 		if(!hasAction()){
-			if(distance < (input.car.position.z > 200 ? 250 : 900) && (input.car.velocity.magnitude() > 1300 || Utils.isBallAirborne(input.ball))){
-				currentAction = new DodgeAction(this, Utils.aim(input.car, wildfire.impactPoint.flatten()) * 3.5D, input);
+			if(distance < (wall ? 250 : 900) && (input.car.velocity.magnitude() > 1300 || Utils.isBallAirborne(input.ball))){
+				//My reason for the angle coefficient: "use whatever works" -Marvin
+				double dodgeAngle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten()) * (wildfire.isTestVersion() ? 1D : 3.25D);
+				dodgeAngle = Utils.clamp(dodgeAngle, -Math.PI, Math.PI);
+				
+				currentAction = new DodgeAction(this, dodgeAngle, input);
 			}else if(Utils.isCarAirborne(input.car)){
 				currentAction = new RecoveryAction(this);
-			}else if(wall && Math.abs(input.car.position.x) < Utils.GOALHALFWIDTH){
-				currentAction = new HopAction(this, wildfire.impactPoint.flatten(), input.car.velocity);
+			}else if(wall && Math.abs(input.car.position.x) < Utils.GOALHALFWIDTH - 50){
+				currentAction = new HopAction(this, wildfire.impactPoint.getPosition().flatten(), input.car.velocity);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
@@ -48,23 +52,20 @@ public class FallbackState extends State {
 			return Utils.driveDownWall(input);
 		}
 		
-//		targetPly = (int)(input.car.velocity.magnitude() / 300D) + 1;
-//		wildfire.renderer.drawString2d("Target Ply: " + targetPly, Color.WHITE, new Point(0, 20), 2, 2);
-		
-		Utils.drawCrosshair(wildfire.renderer, input.car, wildfire.impactPoint, Color.MAGENTA, 125);
+		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
 		Vector2 target = getPosition(input.car.position.flatten(), 0);
-		Utils.drawCircle(wildfire.renderer, Color.ORANGE, target, Utils.BALLRADIUS * 0.25F);
+		wildfire.renderer.drawCircle(Color.ORANGE, target, Utils.BALLRADIUS * 0.25F);
         
 		double aimBall = Utils.aim(input.car, target);
-        return new ControlsOutput().withSteer((float)-aimBall * 2F).withThrottle(1).withBoost(Math.abs(aimBall) < 0.2F).withSlide(Math.abs(aimBall) > 1.4F);
+        return new ControlsOutput().withSteer((float)-aimBall * 2F).withThrottle(1).withBoost(Math.abs(aimBall) < 0.2F && !input.car.isSupersonic).withSlide(Math.abs(aimBall) > 1.4F);
 	}
 	
 	private Vector2 getPosition(Vector2 start, int ply){
 		if(ply >= 30) return null;
 		
-		double distance = wildfire.impactPoint.distanceFlat(start);
+		double distance = wildfire.impactPoint.getPosition().distanceFlat(start);
 		
-		Vector2 end = wildfire.impactPoint.flatten().plus(wildfire.impactPoint.flatten().minus(wildfire.target).scaledToMagnitude(distance * 0.38));
+		Vector2 end = wildfire.impactPoint.getPosition().flatten().plus(wildfire.impactPoint.getPosition().flatten().minus(wildfire.target).scaledToMagnitude(distance * 0.38));
 		end = start.plus(end.minus(start).scaled(0.4)).confine();
 		
 		//Clamp the X when stuck in goal

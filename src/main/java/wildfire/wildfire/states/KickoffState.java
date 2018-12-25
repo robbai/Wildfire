@@ -8,11 +8,11 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.KickoffSpawn;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
+import wildfire.wildfire.obj.KickoffSpawn;
+import wildfire.wildfire.obj.State;
 
 public class KickoffState extends State {
 	
@@ -71,7 +71,7 @@ public class KickoffState extends State {
 			
 			//Render
 			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), target.toFramework());
-			Utils.drawCircle(wildfire.renderer, Color.WHITE, target, 70);
+			wildfire.renderer.drawCircle(Color.WHITE, target, 70);
 			
 			if(!hasAction() && dodge && Utils.isKickoff(input)){
 				currentAction = new DodgeAction(this, Utils.aim(input.car, input.ball.position.flatten()) * 2.9F, input);
@@ -85,17 +85,17 @@ public class KickoffState extends State {
 			//Fake
 			if(input.car.boost > 40){
 				boolean reverse = (Math.abs(input.car.position.y) < 5200);
-				double steerCorrectionRadians = Utils.aim(input.car, reverse ? Utils.homeGoal(input.car.team) : wildfire.impactPoint.flatten());
+				double steerCorrectionRadians = Utils.aim(input.car, reverse ? Utils.homeGoal(input.car.team) : wildfire.impactPoint.getPosition().flatten());
 				if(reverse){
 					steerCorrectionRadians = Utils.invertAim(steerCorrectionRadians);
-			        return new ControlsOutput().withSteer((float)steerCorrectionRadians).withThrottle(-1F).withBoost(false);
+			        return new ControlsOutput().withSteer((float)steerCorrectionRadians * 0.5F).withThrottle(-1F).withBoost(false);
 				}else{
 					return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1F).withBoost(false);
 				}
 			}else{
 				//Get the boost in front of us
 				Vector2 boost = new Vector2(0, -Utils.teamSign(input.car) * 4290);
-				Utils.drawCircle(wildfire.renderer, Color.WHITE, boost, 90);
+				wildfire.renderer.drawCircle(Color.WHITE, boost, 90);
 				double steerCorrectionRadians = Utils.aim(input.car, boost);
 				return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle((float)Math.cos(steerCorrectionRadians)).withBoost(false);
 			}

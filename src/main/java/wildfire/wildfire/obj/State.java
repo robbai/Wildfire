@@ -1,7 +1,8 @@
-package wildfire.wildfire;
+package wildfire.wildfire.obj;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.wildfire.Wildfire;
 
 public abstract class State {
 	

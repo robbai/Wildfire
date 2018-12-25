@@ -1,16 +1,16 @@
 package wildfire.wildfire;
 
-import java.awt.Color;
 import java.util.Random;
 
 import rlbot.flat.BallPrediction;
-import rlbot.render.Renderer;
 import wildfire.input.BallData;
 import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
+import wildfire.wildfire.obj.Action;
+import wildfire.wildfire.obj.PredictionSlice;
 
 public class Utils {
 	
@@ -21,30 +21,6 @@ public class Utils {
 	public static final float CEILING = 2044F;
 	public static final float GOALHEIGHT = 642.775F;
 	public static final float GOALHALFWIDTH = 892.755F;
-	
-	public static void drawCrosshair(Renderer renderer, CarData car, Vector3 point, Color colour, double size){
-    	renderer.drawLine3d(colour, point.withZ(point.z - size / 2).toFramework(), point.withZ(point.z + size / 2).toFramework());
-    	Vector3 orthogonal = car.position.minus(point).scaledToMagnitude(size / 2).rotateHorizontal(Math.PI / 2).withZ(0);
-    	renderer.drawLine3d(colour, point.plus(orthogonal).toFramework(), point.minus(orthogonal).toFramework());
-    }
-	
-	public static void drawCircle(Renderer renderer, Color colour, Vector2 centre, double radius){
-		drawCircle(renderer, colour, centre.withZ(0), radius);
-	}
-	
-	public static void drawCircle(Renderer renderer, Color colour, Vector3 centre, double radius){
-		Vector3 last = null;
-		double pointCount = 100;
-		for(double i = 0; i < pointCount; i += 1){
-            double angle = 2 * Math.PI * i / pointCount;
-            Vector3 latest = new Vector3(centre.x + radius * Math.cos(angle), centre.y + radius * Math.sin(angle), centre.z);
-            if(last != null) renderer.drawLine3d(colour, last.toFramework(), latest.toFramework());
-            last = latest;
-        }
-		
-		//Connect the end to the start
-		renderer.drawLine3d(colour, last.toFramework(), new Vector3(centre.x + radius, centre.y, centre.z).toFramework());
-	}
 	
 	public static Vector2 homeGoal(int team){
 		return new Vector2(0, teamSign(team) * -PITCHLENGTH);
@@ -63,12 +39,11 @@ public class Utils {
 		return carDirection.correctionAngle(point.minus(carPosition));
 	}
 	
+	/*
+	 * Flip the aim to face backwards
+	 */
 	public static double invertAim(double aim){
-		if(aim > 0){
-			return aim - Math.PI;
-		}else{
-			return aim + Math.PI;
-		}
+		return aim != 0 ? aim + -Math.signum(aim) * Math.PI : Math.PI;
 	}
 	
 	public static int teamSign(int team){
@@ -93,7 +68,7 @@ public class Utils {
 	/**
 	 * Acceleration = 2(Displacement - Initial Velocity * Time) / Time^2
 	 */
-	public static Vector3 getEarliestImpactPoint(DataPacket input, BallPrediction ballPrediction){
+	public static PredictionSlice getEarliestImpactPoint(DataPacket input, BallPrediction ballPrediction){
 		Vector2 carPosition = input.car.position.flatten(); 
 		double initialVelocity = input.car.velocity.flatten().magnitude();
 		
@@ -105,12 +80,12 @@ public class Utils {
 			double acceleration = 2 * (displacement - initialVelocity * timeLeft) / Math.pow(timeLeft, 2);
 			
 			if(initialVelocity + acceleration * timeLeft < Math.max(initialVelocity, Utils.boostMaxSpeed(initialVelocity, input.car.boost))){
-				return location.plus(carPosition.minus(location.flatten()).normalized().scaled(BALLRADIUS).withZ(0));
+				return new PredictionSlice(location.plus(carPosition.minus(location.flatten()).normalized().scaled(BALLRADIUS).withZ(0)), i);
 			}
 		}
 		
 		//Return final position as fallback
-		return Vector3.fromFlatbuffer(ballPrediction.slices(ballPrediction.slicesLength() - 1).physics().location());
+		return new PredictionSlice(Vector3.fromFlatbuffer(ballPrediction.slices(ballPrediction.slicesLength() - 1).physics().location()), ballPrediction.slicesLength() - 1);
 	}
 	
 	public static boolean isTeammateCloser(DataPacket input, Vector3 target){
@@ -181,15 +156,9 @@ public class Utils {
 	public static float round(float value){
 		return Math.round(value * 100F) / 100F;
 	}
+	
 	public static double round(double value){
 		return Math.round(value * 100D) / 100D;
-	}
-	
-	public static float clamp(float value){
-		return Math.max(-1F, Math.min(1F, value));
-	}
-	public static double clamp(double value){
-		return Math.max(-1D, Math.min(1D, value));
 	}
 	
 	public static boolean hasOpponent(DataPacket input){
@@ -200,15 +169,15 @@ public class Utils {
 	}
 	
 	/*
-	 * Heuristic for the max velocity given an amount of boost
+	 * Awful heuristic for the max velocity given an amount of boost,
+	 * requires an update
 	 */
 	public static double boostMaxSpeed(double initialVelocity, double boost){
 		return Math.min(2300, initialVelocity + 900D * Math.min(1D, boost / 35D));
 	}
 	
+	// t = (-u +/- sqrt(u^2 + 2as)) / a
 	public static double timeToHitGround(CarData car){
-		// t = (-u +/- sqrt(u^2 + 2as)) / a
-		
 		double s = car.position.z - 60;
 		if(s <= 0) return 0;
 		
@@ -219,6 +188,9 @@ public class Utils {
 		return t;
 	}
 	
+	/*
+	 * Inspired by the wonderful Darxeal
+	 */
 	public static ControlsOutput driveDownWall(DataPacket input){
 		return new ControlsOutput().withThrottle(1).withBoost(false).withSteer((float)input.car.orientation.eularRoll * 10F);
 	}
@@ -231,6 +203,9 @@ public class Utils {
 		one.state.currentAction = two;
 	}
 	
+	/*
+	 * ATBA controller (no wiggle)
+	 */
 	public static ControlsOutput driveBall(DataPacket input){
 		return new ControlsOutput().withSteer((float)-aim(input.car, input.ball.position.flatten()) * 2F).withBoost(false);
 	}
@@ -246,6 +221,10 @@ public class Utils {
 	    return false;
 	}
 	
+	/*
+	 * Returns a 2D vector of a point inside of the enemy's goal,
+	 * it should be a good place to shoot relative to this car
+	 */
 	public static Vector2 getTarget(CarData car, BallData ball){
     	final double goalSafeZone = 770D;
     	Vector2 target = null;
@@ -286,31 +265,17 @@ public class Utils {
 	    return 156D + 0.1D * speed + 0.000069D * Math.pow(speed, 2) + 0.000000164D * Math.pow(speed, 3) -0.0000000000562D * Math.pow(speed, 4);
 	}
 	
-	/*
-	 * Draw the turning radius
-	 */
-	public static void renderTurningRadius(Renderer renderer, CarData car){
-    	double turningRadius = Utils.getTurnRadius(car.velocity.flatten().magnitude());
-    	Utils.drawCircle(renderer, Color.PINK, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(turningRadius)).flatten(), turningRadius);
-    	Utils.drawCircle(renderer, Color.PINK, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(-turningRadius)).flatten(), turningRadius);
-	}
-	
 	public static boolean canShoot(CarData car, Vector3 ball){
-		return canShoot(car, ball, new Vector2(Utils.teamSign(car.team) * (Utils.GOALHALFWIDTH - Utils.BALLRADIUS), Utils.teamSign(car.team) * Utils.PITCHLENGTH), new Vector2(Utils.teamSign(car.team) * (-Utils.GOALHALFWIDTH + Utils.BALLRADIUS), Utils.teamSign(car.team) * Utils.PITCHLENGTH));
-	}
-	
-	public static boolean canShoot(CarData car, Vector3 ball, Vector2 left, Vector2 right){
-		double aimBall = Utils.aim(car, ball.flatten());
-		double aimLeft = Utils.aim(car, left);
-		double aimRight = Utils.aim(car, right);
-		return aimBall > aimLeft && aimBall < aimRight;
+		Vector2 trace = traceToY(car.position.flatten(), ball.minus(car.position).flatten(), Utils.teamSign(car) * Utils.PITCHLENGTH);
+		if(trace == null) return false; //Facing the wrong way
+		return Math.abs(trace.x) < GOALHALFWIDTH;
 	}
 	
 	public static boolean isOpponentBehindBall(DataPacket input){
 		for(byte i = 0; i < input.cars.length; i++){
 			CarData car = input.cars[i];
 			if(car == null || car.team == input.car.team) continue;
-			if(Math.signum(input.ball.position.y - car.position.y) == Utils.teamSign(input.car.team)) return true;
+			if(correctSideOfTarget(car, input.ball.position)) return true;
 		}
 		return false;
 	}
@@ -329,6 +294,86 @@ public class Utils {
 		if(d < -Math.PI) d += 2 * Math.PI;
 		if(d > Math.PI) d -= 2 * Math.PI;
 		return d;
+	}
+	
+	public static double clampSign(double value){
+		return clamp(value, -1, 1);
+	}
+
+	public static double clamp(double value, double min, double max){
+		return Math.max(Math.min(min, max), Math.min(Math.max(min, max), value));
+	}
+	
+	public static double distanceToWall(Vector3 position){
+		return Math.min(PITCHWIDTH - Math.abs(position.x), Math.abs(position.y) > PITCHLENGTH ? 0 : PITCHLENGTH - Math.abs(position.y));
+	}
+	
+	public static boolean correctSideOfTarget(CarData car, Vector2 target){
+		return Math.signum(target.y - car.position.y) == Utils.teamSign(car);
+	}
+	
+	public static boolean correctSideOfTarget(CarData car, Vector3 target){
+		return correctSideOfTarget(car, target.flatten());
+	}
+	
+	public static Vector2 traceToX(Vector2 start, Vector2 direction, double x){
+		//The direction is pointing away from the X
+		if(Math.signum(direction.x) != Math.signum(x - start.x)) return null;
+
+		//Scale up the direction so the X meets the requirement
+		double xChange = x - start.x;
+		direction = direction.normalized();
+		direction = direction.scaled(Math.abs(xChange / direction.x));
+		
+		return start.plus(direction);
+	}
+	
+	public static Vector2 traceToY(Vector2 start, Vector2 direction, double y){
+		//The direction is pointing away from the X
+		if(Math.signum(direction.y) != Math.signum(y - start.y)) return null;
+
+		//Scale up the direction so the X meets the requirement
+		double yChange = y - start.y;
+		direction = direction.normalized();
+		direction = direction.scaled(Math.abs(yChange / direction.y));
+		
+		return start.plus(direction);
+	}
+	
+	public static Vector2 traceToWall(Vector2 start, Vector2 direction){
+		Vector2 trace;
+		
+		if(!direction.isZero()){
+			trace = traceToX(start, direction, Math.signum(direction.x) * PITCHWIDTH);
+			if(trace != null && Math.abs(trace.y) <= PITCHLENGTH) return trace;
+			
+			trace = traceToY(start, direction, Math.signum(direction.y) * PITCHLENGTH);
+			if(trace != null && Math.abs(trace.x) <= PITCHWIDTH) return trace;
+		}
+		
+		//Direction is zero or the start is outside of the map
+		return start.confine();
+	}
+	
+	/*
+	 * Returns whether the trace goes into our own goal
+	 */
+	public static boolean isTowardsOwnGoal(CarData car, Vector2 ball){
+		Vector2 trace = traceToY(car.position.flatten(), ball.minus(car.position.flatten()), teamSign(car) * -PITCHLENGTH);
+		return trace != null && Math.abs(trace.x) < GOALHALFWIDTH - 50;
+	}
+	
+	/*
+	 * Returns whether the trace goes into the opponent's goal
+	 */
+	public static boolean isTowardsEnemyGoal(CarData car, Vector2 ball){
+		Vector2 trace = traceToY(car.position.flatten(), ball.minus(car.position.flatten()), teamSign(car) * PITCHLENGTH);
+		return trace != null && Math.abs(trace.x) < GOALHALFWIDTH - 50;
+	}
+	
+	// https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+	public static double distanceFromLine(Vector2 point, Vector2 lineA, Vector2 lineB){
+		return Math.abs(point.x * (lineB.y - lineA.y) - point.y * (lineB.x - lineA.x) + lineB.x * lineA.y - lineB.y * lineA.x) / Math.sqrt(Math.pow(lineB.y - lineA.y, 2) + Math.pow(lineB.x - lineA.x, 2));
 	}
 
 }

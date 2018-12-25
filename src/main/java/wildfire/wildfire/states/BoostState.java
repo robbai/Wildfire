@@ -3,15 +3,16 @@ package wildfire.wildfire.states;
 import java.awt.Color;
 import java.awt.Point;
 
+import rlbot.flat.QuickChatSelection;
 import wildfire.boost.BoostManager;
 import wildfire.boost.BoostPad;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
+import wildfire.wildfire.obj.State;
 
 public class BoostState extends State {
 
@@ -23,7 +24,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		if(input.car.boost > 40 || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint) < 2000 || wildfire.impactPoint.distanceFlat(Utils.homeGoal(wildfire.team)) < 4700 || Math.abs(wildfire.impactPoint.x) < 1550){
+		if(input.car.boost > 40 || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2000 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(wildfire.team)) < 4700 || Math.abs(wildfire.impactPoint.getPosition().x) < 1550){
 			return false;
 		}
 		boost = getBoost(input);
@@ -32,7 +33,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean expire(DataPacket input){
-		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > 40 || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.distanceFlat(input.car.position) < 1400 || wildfire.impactPoint.distanceFlat(Utils.homeGoal(wildfire.team)) < 4700;
+		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > 40 || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1400 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(wildfire.team)) < 4700;
 	}
 
 	@Override
@@ -44,6 +45,8 @@ public class BoostState extends State {
 		if(Utils.isOnWall(input.car)){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Utils.driveDownWall(input);
+		}else{
+			wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		}
 		
 		double distance = boost.getLocation().distanceFlat(input.car.position);
@@ -60,13 +63,12 @@ public class BoostState extends State {
 		}
 		
 		wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.flatten().toFramework(), boost.getLocation().flatten().toFramework());
-		Utils.drawCircle(wildfire.renderer, Color.BLUE, boost.getLocation().flatten(), 110);
+		wildfire.renderer.drawCircle(Color.BLUE, boost.getLocation().flatten(), 110);
 		return new ControlsOutput().withSteer((float)-(throttle > 0 ? steer : Utils.invertAim(steer)) * 2F).withThrottle((float)throttle).withBoost(Math.abs(steer) < 0.1);
 	}
 
 	private BoostPad getBoost(DataPacket input){
 		final double maxDistance = input.ball.position.distanceFlat(input.ball.position) + 1500;
-//		final double maxDistance = 4000D;
 		double bestDistance = 0;
 		BoostPad bestBoost = null;
 		for(BoostPad boost : BoostManager.getFullBoosts()){

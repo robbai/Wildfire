@@ -7,9 +7,9 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.obj.State;
 
 public class TestState2 extends State {
 	
@@ -38,7 +38,7 @@ public class TestState2 extends State {
 		final float sharpness = 2F;
 		
 //		double steerCorrectionRadians = Utils.aim(input.car, new Vector2(0, 0));
-		double steerCorrectionRadians = Utils.aim(input.car, wildfire.impactPoint.flatten());
+		double steerCorrectionRadians = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		double steer = (float)-steerCorrectionRadians * sharpness;
 //		steer += Math.sin((double)System.currentTimeMillis() / 1000D);
 		
@@ -50,7 +50,7 @@ public class TestState2 extends State {
 			Vector2 rotation = c.velocity.scaled(scale).flatten();
 			for(int i = 0; i < 100; i++){
 				double s = (float)-Utils.aimFromPoint(start.flatten(), rotation, input.ball.position.flatten()) * sharpness;
-				rotation = rotation.rotate(-Utils.clamp(s) / (0.4193 / scale));
+				rotation = rotation.rotate(-Utils.clampSign(s) / (0.4193 / scale));
 				Vector3 end = start.plus(rotation.withZ(0));
 				wildfire.renderer.drawLine3d(i % 2 == 0 ? (c.team == 0 ? Color.BLUE : Color.ORANGE) : Color.WHITE, start.toFramework(), end.toFramework());
 				start = end;

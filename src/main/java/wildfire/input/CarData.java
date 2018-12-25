@@ -18,9 +18,8 @@ public class CarData {
     public final boolean isSupersonic;
     
     public final int team;
-    public final float elapsedSeconds;
 
-    public CarData(rlbot.flat.PlayerInfo playerInfo, float elapsedSeconds){
+    public CarData(rlbot.flat.PlayerInfo playerInfo){
         this.position = Vector3.fromFlatbuffer(playerInfo.physics().location());
         this.velocity = Vector3.fromFlatbuffer(playerInfo.physics().velocity());
         
@@ -31,7 +30,6 @@ public class CarData {
         this.isSupersonic = playerInfo.isSupersonic();
         this.team = playerInfo.team();
         this.hasWheelContact = playerInfo.hasWheelContact();
-        this.elapsedSeconds = elapsedSeconds;
     }
     
     public double forwardMagnitude(){
@@ -46,7 +44,7 @@ public class CarData {
 
 	@Override
 	public String toString() {
-		return "[boost=" + (int)boost + ", team=" + team + ", " + position.toString() + "]";
+		return "[" + (hasWheelContact ? "grounded" : "airborne") + ", boost=" + (int)boost + ", team=" + team + "]";
 	}
     
 }

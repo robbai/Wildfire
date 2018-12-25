@@ -5,10 +5,10 @@ import java.awt.Point;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
-import wildfire.wildfire.Action;
-import wildfire.wildfire.PID;
-import wildfire.wildfire.State;
 import wildfire.wildfire.Utils;
+import wildfire.wildfire.obj.Action;
+import wildfire.wildfire.obj.PID;
+import wildfire.wildfire.obj.State;
 
 public class RecoveryAction extends Action {
 	
@@ -18,7 +18,7 @@ public class RecoveryAction extends Action {
 		super("Recovery", state);
 		
 		this.rollPID = new PID(1, 0.2, 0.2);
-		this.pitchPID = new PID(0.75, 0.1, 0.1);
+		this.pitchPID = new PID(1.75, 0.1, 0.4);
 	}
 
 	@Override
