@@ -24,7 +24,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		if(input.car.boost > 40 || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2000 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(wildfire.team)) < 4700 || Math.abs(wildfire.impactPoint.getPosition().x) < 1550){
+		if(input.car.boost > 40 || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2000 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 4700 || Math.abs(wildfire.impactPoint.getPosition().x) < 1550){
 			return false;
 		}
 		boost = getBoost(input);
@@ -33,7 +33,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean expire(DataPacket input){
-		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > 40 || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1400 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(wildfire.team)) < 4700;
+		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > 40 || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1400 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 4700;
 	}
 
 	@Override

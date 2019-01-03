@@ -31,14 +31,14 @@ public class HalfFlipAction extends Action {
 			if(timeDifference <= 100){
 				controller.withJump(timeDifference <= 50);
 				controller.withPitch(1);
-			}else if(timeDifference <= 260){
+			}else if(timeDifference <= 350){
 				controller.withJump(true);
 				controller.withPitch(1);
-			}else if(timeDifference <= 1200){
+			}else if(timeDifference <= 1250){
 				controller.withJump(false);
 				controller.withPitch(-1);
-				controller.withRoll(timeDifference <= 500 ? 0F : (float)Math.signum(input.car.orientation.noseVector.z));
-				controller.withBoost(timeDifference > 950F);
+				controller.withRoll(timeDifference <= 450 ? 0 : (float)Math.signum(input.car.orientation.noseVector.z));
+				controller.withBoost(timeDifference >= 950);
 			}
 		}
 	        

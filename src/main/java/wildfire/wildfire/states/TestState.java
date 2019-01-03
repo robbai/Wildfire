@@ -24,17 +24,15 @@ public class TestState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(wildfire.impactPoint.getPosition().z < 200){
-			double steer = -Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten()) * 2;
-			return new ControlsOutput().withSteer((float)steer).withThrottle(1F).withBoost(!Utils.isBallAirborne(input.ball) && input.car.hasWheelContact).withSlide(Math.abs(steer) > 2);
-		}
-		
-		if(!hasAction() && input.car.hasWheelContact && input.car.velocity.magnitude() < 900){
-			currentAction = new AerialAction(this, input, input.car.position.z < 1000 && wildfire.impactPoint.getPosition().z > 800);
+		boolean positioned = input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < wildfire.impactPoint.getPosition().z * 4;
+		if(!hasAction() && input.car.hasWheelContact && positioned){
+			currentAction = new AerialAction(this, input, input.car.position.z < 500 && wildfire.impactPoint.getPosition().z > 500);
 			if(!currentAction.failed) return currentAction.getOutput(input); //Start overriding
 		}
 		
-		return new ControlsOutput().withThrottle(0).withBoost(false).withSteer(0).withSlide(false);
+		double steer = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+		double throttle = Math.cos(steer);
+		return new ControlsOutput().withSteer((float)(throttle < 0 ? Utils.invertAim(steer) : -steer) * 2F).withThrottle((float)throttle).withBoost(false);
 	}
 
 }

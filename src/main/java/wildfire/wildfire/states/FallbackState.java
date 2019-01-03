@@ -52,20 +52,27 @@ public class FallbackState extends State {
 			return Utils.driveDownWall(input);
 		}
 		
+		//Goal-target
+		Vector2 goal = Utils.getTarget(input.car, input.ball);
+    	wildfire.renderer.drawCrosshair(input.car, goal.withZ(Utils.BALLRADIUS), Color.WHITE, 125);
+		
+    	//Impact point
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
-		Vector2 target = getPosition(input.car.position.flatten(), 0);
+		
+		//Target
+		Vector2 target = getPosition(input.car.position.flatten(), goal, 0);
 		wildfire.renderer.drawCircle(Color.ORANGE, target, Utils.BALLRADIUS * 0.25F);
         
-		double aimBall = Utils.aim(input.car, target);
-        return new ControlsOutput().withSteer((float)-aimBall * 2F).withThrottle(1).withBoost(Math.abs(aimBall) < 0.2F && !input.car.isSupersonic).withSlide(Math.abs(aimBall) > 1.4F);
+		double steer = Utils.aim(input.car, target);
+        return new ControlsOutput().withSteer((float)-steer * 2F).withThrottle(1).withBoost(Math.abs(steer) < 0.2F && !input.car.isSupersonic).withSlide(Math.abs(steer) > 1.4F);
 	}
 	
-	private Vector2 getPosition(Vector2 start, int ply){
+	private Vector2 getPosition(Vector2 start, Vector2 goal, int ply){
 		if(ply >= 30) return null;
 		
 		double distance = wildfire.impactPoint.getPosition().distanceFlat(start);
 		
-		Vector2 end = wildfire.impactPoint.getPosition().flatten().plus(wildfire.impactPoint.getPosition().flatten().minus(wildfire.target).scaledToMagnitude(distance * 0.38));
+		Vector2 end = wildfire.impactPoint.getPosition().flatten().plus(wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(distance * 0.38));
 		end = start.plus(end.minus(start).scaled(0.4)).confine();
 		
 		//Clamp the X when stuck in goal
@@ -75,7 +82,7 @@ public class FallbackState extends State {
 		}
 		
 		wildfire.renderer.drawLine3d(Color.RED, start.toFramework(), end.toFramework());
-		Vector2 next = getPosition(end, ply + 1);
+		Vector2 next = getPosition(end, goal, ply + 1);
 		return ply < targetPly && !stuck ? next : end;
 	}
 

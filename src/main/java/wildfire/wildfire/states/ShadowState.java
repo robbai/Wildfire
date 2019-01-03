@@ -6,6 +6,7 @@ import rlbot.flat.QuickChatSelection;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
+import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
@@ -19,7 +20,7 @@ public class ShadowState extends State {
 
 	public ShadowState(Wildfire wildfire){
 		super("Shadow", wildfire);
-		homeGoal = Utils.homeGoal(wildfire.team);
+		updateHomeGoal(wildfire.team);
 	}
 
 	@Override
@@ -35,38 +36,50 @@ public class ShadowState extends State {
 			return true;
 		}
 		
-		if(Utils.isTeammateCloser(input)) return true;
+		//Outside of the "useful hitting arc"
+		if(new Vector3(0, -Utils.teamSign(input.car), 0).angle(input.car.position.minus(wildfire.impactPoint.getPosition())) > Math.PI * 0.4){
+			if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) > 1500) return true;
+		}
 		
-		return Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) > Math.PI * 0.6 && Utils.teamSign(wildfire.team) * input.ball.velocity.y > -800;
+//		if(Utils.isTeammateCloser(input)) return true;
+		
+		return Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) > Math.PI * 0.6 && Utils.teamSign(input.car.team) * input.ball.velocity.y > -800;
 	}
 	
 	@Override
 	public boolean expire(DataPacket input){
+		double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position);
+		
 		//Avoid stopping forever
 		if(avoidStoppingForever(input)) return true;
 				
-		//Aiming very close to the ball
-		if(Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.13) return true;
+		//Aiming very close to the ball, and closeby
+		if(Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.13 && distance < 3500){
+			return true;
+		}
 		
 		//Ball is close to our net
 		if(input.ball.position.flatten().distance(homeGoal) < homeZoneSize) return true;
 		
 		//Ball is centralised
-		if(Math.abs(input.ball.position.x) < 1200) return true;
+		if(Math.abs(input.ball.position.x) < 1200 && distance < 7000) return true;
 		
 		//Beating the opponent
 		double ourDistance = input.car.position.distance(input.ball.position);
 		if(ourDistance < 800) return true;
 		double closestOpponentDistance = Utils.closestOpponentDistance(input);
-		return !Utils.isTeammateCloser(input) && (closestOpponentDistance > Math.max(2250, ourDistance * 1.75D) || Utils.teamSign(wildfire.team) * input.ball.velocity.y < -850);
+		return !Utils.isTeammateCloser(input) && (closestOpponentDistance > Math.max(2250, ourDistance * 1.75D) || Utils.teamSign(input.car.team) * input.ball.velocity.y < -850);
 	}
 
-	private boolean avoidStoppingForever(DataPacket input) {
+	private boolean avoidStoppingForever(DataPacket input){
 		return input.ball.velocity.isZero() && Math.signum(input.ball.position.y) != Utils.teamSign(input.car);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
+		//Update the home goal every three seconds
+		if(input.gameInfo.gameTimeRemaining() % 3 < 1) updateHomeGoal(input.car.team);
+		
 		Vector2 target = getTarget(input);
 		wildfire.renderer.drawCircle(Color.BLACK, target, Utils.BALLRADIUS);
 		double steerCorrectionRadians = Utils.aim(input.car, target);
@@ -90,7 +103,7 @@ public class ShadowState extends State {
 			if(distance > 3000) wildfire.sendQuickChat(QuickChatSelection.Information_Defending);
 		}
 		
-        return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(throttle).withBoost(distance > 1500 && Math.abs(steerCorrectionRadians) < 0.2F);
+        return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(throttle).withBoost(distance > 1500 && Math.abs(steerCorrectionRadians) < 0.2F && !Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()));
 	}
 
 	/**
@@ -99,6 +112,13 @@ public class ShadowState extends State {
 	private Vector2 getTarget(DataPacket input){
 		Vector2 difference = input.ball.position.flatten().minus(homeGoal);
 		return homeGoal.plus(difference.scaled(0.5D));
+	}
+	
+	/**
+	 * I don't know why I made this a method
+	 */
+	private void updateHomeGoal(int team){
+		homeGoal = Utils.homeGoal(team);
 	}
 
 }

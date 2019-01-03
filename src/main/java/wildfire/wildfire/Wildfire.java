@@ -15,14 +15,15 @@ import rlbot.flat.QuickChatSelection;
 import wildfire.boost.BoostManager;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
-import wildfire.vector.Vector2;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.obj.StateSettingManager;
 import wildfire.wildfire.obj.WRenderer;
 import wildfire.wildfire.states.BoostState;
+import wildfire.wildfire.states.ClearState;
 import wildfire.wildfire.states.FallbackState;
-import wildfire.wildfire.states.InterceptState;
 import wildfire.wildfire.states.KickoffState;
+import wildfire.wildfire.states.ReturnState;
 import wildfire.wildfire.states.ShadowState;
 import wildfire.wildfire.states.ShootState;
 import wildfire.wildfire.states.WaitState;
@@ -38,7 +39,11 @@ public class Wildfire implements Bot {
     
 	public WRenderer renderer;
 	public BallPrediction ballPrediction;
+	public PredictionSlice impactPoint;
 	
+	public StateSettingManager stateSetting;
+	
+	//State info
 	public ArrayList<State> states;
 	private State fallbackState;
 	private State activeState;
@@ -46,14 +51,12 @@ public class Wildfire implements Bot {
 	
 	public long lastDodge = 0L;
 	private long lastQuickChat = 0L;
-	
-	public PredictionSlice impactPoint;
-	public Vector2 target;
 
     public Wildfire(int playerIndex, int team, boolean test){
         this.playerIndex = playerIndex;
         this.team = team;
         this.test = test;
+        this.stateSetting = new StateSettingManager(this);
         
         //Initialise all the states
         states = new ArrayList<State>();
@@ -61,18 +64,23 @@ public class Wildfire implements Bot {
         new ShootState(this);
         new WallHitState(this);
         new WaitState(this);
-        new InterceptState(this);
+        new ClearState(this);
+        new ReturnState(this);
         new BoostState(this);
         new ShadowState(this);
-//        new TestState(this);
-//     	  new TestState2(this);
+//        new HookState(this); //Test
+//        new TestState(this); //Test
+//     	  new TestState2(this); //Test
+//        fallbackState = new CircleState(this); //Test
         fallbackState = new FallbackState(this);
-//        fallbackState = new StayStillState(this);
+//        fallbackState = new StayStillState(this); //Test
     }
 
     private ControlsOutput processInput(DataPacket input){
     	//Get a renderer
-    	renderer = new WRenderer(this, false, true);
+    	renderer = new WRenderer(this, false, false);
+    	
+//    	stateSetting.hop(input);
     	
     	//Get the ball prediction
     	try{
@@ -82,11 +90,15 @@ public class Wildfire implements Bot {
     	}
     	
     	//GG
-    	if(input.gameInfo.isMatchEnded() && lastQuickChat != -1){
+    	if(input.gameInfo.isMatchEnded()){
     		try{
-				RLBotDll.sendQuickChat(this.playerIndex, false, QuickChatSelection.PostGame_Gg);
+				if(lastQuickChat != -1) RLBotDll.sendQuickChat(this.playerIndex, false, QuickChatSelection.PostGame_Gg);
 				lastQuickChat = -1;
-			}catch(Exception e){e.printStackTrace();}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+    	}else if(lastQuickChat == -1){
+    		lastQuickChat = 0;
     	}
     	
     	//Impact point
@@ -96,10 +108,6 @@ public class Wildfire implements Bot {
     		e.printStackTrace();
     		impactPoint = new PredictionSlice(input.ball.position, 360);
     	}
-    	
-    	//Target
-    	target = Utils.getTarget(input.car, input.ball);
-    	renderer.drawCrosshair(input.car, target.withZ(Utils.BALLRADIUS), Color.WHITE, 125);
     	
     	//Choose whether to continue with the active state
     	if(activeState != null){

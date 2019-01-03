@@ -32,7 +32,7 @@ public class ShootState extends State {
 		if(input.ball.position.z > 350 || Math.signum(wildfire.impactPoint.getPosition().y - input.car.position.y) != Utils.teamSign(input.car)) return false;
 		
 		//Not during a weird dribble
-		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 80 && input.ball.position.distanceFlat(Utils.enemyGoal(wildfire.team)) > 7000) return false;
+		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 80 && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 7000) return false;
 		
 		double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(Math.abs(aimBall) > Math.PI * 0.8 && input.car.velocity.magnitude() > 1100) return false;
@@ -74,7 +74,7 @@ public class ShootState extends State {
 		float throttle = (float)Math.abs(Math.cos(aimBall));
 		
 		wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH).toFramework());
-		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
+		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.LIGHT_GRAY, 125);
 		
 		wildfire.renderer.drawString2d("Aim: " + Utils.round(aimBall), Color.WHITE, new Point(0, 20), 2, 2);
 		wildfire.renderer.drawString2d("Throttle: " + Utils.round(throttle), Color.WHITE, new Point(0, 40), 2, 2);

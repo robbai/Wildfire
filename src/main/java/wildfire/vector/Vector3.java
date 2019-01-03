@@ -131,5 +131,9 @@ public class Vector3 {
 	public DesiredVector3 toDesired(){
 		return new DesiredVector3().withX((float)-x).withY((float)y).withZ((float)z);
 	}
+
+	public boolean isOutOfBounds(){
+		 return Math.abs(x) > Utils.PITCHWIDTH || Math.abs(y) > Utils.PITCHLENGTH || z > Utils.CEILING || z < 0;
+	}
     
 }

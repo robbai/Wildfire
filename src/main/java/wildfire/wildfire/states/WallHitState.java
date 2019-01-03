@@ -18,7 +18,7 @@ import wildfire.wildfire.obj.State;
 
 public class WallHitState extends State {
 	
-	private final double maxWallDistance = 550;
+	private final double maxWallDistance = 350;
 
 	public WallHitState(Wildfire wildfire){
 		super("Wall Hit", wildfire);
@@ -27,7 +27,7 @@ public class WallHitState extends State {
 	@Override
 	public boolean ready(DataPacket input){
 		//The ball must be in an appropriate wall hit position
-		if(!isAppropriateWallHit(input.car.position, wildfire.impactPoint.getPosition())) return false;
+		if(!isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition())) return false;
 		
 		//We would like the hit to be constructive
 		return Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < -4000 || Utils.teamSign(input.car) * (wildfire.impactPoint.getPosition().y - input.car.position.y) > -600;
@@ -35,7 +35,7 @@ public class WallHitState extends State {
 	
 	@Override
 	public boolean expire(DataPacket input){
-		return input.car.position.z < 200 && !isAppropriateWallHit(input.car.position, wildfire.impactPoint.getPosition());
+		return input.car.position.z < 200 && !isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition());
 	}
 
 	@Override
@@ -44,7 +44,7 @@ public class WallHitState extends State {
 		
 		if(wall){
 			//Drive down the wall when the opportunity is gone (we might've hit it!)
-			if(!isAppropriateWallHit(input.car.position, wildfire.impactPoint.getPosition())){
+			if(!isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition())){
 				wildfire.renderer.drawString2d("Abandon", Color.WHITE, new Point(0, 20), 2, 2);
 				return Utils.driveDownWall(input);
 			}else{
@@ -55,7 +55,8 @@ public class WallHitState extends State {
 				Vector2 forward = new Vector2(0, 1);
 				double aim = forward.correctionAngle(localTarget.flatten());
 				
-				if(wildfire.impactPoint.getPosition().distance(input.car.position) < 400){
+				//Dodge
+				if(wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 400 : 200)){
 					currentAction = new DodgeAction(this, aim, input);
 					if(!currentAction.failed){
 						if(input.car.position.z > 1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
@@ -78,7 +79,7 @@ public class WallHitState extends State {
 			
 			Vector2 destination = wildfire.impactPoint.getPosition().minus(input.car.position).scaled(100).plus(input.car.position).flatten();
 			if(sideWall) destination = destination.withY(input.car.position.y);
-			if(backWall) destination = destination.withX(input.car.position.x);
+			if(backWall) destination = destination.withX(Math.abs(wildfire.impactPoint.getPosition().x) > 1100 ? wildfire.impactPoint.getPosition().x : Math.signum(wildfire.impactPoint.getPosition().x) * 1100);
 			
 			float steer = (float)Utils.aim(input.car, destination);
 			boolean reverse = false;
@@ -108,12 +109,12 @@ public class WallHitState extends State {
 		}
 	}
 	
-	private boolean isAppropriateWallHit(Vector3 carPosition, Vector3 target){
-		if(target.z < Math.min(750, carPosition.distanceFlat(target) / 2) || Utils.distanceToWall(target) > maxWallDistance) return false;
+	private boolean isAppropriateWallHit(CarData car, Vector3 target){
+		if(target.z < Math.min(750, car.position.distanceFlat(target) / 2) || Utils.distanceToWall(target) > maxWallDistance) return false;
 		if(Math.abs(target.y) < 4350) return true;
 		
 		//Away from our back wall
-		return (Math.abs(target.x) > 1000 || carPosition.z > 1000) && target.y * Utils.teamSign(wildfire.team) < -4000; 
+		return (Math.abs(target.x) > 1200 || car.position.z > 1000) && target.y * Utils.teamSign(car) < -4000; 
 	}
 	
 	private Vector3 local(CarData car, Vector3 ball){

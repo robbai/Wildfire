@@ -69,6 +69,12 @@ public class Utils {
 	 * Acceleration = 2(Displacement - Initial Velocity * Time) / Time^2
 	 */
 	public static PredictionSlice getEarliestImpactPoint(DataPacket input, BallPrediction ballPrediction){
+		//"NullPointerException - Lookin' good!"
+		if(ballPrediction == null){
+			System.err.println("NullPointerException - Lookin' good!");
+			return new PredictionSlice(input.ball.position, 0);
+		}
+		
 		Vector2 carPosition = input.car.position.flatten(); 
 		double initialVelocity = input.car.velocity.flatten().magnitude();
 		
@@ -214,6 +220,7 @@ public class Utils {
 	 * Whether the ball will go in this team's goal
 	 */
 	public static boolean isOnTarget(BallPrediction ballPrediction, int team){
+		if(ballPrediction == null) return false;
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
 	    	Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 	    	if(Math.abs(location.y) >= PITCHLENGTH) return Math.signum(location.y) != teamSign(team);
@@ -262,6 +269,7 @@ public class Utils {
 	 * Via DomNomNom's tests
 	 */
 	public static double getTurnRadius(double speed){
+		if(speed < 0) return 0;
 	    return 156D + 0.1D * speed + 0.000069D * Math.pow(speed, 2) + 0.000000164D * Math.pow(speed, 3) -0.0000000000562D * Math.pow(speed, 4);
 	}
 	
@@ -374,6 +382,9 @@ public class Utils {
 	// https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
 	public static double distanceFromLine(Vector2 point, Vector2 lineA, Vector2 lineB){
 		return Math.abs(point.x * (lineB.y - lineA.y) - point.y * (lineB.x - lineA.x) + lineB.x * lineA.y - lineB.y * lineA.x) / Math.sqrt(Math.pow(lineB.y - lineA.y, 2) + Math.pow(lineB.x - lineA.x, 2));
+	}
+	public static boolean defendNotReturn(DataPacket input, Vector3 impactPoint, double homeZoneSize, boolean onTarget){
+		return onTarget || Utils.teamSign(input.car.team) * input.ball.velocity.y < -1200 || impactPoint.distanceFlat(Utils.homeGoal(input.car.team)) < homeZoneSize;
 	}
 
 }

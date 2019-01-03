@@ -61,7 +61,10 @@ public class PID {
 
 		//Calculate the error
 		double error = (target - start);
-		if(render) data.add(error);
+		if(render){
+			data.add(error);
+			while(data.size() > 120) data.remove(0);
+		}
 		errorSum += (error * timeDifference);
 		double errorDifference = (error - lastError) / timeDifference;
 

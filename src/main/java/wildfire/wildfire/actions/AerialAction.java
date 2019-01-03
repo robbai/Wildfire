@@ -1,7 +1,6 @@
 package wildfire.wildfire.actions;
 
 import java.awt.Color;
-import java.awt.Point;
 
 import wildfire.input.CarData;
 import wildfire.input.DataPacket;
@@ -15,13 +14,13 @@ import wildfire.wildfire.obj.State;
 public class AerialAction extends Action {
 	
 	/*What point of the ball we wish to hit*/
-	private final Vector3 offset = new Vector3(0, 0, Utils.BALLRADIUS * -0.6);
+	private final Vector3 offset = new Vector3(0, 0, Utils.BALLRADIUS * -0.75);
 	
 	private boolean startMidair;
 	private boolean doubleJump;
 	private Vector3 target;
 	
-	private PID pitchPID, yawPID;
+	private PID pitchPID, yawPID, rollPID;
 
 	public AerialAction(State state, DataPacket input, boolean doubleJump){
 		super("Aerial", state);
@@ -30,7 +29,8 @@ public class AerialAction extends Action {
 		this.doubleJump = !startMidair && doubleJump;
 		
 		this.pitchPID = new PID(state.wildfire.renderer, Color.BLUE, 4, 0, 0.4);
-		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 4, 0, 1.8);
+		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 4.5, 0, 0.6);
+		this.rollPID = new PID(state.wildfire.renderer, Color.YELLOW, 2.4, 0, 0.6);
 	}
 
 	@Override
@@ -39,6 +39,7 @@ public class AerialAction extends Action {
 		
 		//Slight offset so we hit the centre
 		Vector3 impactPoint = state.wildfire.impactPoint.getPosition().plus(offset);
+//		double z = -Math.min(800, impactPoint.distanceFlat(input.car.position) / 4);
 		if(input.ball.velocity.flatten().isZero()){
 			target = input.ball.position.plus(offset);
 		}else if(target != null){
@@ -46,6 +47,7 @@ public class AerialAction extends Action {
 		}else{
 			target = impactPoint;
 		}
+//		target = target.withZ(target.z + z);
 		
 		//Draw the crosshair
 		state.wildfire.renderer.drawCrosshair(input.car, target, Color.YELLOW, 125);
@@ -57,26 +59,37 @@ public class AerialAction extends Action {
 			controller.withJump(timeDifference < 160 || (timeDifference > 300 && doubleJump));
 		}else{	        
 	        //Bail out
-	        if(input.car.magnitudeInDirection(target.minus(input.car.position).flatten()) < -1200 || (input.car.position.distance(target) < 200 && input.car.boost < 20)){
-	        	Utils.transferAction(this, new RecoveryAction(this.state));
-	        }
+//	        if(input.car.magnitudeInDirection(target.minus(input.car.position).flatten()) < -1200 || (input.car.position.distance(target) < 200 && input.car.boost < 20)){
+//	        	Utils.transferAction(this, new RecoveryAction(this.state));
+//	        }
 		}
 		
 		//This is the angling part
 		if(timeDifference > (doubleJump ? 380 : 200) || timeDifference < 170 || startMidair){
-			Vector3 targetLocal = target.minus(input.car.position);
+			Vector3 targetRelative = target.minus(input.car.position);
 			
-			boolean pointStraight = (input.car.position.distance(target) / input.car.velocity.magnitude()) < 0.325D && input.car.velocity.magnitude() > 2000;
-			if(pointStraight) state.wildfire.renderer.drawString2d("Straighten", Color.WHITE, new Point(0, 40), 2, 2);
+			//The last second decision to point directly at the ball
+			boolean pointStraight = (input.car.position.distance(target) / input.car.velocity.magnitude()) < 0.335D && input.car.velocity.magnitude() > 2000;
+			if(pointStraight){
+				//Redraw the crosshair
+				state.wildfire.renderer.drawCrosshair(input.car, target, Color.RED, 150);
+			}
 			
 	        //Stay flat by rolling
-			controller.withRoll((float)input.car.orientation.rightVector.z * 0.85F);
+			double currentRoll = input.car.orientation.eularRoll;
+//			double rollSign = Math.abs(currentRoll) > Math.PI / 2 ? -1 : 1;
+			double rollSign = 1;
+			double roll = rollPID.getOutput(currentRoll, rollSign == 1 ? 0 : Math.PI * Math.signum(currentRoll));
+			controller.withRoll((float)roll);
 	        
 	        //The rest is pitch and yaw
-			Vector3 path = pointStraight ? input.car.orientation.noseVector : simulate(input.car, 1D / 60D).scaledToMagnitude(targetLocal.magnitude());
+			Vector3 path = pointStraight ? input.car.orientation.noseVector : simulate(input.car, 1D / 60D).scaledToMagnitude(targetRelative.magnitude());
 			
-			state.wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), targetLocal.scaledToMagnitude(2000).plus(input.car.position).toFramework());
-			if(!input.car.hasWheelContact && !pointStraight) state.wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.toFramework(), path.scaledToMagnitude(2000).plus(input.car.position).toFramework());
+			//Rendering
+//			state.wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), targetRelative.scaledToMagnitude(2000).plus(input.car.position).toFramework());
+//			if(!input.car.hasWheelContact && !pointStraight) state.wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.toFramework(), path.scaledToMagnitude(2000).plus(input.car.position).toFramework());
+			renderFall(Color.PINK, input.car.position, input.car.velocity, null);
+			renderFall(Color.CYAN, input.car.position, input.car.velocity, input.car.orientation.noseVector);
 			
 			//Get our current angles
 			Vector3 currentAngles = toPitchYawRoll(path);
@@ -84,20 +97,26 @@ public class AerialAction extends Action {
 			double currentYaw = currentAngles.y;
 			
 			//Get the desired angles
-			Vector3 desiredAngles = toPitchYawRoll(targetLocal);
+			Vector3 desiredAngles = toPitchYawRoll(targetRelative);
 			double desiredPitch = desiredAngles.x;
 			double desiredYaw = desiredAngles.y;
 			
 			//It is useful to wrap our yaw angle
 			double yawCorrection = Utils.wrapAngle(desiredYaw - currentYaw);
 			
-			double pitch = pitchPID.getOutput(currentPitch, desiredPitch);
-			double yaw = yawPID.getOutput(0, yawCorrection);
+			//Get the PID output
+			double pitch = rollSign * pitchPID.getOutput(currentPitch, desiredPitch);
+			double yaw = rollSign * yawPID.getOutput(0, yawCorrection);
 			
-			controller.withBoost((!pointStraight && Math.abs(pitch) < 1.5 && Math.abs(yaw) < (timeDifference < 800 ? 0.35 : 1.5)) || (timeDifference < 1200 && input.car.velocity.z < -50));
+			//Managing boost
+			if(!pointStraight){
+				boolean boost = Math.abs(desiredPitch - currentPitch) < 1.3 && Math.abs(yawCorrection) < 1.1;
+				controller.withBoost(boost);
+				if(!boost) controller.withBoost(timeDifference < 1200 && input.car.velocity.z < 0 && currentPitch > 0);
+			}
 
 			controller.withPitch((float)pitch);
-			if(input.car.orientation.eularPitch + Math.min(pitch, 1) > 1){
+			if(input.car.orientation.eularPitch + Utils.clampSign(pitch) > 1){
 				controller.withPitch((float)(1 - input.car.orientation.noseVector.z));
 			}
 			
@@ -122,11 +141,19 @@ public class AerialAction extends Action {
 	private Vector3 toPitchYawRoll(Vector3 direction){
 		direction = direction.normalized();
 		double pitch = Math.asin(direction.z);
-		
-//		double yaw = Math.asin(direction.y / Math.cos(pitch));
 		double yaw = -Math.atan2(direction.y, direction.x);
-		
 		return new Vector3(pitch, yaw, 0); //Rolling has no effect
+	}
+	
+	private void renderFall(Color colour, Vector3 start, Vector3 velocity, Vector3 nose){
+		if(start.z < 0 || start.isOutOfBounds()) return;
+		double scale = 1D / 10;
+		velocity = velocity.plus(new Vector3(0, 0, -650 * scale)); //Gravity
+		if(nose != null) velocity = velocity.plus(nose.scaledToMagnitude(1000D * scale)); //Boost
+		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
+		Vector3 next = start.plus(velocity.scaled(scale));
+		state.wildfire.renderer.drawLine3d(colour, start.toFramework(), next.toFramework());
+		renderFall(colour, next, velocity, nose);
 	}
 
 }

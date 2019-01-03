@@ -17,7 +17,7 @@ import wildfire.wildfire.obj.State;
 public class WaitState extends State {
 	
 	/*How far we want to be from the ball's bounce*/
-	private final double desiredDistance = 26D;
+	private final double desiredDistance = 30D;
 	
 	private Vector2 bounce = null;
 	private double timeLeft = 0;
@@ -40,7 +40,7 @@ public class WaitState extends State {
 		}
 		
 		//Can't reach point, warning: very optimistic
-		if(bounce.distance(input.car.position.flatten()) / timeLeft > 3000) return false;
+		if(bounce.distance(input.car.position.flatten()) / timeLeft > 2500) return false;
 		
 		//Teammate's closer
 		if(Utils.isTeammateCloser(input, bounce)) return false;
@@ -51,7 +51,7 @@ public class WaitState extends State {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		//Mostly for aerial purposes
-		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, wildfire.team);
+		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
 		
 		//Aerial
 		double steerImpact = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
@@ -86,7 +86,7 @@ public class WaitState extends State {
 			return new ControlsOutput().withBoost(false).withSteer((float)-Utils.aim(input.car, bounce) * 2F).withThrottle((float)-input.car.forwardMagnitude());
 		}
 		
-		Vector2 enemyGoal = Utils.enemyGoal(wildfire.team);
+		Vector2 enemyGoal = Utils.enemyGoal(input.car.team);
 
 		Vector2 target = null;
 		double velocityNeeded = -1;
@@ -139,7 +139,7 @@ public class WaitState extends State {
 			}
 		}
 		
-		ControlsOutput controls = new ControlsOutput().withSteer(steer);
+		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 2);
 		double currentVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
 			
 		if(velocityNeeded > currentVelocity){

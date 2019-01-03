@@ -23,7 +23,7 @@ public class HopAction extends Action {
 		this.target = target;
 		this.throttleTime = (int)Math.min(300, initialVelocity.flatten().magnitude() / 6);
 		
-		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 2, 0.2, 1.05);
+		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 3.2, 0, 1.1);
 	}
 
 	@Override
@@ -31,25 +31,24 @@ public class HopAction extends Action {
 		ControlsOutput controller = new ControlsOutput().withThrottle(0).withBoost(false);
 		
 		long timeDifference = timeDifference();
-		state.wildfire.renderer.drawString2d("Throttle Time: " + throttleTime, Color.WHITE, new Point(0, 40), 2, 2);
+		
+		if(throttleTime != 0) state.wildfire.renderer.drawString2d("Throttle: " + throttleTime + "ms", Color.WHITE, new Point(0, 40), 2, 2);
 		
 		if(timeDifference <= throttleTime){
 			controller.withThrottle((float)-Math.signum(input.car.forwardMagnitude()));
+		}else if(timeDifference < throttleTime + 40){
+			controller.withJump(true);
 		}else{
-			if(input.car.hasWheelContact){
-				controller.withJump(true);
-			}else{
-				double targetAngle = Utils.aim(input.car, target);
-				double yaw = yawPID.getOutput(targetAngle, 0);
-		        controller.withYaw((float)yaw);
-				
-				//This is a very rough recovery, no PID controllers, just pure multiplication
-				controller.withPitch((float)-input.car.orientation.noseVector.z * 0.5F);
-				controller.withRoll((float)input.car.orientation.rightVector.z * 0.5F);
-				
-				//Avoid turtling 
-				if(timeDifference > 300) controller.withThrottle(1);
-			}
+			double targetAngle = Utils.aim(input.car, target);
+			double yaw = yawPID.getOutput(targetAngle, 0);
+			controller.withYaw((float)yaw);
+
+			//This is a very rough recovery, no PID controllers, just pure multiplication
+			controller.withPitch((float)-input.car.orientation.noseVector.z * 0.5F);
+			controller.withRoll((float)input.car.orientation.rightVector.z * 0.5F);
+
+			//Avoid turtling 
+			controller.withThrottle(timeDifference > 2000 ? 1 : 0);
 		}
 		return controller;
 	}

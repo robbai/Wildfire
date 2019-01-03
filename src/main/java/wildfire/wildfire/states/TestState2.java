@@ -9,15 +9,16 @@ import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.actions.JumpAction;
 import wildfire.wildfire.obj.State;
 
 public class TestState2 extends State {
 	
 	/*
-	 * This state just drives towards the centre of the arena,
-	 * and performs an action when it gets close enough,
-	 * this is for the purpose of testing actions
+	 * Action testing state
 	 */
+	
+	private static final Vector2 origin = new Vector2(0, 0);
 
 	public TestState2(Wildfire wildfire){
 		super("Test", wildfire);
@@ -30,19 +31,18 @@ public class TestState2 extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-//		if(input.car.position.magnitude() < 2000 && !hasAction()){
-//			currentAction = new HopAction(this, input.car.position.flatten().scaled(2), input.car.velocity);
-//			if(!currentAction.failed) return currentAction.getOutput(input); 
-//		}
+		if(!hasAction() && wildfire.stateSetting.getCooldown(input) < 1){
+//			currentAction = new HopAction(this, origin, input.car.velocity);
+			currentAction = new JumpAction(this, 250);
+			if(!currentAction.failed) return currentAction.getOutput(input); 
+		}
 		
+		return new ControlsOutput().withThrottle(0).withBoost(false);
+	}
+	
+	@SuppressWarnings("unused")
+	private void coolRender(DataPacket input){
 		final float sharpness = 2F;
-		
-//		double steerCorrectionRadians = Utils.aim(input.car, new Vector2(0, 0));
-		double steerCorrectionRadians = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-		double steer = (float)-steerCorrectionRadians * sharpness;
-//		steer += Math.sin((double)System.currentTimeMillis() / 1000D);
-		
-		//Render
 		for(CarData c : input.cars){
 			if(c == null) continue;
 			Vector3 start = c.position;
@@ -56,9 +56,6 @@ public class TestState2 extends State {
 				start = end;
 			}
 		}
-		
-		//return new ControlsOutput().withSteer0F).withThrottle((float)-input.car.forwardMagnitude() / 100).withBoost(false);
-        return new ControlsOutput().withSteer((float)steer).withThrottle(1F).withBoost(true);
 	}
 
 }
