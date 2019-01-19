@@ -18,7 +18,8 @@ public class TestState2 extends State {
 	 * Action testing state
 	 */
 	
-	private static final Vector2 origin = new Vector2(0, 0);
+	@SuppressWarnings("unused")
+	private static final Vector2 origin = new Vector2();
 
 	public TestState2(Wildfire wildfire){
 		super("Test", wildfire);
@@ -33,7 +34,7 @@ public class TestState2 extends State {
 	public ControlsOutput getOutput(DataPacket input){
 		if(!hasAction() && wildfire.stateSetting.getCooldown(input) < 1){
 //			currentAction = new HopAction(this, origin, input.car.velocity);
-			currentAction = new JumpAction(this, 250);
+			currentAction = new JumpAction(this, input.elapsedSeconds, 250);
 			if(!currentAction.failed) return currentAction.getOutput(input); 
 		}
 		

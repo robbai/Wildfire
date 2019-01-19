@@ -13,7 +13,7 @@ public class PID {
 	private ArrayList<Double> data;
 	private Color colour;
 	
-	private long lastTime;
+	private float lastTime;
 	private double errorSum, lastError;
 	private double kp, ki, kd;
 	
@@ -53,11 +53,10 @@ public class PID {
 		this.kd = other.kd;
 	}
 
-	public double getOutput(double start, double target){
+	public double getOutput(float time, double start, double target){
 		//How long since we last calculated
-		long now = System.currentTimeMillis();
-		if(lastTime == -1) lastTime = now;
-		double timeDifference = (double)(now - lastTime) / 1000D;
+		if(lastTime == -1) lastTime = time;
+		double timeDifference = (double)(time - lastTime);
 
 		//Calculate the error
 		double error = (target - start);
@@ -94,7 +93,7 @@ public class PID {
 
 		//Save the values for the next calculation
 		lastError = error;
-		lastTime = now;
+		lastTime = time;
 
 		return output;
 	}

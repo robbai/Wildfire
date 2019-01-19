@@ -1,8 +1,5 @@
 package wildfire.wildfire.actions;
 
-import java.awt.Color;
-import java.awt.Point;
-
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
@@ -18,21 +15,25 @@ public class HopAction extends Action {
 	private int throttleTime;
 	private PID yawPID;
 
-	public HopAction(State state, Vector2 target, Vector3 initialVelocity){
-		super("Hop", state);
+	public HopAction(State state, DataPacket input, Vector2 target){
+		super("Hop", state, input.elapsedSeconds);
 		this.target = target;
-		this.throttleTime = (int)Math.min(300, initialVelocity.flatten().magnitude() / 6);
-		
-		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 3.2, 0, 1.1);
+		this.throttleTime = (int)Math.min(300, input.car.velocity.flatten().magnitude() / 6);
+		this.yawPID = new PID(3.2, 0, 1.1);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		ControlsOutput controller = new ControlsOutput().withThrottle(0).withBoost(false);
 		
-		long timeDifference = timeDifference();
+		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
 		
-		if(throttleTime != 0) state.wildfire.renderer.drawString2d("Throttle: " + throttleTime + "ms", Color.WHITE, new Point(0, 40), 2, 2);
+		//Switch to recovery
+		if(timeDifference > 1500 && input.car.position.z > 400){
+			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+		}
+		
+//		if(throttleTime != 0) state.wildfire.renderer.drawString2d("Throttle: " + throttleTime + "ms", Color.WHITE, new Point(0, 40), 2, 2);
 		
 		if(timeDifference <= throttleTime){
 			controller.withThrottle((float)-Math.signum(input.car.forwardMagnitude()));
@@ -40,7 +41,7 @@ public class HopAction extends Action {
 			controller.withJump(true);
 		}else{
 			double targetAngle = Utils.aim(input.car, target);
-			double yaw = yawPID.getOutput(targetAngle, 0);
+			double yaw = yawPID.getOutput(input.elapsedSeconds, targetAngle, 0);
 			controller.withYaw((float)yaw);
 
 			//This is a very rough recovery, no PID controllers, just pure multiplication
@@ -55,7 +56,7 @@ public class HopAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return timeDifference() > 160 + throttleTime && input.car.hasWheelContact;
+		return timeDifference(input.elapsedSeconds) * 1000 > 160 + throttleTime && input.car.hasWheelContact;
 	}
 	
 	@SuppressWarnings("unused")

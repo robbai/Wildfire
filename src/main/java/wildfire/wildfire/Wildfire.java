@@ -23,6 +23,7 @@ import wildfire.wildfire.states.BoostState;
 import wildfire.wildfire.states.ClearState;
 import wildfire.wildfire.states.FallbackState;
 import wildfire.wildfire.states.KickoffState;
+import wildfire.wildfire.states.PathState;
 import wildfire.wildfire.states.ReturnState;
 import wildfire.wildfire.states.ShadowState;
 import wildfire.wildfire.states.ShootState;
@@ -36,6 +37,9 @@ public class Wildfire implements Bot {
     
     /*Whether this is a test version*/
     private final boolean test;
+    public boolean isTestVersion(){
+		return test;
+	}
     
 	public WRenderer renderer;
 	public BallPrediction ballPrediction;
@@ -49,7 +53,11 @@ public class Wildfire implements Bot {
 	private State activeState;
 	private State lastPrintedState = null;
 	
-	public long lastDodge = 0L;
+	//Measured in elapsed seconds
+	public float lastDodge = 0;
+	
+	//Measured in milliseconds
+	private final long quickChatCooldown = 60000L;
 	private long lastQuickChat = 0L;
 
     public Wildfire(int playerIndex, int team, boolean test){
@@ -61,26 +69,38 @@ public class Wildfire implements Bot {
         //Initialise all the states
         states = new ArrayList<State>();
         new KickoffState(this);
-        new ShootState(this);
         new WallHitState(this);
         new WaitState(this);
+        new ShootState(this);
         new ClearState(this);
         new ReturnState(this);
         new BoostState(this);
+        new PathState(this);
         new ShadowState(this);
-//        new HookState(this); //Test
-//        new TestState(this); //Test
-//     	  new TestState2(this); //Test
-//        fallbackState = new CircleState(this); //Test
         fallbackState = new FallbackState(this);
-//        fallbackState = new StayStillState(this); //Test
+        
+        //Test states
+//        new HookState(this);
+//        new TestState(this);
+//     	  new TestState2(this);
+//        fallbackState = new CircleState(this);
+//        fallbackState = new StayStillState(this);
+//        fallbackState = new PathState(this);
     }
 
     private ControlsOutput processInput(DataPacket input){
     	//Get a renderer
-    	renderer = new WRenderer(this, false, false);
+    	renderer = new WRenderer(this, isTestVersion(), isTestVersion());
     	
-//    	stateSetting.hop(input);
+//    	//Bezier
+//    	for(CarData car : input.cars){
+//    		Vector2 trace = Utils.traceToY(car.position.flatten(), input.ball.position.minus(car.position).flatten(), Utils.PITCHLENGTH * Utils.teamSign(car));
+//    		double offset = (trace == null ? 2000 : Math.max(0, Math.abs(trace.x) - Utils.GOALHALFWIDTH) / 4);
+//	    	BezierCurve bezier = new BezierCurve(car.position.flatten(), input.ball.position.plus(input.ball.position.minus(Utils.enemyGoal(car.team).withZ(0)).scaledToMagnitude(offset)).flatten().confine(), input.ball.position.flatten());
+//	    	bezier.render(BotLoopRenderer.forBotLoop(this), car.team == 0 ? Color.BLUE : Color.ORANGE);
+//    	}
+    	
+//    	stateSetting.recovery(input);
     	
     	//Get the ball prediction
     	try{
@@ -188,32 +208,30 @@ public class Wildfire implements Bot {
     public void retire(){
         System.out.println("Retiring Wildfire [" + playerIndex + "]");
     }
-    
+
     @Override
     public int getIndex(){
         return this.playerIndex;
     }
 
-	public boolean isTestVersion(){
-		return test;
-	}
-	
 	/*
 	 * Intended so that the bot doesn't spam... too much
 	 */
 	public boolean sendQuickChat(byte... quickChatSelection){
 		long currentTime = System.currentTimeMillis();
-		if(currentTime > lastQuickChat + 60000 && lastQuickChat != -1){
+		if(currentTime > lastQuickChat + quickChatCooldown && lastQuickChat != -1){
 			Random random = new Random();
 			
 			try{
 				RLBotDll.sendQuickChat(this.playerIndex, false, quickChatSelection[random.nextInt(quickChatSelection.length)]);
-			}catch(Exception e){e.printStackTrace();}
+			}catch(Exception e){
+				System.err.println("Error when trying to send quick-chat [" + quickChatSelection.toString() + "]");
+			}
 			
 			lastQuickChat = currentTime;
 			return true;
 		}
 		return false;
 	}
-    
+
 }

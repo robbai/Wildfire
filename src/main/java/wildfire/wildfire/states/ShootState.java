@@ -22,21 +22,21 @@ public class ShootState extends State {
 
 	@Override
 	public boolean ready(DataPacket input){
-		//Not during kickoff
-		if(Utils.isKickoff(input)) return false;
+		//Not during kickoff or inside their net
+		if(Utils.isKickoff(input) || Utils.teamSign(input.car) * input.car.position.y > Utils.PITCHLENGTH) return false;
 		
 		//Not while in goal
 		if(Utils.isOnTarget(wildfire.ballPrediction, input.car.team) && Math.abs(input.car.position.y) > 4500) return false;
 		
 		//Not while the ball is being awkward
-		if(input.ball.position.z > 350 || Math.signum(wildfire.impactPoint.getPosition().y - input.car.position.y) != Utils.teamSign(input.car)) return false;
+		if(wildfire.impactPoint.getPosition().z > 320) return false;
 		
 		//Not during a weird dribble
 		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 80 && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 7000) return false;
 		
 		double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(Math.abs(aimBall) > Math.PI * 0.8 && input.car.velocity.magnitude() > 1100) return false;
-		return Utils.canShoot(input.car, wildfire.impactPoint.getPosition());
+		return Utils.isInCone(input.car, wildfire.impactPoint.getPosition());
 	}
 
 	@Override
@@ -48,25 +48,15 @@ public class ShootState extends State {
 			if(input.car.hasWheelContact){
 				double steerBall = Utils.aim(input.car, input.ball.position.flatten());
 				if(Math.abs(aimBall) > Math.PI * 0.7 && distance < 500){
-					currentAction = new HalfFlipAction(this);
-				}else if(Math.abs(aimBall) > Math.PI * 0.6 && distance > 400 && input.car.velocity.magnitude() < 600){
-					currentAction = new HopAction(this, wildfire.impactPoint.getPosition().flatten(), input.car.velocity);
-				}else if(distance < 500 || (distance > 3000 && Math.abs(steerBall) < 0.08)){
+					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+				}else if(Math.abs(aimBall) > Math.PI * 0.6 && distance > 400 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
+					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
+				}else if(distance < 500 || (distance > 3000 && Math.abs(steerBall) < 0.09 && input.car.forwardMagnitude() > 500)){
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 					currentAction = new DodgeAction(this, steerBall, input);
 				}
-//				else if(wildfire.impactPoint.getPosition().z > 400 && Utils.isEnoughBoostForAerial(input.car, wildfire.impactPoint.getPosition())){
-//					double maxRange = wildfire.impactPoint.getPosition().z * 4;
-//					double minRange = wildfire.impactPoint.getPosition().z * 1;
-//					wildfire.renderer.drawCircle(Color.ORANGE, wildfire.impactPoint.getPosition().flatten(), minRange);
-//					wildfire.renderer.drawCircle(Color.ORANGE, wildfire.impactPoint.getPosition().flatten(), maxRange);
-//					if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
-//						currentAction = new AerialAction(this, input, wildfire.impactPoint.getPosition().z > 600);
-//						return currentAction.getOutput(input);
-//					}
-//				}
 			}else if(Utils.isCarAirborne(input.car)){
-				currentAction = new RecoveryAction(this);
+				currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}

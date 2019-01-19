@@ -45,7 +45,7 @@ public class CircleState extends State {
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Utils.driveDownWall(input);
 		}else if(Utils.isCarAirborne(input.car)){
-			currentAction = new RecoveryAction(this);
+			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			return currentAction.getOutput(input);
 		}
 

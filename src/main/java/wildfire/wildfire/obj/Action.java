@@ -5,13 +5,13 @@ import wildfire.output.ControlsOutput;
 
 public abstract class Action {
 	
-	public long timeStarted;
+	public float timeStarted;
 	private String name;
 	public boolean failed;
 	public State state;
 	
-	public Action(String name, State state){
-		this.timeStarted = System.currentTimeMillis();
+	public Action(String name, State state, float time){
+		this.timeStarted = time;
 		this.failed = false;
 		this.name = name;
 		this.state = state;
@@ -26,8 +26,8 @@ public abstract class Action {
 	
 	public abstract boolean expire(DataPacket input);
 	
-	public long timeDifference(){
-		return System.currentTimeMillis() - timeStarted;
+	public float timeDifference(float time){
+		return time - timeStarted;
 	}
 
 }

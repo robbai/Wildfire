@@ -23,7 +23,7 @@ public class AerialAction extends Action {
 	private PID pitchPID, yawPID, rollPID;
 
 	public AerialAction(State state, DataPacket input, boolean doubleJump){
-		super("Aerial", state);
+		super("Aerial", state, input.elapsedSeconds);
 		this.target = state.wildfire.impactPoint.getPosition().plus(offset);
 		this.startMidair = !input.car.hasWheelContact;
 		this.doubleJump = !startMidair && doubleJump;
@@ -35,11 +35,10 @@ public class AerialAction extends Action {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		long timeDifference = timeDifference();
+		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
 		
 		//Slight offset so we hit the centre
 		Vector3 impactPoint = state.wildfire.impactPoint.getPosition().plus(offset);
-//		double z = -Math.min(800, impactPoint.distanceFlat(input.car.position) / 4);
 		if(input.ball.velocity.flatten().isZero()){
 			target = input.ball.position.plus(offset);
 		}else if(target != null){
@@ -47,7 +46,6 @@ public class AerialAction extends Action {
 		}else{
 			target = impactPoint;
 		}
-//		target = target.withZ(target.z + z);
 		
 		//Draw the crosshair
 		state.wildfire.renderer.drawCrosshair(input.car, target, Color.YELLOW, 125);
@@ -59,9 +57,9 @@ public class AerialAction extends Action {
 			controller.withJump(timeDifference < 160 || (timeDifference > 300 && doubleJump));
 		}else{	        
 	        //Bail out
-//	        if(input.car.magnitudeInDirection(target.minus(input.car.position).flatten()) < -1200 || (input.car.position.distance(target) < 200 && input.car.boost < 20)){
-//	        	Utils.transferAction(this, new RecoveryAction(this.state));
-//	        }
+	        if(input.car.magnitudeInDirection(target.minus(input.car.position).flatten()) < -1200 || (input.car.position.distance(target) < 200 && input.car.boost < 20)){
+	        	Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+	        }
 		}
 		
 		//This is the angling part
@@ -79,7 +77,7 @@ public class AerialAction extends Action {
 			double currentRoll = input.car.orientation.eularRoll;
 //			double rollSign = Math.abs(currentRoll) > Math.PI / 2 ? -1 : 1;
 			double rollSign = 1;
-			double roll = rollPID.getOutput(currentRoll, rollSign == 1 ? 0 : Math.PI * Math.signum(currentRoll));
+			double roll = rollPID.getOutput(input.elapsedSeconds, currentRoll, rollSign == 1 ? 0 : Math.PI * Math.signum(currentRoll));
 			controller.withRoll((float)roll);
 	        
 	        //The rest is pitch and yaw
@@ -105,8 +103,8 @@ public class AerialAction extends Action {
 			double yawCorrection = Utils.wrapAngle(desiredYaw - currentYaw);
 			
 			//Get the PID output
-			double pitch = rollSign * pitchPID.getOutput(currentPitch, desiredPitch);
-			double yaw = rollSign * yawPID.getOutput(0, yawCorrection);
+			double pitch = rollSign * pitchPID.getOutput(input.elapsedSeconds, currentPitch, desiredPitch);
+			double yaw = rollSign * yawPID.getOutput(input.elapsedSeconds, 0, yawCorrection);
 			
 			//Managing boost
 			if(!pointStraight){
@@ -128,13 +126,13 @@ public class AerialAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return System.currentTimeMillis() > 600 + timeStarted && input.car.hasWheelContact && input.car.position.z < 1000;
+		return timeDifference(input.elapsedSeconds) * 1000 > 600 + timeStarted && input.car.hasWheelContact && input.car.position.z < 1000;
 	}
 	
 	private Vector3 simulate(CarData car, double scale){
 		Vector3 position = new Vector3(car.velocity).scaled(scale);
 		position = position.plus(car.orientation.noseVector.scaledToMagnitude(1000 * scale)); //Boost
-		position = position.plus(new Vector3(0, 0, -650 * scale)); //Gravity
+		position = position.plus(new Vector3(0, 0, -Utils.GRAVITY * scale)); //Gravity
 		return position.normalized();
 	}
 	
@@ -146,9 +144,9 @@ public class AerialAction extends Action {
 	}
 	
 	private void renderFall(Color colour, Vector3 start, Vector3 velocity, Vector3 nose){
-		if(start.z < 0 || start.isOutOfBounds()) return;
+		if(start.isOutOfBounds()) return;
 		double scale = 1D / 10;
-		velocity = velocity.plus(new Vector3(0, 0, -650 * scale)); //Gravity
+		velocity = velocity.plus(new Vector3(0, 0, -Utils.GRAVITY * scale)); //Gravity
 		if(nose != null) velocity = velocity.plus(nose.scaledToMagnitude(1000D * scale)); //Boost
 		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
 		Vector3 next = start.plus(velocity.scaled(scale));

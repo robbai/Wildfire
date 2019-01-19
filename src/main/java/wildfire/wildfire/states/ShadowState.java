@@ -14,8 +14,6 @@ import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.obj.State;
 
 public class ShadowState extends State {
-	
-	private final double homeZoneSize = 4500D;
 	Vector2 homeGoal;
 
 	public ShadowState(Wildfire wildfire){
@@ -28,17 +26,23 @@ public class ShadowState extends State {
 		//Avoid stopping forever
 		if(avoidStoppingForever(input)) return false;
 		
-		//The ball must not be centralised
-		if(Math.abs(input.ball.position.x) < 1500) return false;
+		//Ball must not be close to our net
+		if(input.ball.position.flatten().distance(homeGoal) < 2000) return false;
 		
-		//If we're on the wrong side of the ball
+		//The ball must not be centralised
+		if(Math.abs(input.ball.position.x) < (Utils.isOpponentBehindBall(input) ? 1600 : 1400)) return false;
+		
+		//We're on the wrong side of the ball
 		if(Math.signum(input.car.position.y - input.ball.position.y) == Utils.teamSign(input.car) && Math.signum(input.ball.velocity.y) != Utils.teamSign(input.car)){
 			return true;
 		}
 		
+		//There is no defender
+		if(!Utils.isOpponentBehindBall(input)) return false;
+		
 		//Outside of the "useful hitting arc"
-		if(new Vector3(0, -Utils.teamSign(input.car), 0).angle(input.car.position.minus(wildfire.impactPoint.getPosition())) > Math.PI * 0.4){
-			if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) > 1500) return true;
+		if(Math.abs(input.ball.position.y) < 4000 && new Vector3(0, -Utils.teamSign(input.car), 0).angle(input.car.position.minus(wildfire.impactPoint.getPosition())) > Math.PI * 0.45){
+			if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) > 2500) return true;
 		}
 		
 //		if(Utils.isTeammateCloser(input)) return true;
@@ -47,32 +51,32 @@ public class ShadowState extends State {
 	}
 	
 	@Override
-	public boolean expire(DataPacket input){
-		double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position);
-		
+	public boolean expire(DataPacket input){		
 		//Avoid stopping forever
 		if(avoidStoppingForever(input)) return true;
+		
+		double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position);
 				
-		//Aiming very close to the ball, and closeby
-		if(Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.13 && distance < 3500){
+		//Aiming very close to the ball, and close-by		
+		if(Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.13 && distance < 4000){
 			return true;
 		}
 		
 		//Ball is close to our net
-		if(input.ball.position.flatten().distance(homeGoal) < homeZoneSize) return true;
+		if(input.ball.position.flatten().distance(homeGoal) < 4500) return true;
 		
 		//Ball is centralised
-		if(Math.abs(input.ball.position.x) < 1200 && distance < 7000) return true;
+		if(Math.abs(input.ball.position.x) < 1200 && distance < 8000) return true;
 		
 		//Beating the opponent
 		double ourDistance = input.car.position.distance(input.ball.position);
-		if(ourDistance < 800) return true;
+		if(ourDistance < 1400) return true;
 		double closestOpponentDistance = Utils.closestOpponentDistance(input);
-		return !Utils.isTeammateCloser(input) && (closestOpponentDistance > Math.max(2250, ourDistance * 1.75D) || Utils.teamSign(input.car.team) * input.ball.velocity.y < -850);
+		return !Utils.isTeammateCloser(input) && (closestOpponentDistance > Math.max(1800, ourDistance * 1.35D) || Utils.teamSign(input.car.team) * input.ball.velocity.y < -850);
 	}
 
 	private boolean avoidStoppingForever(DataPacket input){
-		return input.ball.velocity.isZero() && Math.signum(input.ball.position.y) != Utils.teamSign(input.car);
+		return input.ball.velocity.magnitude() < 500 && Math.signum(input.ball.position.y) != Utils.teamSign(input.car);
 	}
 
 	@Override
@@ -89,7 +93,7 @@ public class ShadowState extends State {
 			if(input.car.velocity.magnitude() > 1000 && Math.abs(steerCorrectionRadians) < Math.PI * 0.25){
 				currentAction = new DodgeAction(this, input.ball.position.distanceFlat(input.car.position) > 600 ? steerCorrectionRadians : Utils.aim(input.car, input.ball.position.flatten()), input);
 			}else if(Math.abs(steerCorrectionRadians) > Math.PI * 0.85 && input.car.position.z < 100){
-				currentAction = new HalfFlipAction(this);
+				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}

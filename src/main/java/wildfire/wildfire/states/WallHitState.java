@@ -18,7 +18,7 @@ import wildfire.wildfire.obj.State;
 
 public class WallHitState extends State {
 	
-	private final double maxWallDistance = 350;
+	private final double maxWallDistance = 290;
 
 	public WallHitState(Wildfire wildfire){
 		super("Wall Hit", wildfire);
@@ -97,7 +97,7 @@ public class WallHitState extends State {
 					}else if(Math.abs(steer) > 2.6){
 						reverse = true;
 						if(input.car.forwardMagnitude() < -400){
-							currentAction = new HalfFlipAction(this);
+							currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 						}
 					}
 					if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
@@ -110,7 +110,7 @@ public class WallHitState extends State {
 	}
 	
 	private boolean isAppropriateWallHit(CarData car, Vector3 target){
-		if(target.z < Math.min(750, car.position.distanceFlat(target) / 2) || Utils.distanceToWall(target) > maxWallDistance) return false;
+		if(target.z < Math.max(600, car.position.distanceFlat(target) / 2) || Utils.distanceToWall(target) > maxWallDistance) return false;
 		if(Math.abs(target.y) < 4350) return true;
 		
 		//Away from our back wall

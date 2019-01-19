@@ -16,6 +16,11 @@ import wildfire.wildfire.obj.State;
 
 public class KickoffState extends State {
 	
+	/**
+	 * Used for enabling/disabling the chance of fake kickoffs
+	 */
+	private final boolean fakeKickoffs = true;
+	
 	private Random random;
 	private boolean fake = false;
 	private KickoffSpawn spawn;
@@ -27,10 +32,18 @@ public class KickoffState extends State {
 
 	@Override
 	public boolean ready(DataPacket input){
-		boolean ready = Utils.isKickoff(input);
+		if(!Utils.isKickoff(input)) return false;
+		
 		getSpawn(input.car.position);
-		if(ready) fake = Utils.isTeammateCloser(input) || (random.nextFloat() < 0.2F && !Utils.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Utils.hasOpponent(input));
-		return ready;
+
+		//Choosing to fake
+		if(fakeKickoffs){
+			fake = Utils.isTeammateCloser(input) || (random.nextFloat() < 0.2F && !Utils.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Utils.hasOpponent(input));
+		}else{
+			fake = false;
+		}
+		
+		return true;
 	}
 	
 	private void getSpawn(Vector3 position){

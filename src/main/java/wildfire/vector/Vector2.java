@@ -7,6 +7,11 @@ public class Vector2 {
 
     public final double x;
     public final double y;
+    
+    public Vector2(){
+        this.x = 0;
+        this.y = 0;
+    }
 
     public Vector2(double x, double y){
         this.x = x;
@@ -83,6 +88,9 @@ public class Vector2 {
     public static double angle(Vector2 a, Vector2 b){
         return Math.abs(a.correctionAngle(b));
     }
+    public double angle(Vector2 b){
+    	return Math.abs(this.correctionAngle(b));
+    }
     
     public rlbot.vector.Vector3 toFramework(){
         // Invert the X value again so that RLBot sees the format it expects.
@@ -97,16 +105,12 @@ public class Vector2 {
 		return new Vector3(x, y, z);
 	}
 	
+	public Vector2 confine(double border){
+		return new Vector2(Math.min(Utils.PITCHWIDTH - border, Math.max(-Utils.PITCHWIDTH + border, x)), Math.min(Utils.PITCHLENGTH - border, Math.max(-Utils.PITCHLENGTH + border, y)));
+	}
+	
 	public Vector2 confine(){
-		return new Vector2(Math.min(Utils.PITCHWIDTH, Math.max(-Utils.PITCHWIDTH, x)), Math.min(Utils.PITCHLENGTH, Math.max(-Utils.PITCHLENGTH, y)));
-	}
-	
-	public Vector2 confineRatio(){
-		return this.scaled(Math.min(Utils.PITCHLENGTH / Math.abs(y), Utils.PITCHWIDTH / Math.abs(x)));
-	}
-	
-	public Vector2 confineRatioX(){
-		return this.scaled(Utils.PITCHWIDTH / Math.abs(x));
+		return this.confine(0);
 	}
 	
 	public Vector2 withX(double x){

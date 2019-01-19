@@ -11,11 +11,11 @@ public class DodgeAction extends Action {
 	private double angle;
 
 	public DodgeAction(State state, double angle, DataPacket input){
-		super("Dodge", state);
+		super("Dodge", state, input.elapsedSeconds);
 		this.angle = angle;
 		
 		//No spamming!
-		if(state.wildfire.lastDodge + 2000 > timeStarted){
+		if(state.wildfire.lastDodge + 2 > timeStarted){
 			failed = true; 
 		}else{
 			state.wildfire.lastDodge = timeStarted;
@@ -25,7 +25,7 @@ public class DodgeAction extends Action {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		ControlsOutput controller = new ControlsOutput().withThrottle(1).withBoost(false);
-		long timeDifference = timeDifference();
+		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
 		
 		if(timeDifference <= 160){
 			controller.withJump(timeDifference <= 90);
@@ -35,7 +35,7 @@ public class DodgeAction extends Action {
 	        controller.withYaw((float)-Math.sin(angle));
 	        controller.withPitch((float)-Math.cos(angle)); 
 		}else if(input.car.position.z > 250 || timeDifference >= 2600){
-			Utils.transferAction(this, new RecoveryAction(this.state));
+			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 		}
 	        
 		return controller;
@@ -43,7 +43,7 @@ public class DodgeAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return failed || (System.currentTimeMillis() >= 400 + timeStarted && input.car.hasWheelContact);
+		return failed || (timeDifference(input.elapsedSeconds) > 0.4 && input.car.hasWheelContact);
 	}
 
 }

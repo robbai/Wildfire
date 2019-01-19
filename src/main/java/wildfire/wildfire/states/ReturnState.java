@@ -36,12 +36,17 @@ public class ReturnState extends State {
 		if(!Utils.isOpponentBehindBall(input) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 2000){
 			double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 			if(Math.abs(aimBall) < Math.PI * 0.4){
-				if(Utils.canShoot(input.car, wildfire.impactPoint.getPosition())) return false;
+				if(Utils.isInCone(input.car, wildfire.impactPoint.getPosition())) return false;
 			}
 		}
 		
 		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
 		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000) return false;
+		
+		//Just hit it instead
+		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1200 && !Utils.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition().flatten())){
+			return false;
+		}
 		
 		return !Utils.defendNotReturn(input, wildfire.impactPoint.getPosition(), homeZoneSize, onTarget);
 	}
@@ -61,7 +66,7 @@ public class ReturnState extends State {
 			if(Math.abs(aim) < 0.75 * Math.PI){
 				currentAction = new DodgeAction(this, aim, input);
 			}else{
-				currentAction = new HalfFlipAction(this);
+				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(!currentAction.failed) return currentAction.getOutput(input);
 		}

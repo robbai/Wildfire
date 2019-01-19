@@ -30,7 +30,7 @@ public class ClearState extends State {
 		if(!Utils.isOpponentBehindBall(input) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 2000){
 			double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 			if(Math.abs(aimBall) < Math.PI * 0.4){
-				if(Utils.canShoot(input.car, wildfire.impactPoint.getPosition())) return false;
+				if(Utils.isInCone(input.car, wildfire.impactPoint.getPosition())) return false;
 			}
 		}
 		
@@ -43,8 +43,8 @@ public class ClearState extends State {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		//Drive down the wall
-		boolean wall = Utils.isOnWall(input.car);
-		if(wall){
+		boolean onWall = Utils.isOnWall(input.car);
+		if(onWall){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Utils.driveDownWall(input);
 		}
@@ -56,7 +56,7 @@ public class ClearState extends State {
 			if(Math.abs(steer) < 0.75 * Math.PI){
 				currentAction = new DodgeAction(this, steer, input);
 			}else{
-				currentAction = new HalfFlipAction(this);
+				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(!currentAction.failed) return currentAction.getOutput(input);
 		}
@@ -71,32 +71,37 @@ public class ClearState extends State {
 			}
 		}
 		
-		double yDifference = input.car.position.y - input.ball.position.y;
-		boolean behindBall = (Math.signum(yDifference) != Utils.teamSign(input.car));
-
+		wildfire.renderer.drawCircle(Color.GREEN, Utils.homeGoal(input.car.team), homeZoneSize);
+		
 		//We are in position for the ball to hit us (and we can't quickly turn towards the ball)
-		if(behindBall){ 
-			wildfire.renderer.drawCircle(Color.GREEN, Utils.homeGoal(input.car.team), homeZoneSize);
-			//63 degrees is the minimum
-			if(input.car.position.y * Utils.teamSign(input.car) > -5050 && Math.abs(steer) > 0.35 * Math.PI){
-				//We don't want to wait too long for the ball to reach us
-				double ballTime = Math.abs(yDifference / input.ball.velocity.y);
-				if(ballTime < 1.4){
-					Vector2 intersect = Utils.traceToY(input.ball.position.flatten(), input.ball.velocity.flatten(), input.car.position.y);
-
-					//Check if our X-coordinate is close-by when we should intersect with the ball's path
-					boolean closeby = Math.abs(input.car.position.x - intersect.x) < 140;
-					wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten().toFramework(), intersect.toFramework());
-					if(closeby){
-						wildfire.sendQuickChat(QuickChatSelection.Information_InPosition);
-						wildfire.renderer.drawString2d("Stop (" + (int)Math.abs(input.car.position.x - intersect.x) + ")", Color.WHITE, new Point(0, 20), 2, 2);
-						return stayStill(input);
-					}
+		if(input.car.position.y * Utils.teamSign(input.car) > -5050 && Math.abs(steer) > 0.35 * Math.PI){ //63 degrees
+			//We don't want to wait too long for the ball to reach us
+			double ballTime = Math.abs((input.car.position.y - input.ball.position.y) / input.ball.velocity.y);
+			Vector2 intersect = Utils.traceToY(input.ball.position.flatten(), input.ball.velocity.flatten(), input.car.position.y);
+			if(ballTime < 1.6 && intersect != null){
+				//Check if our X-coordinate is close-by when we should intersect with the ball's path
+				boolean closeby = Math.abs(input.car.position.x - intersect.x) < 140;
+				wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten().toFramework(), intersect.toFramework());
+				if(closeby){
+					wildfire.sendQuickChat(QuickChatSelection.Information_InPosition);
+					wildfire.renderer.drawString2d("Stop (" + (int)Math.abs(input.car.position.x - intersect.x) + ")", Color.WHITE, new Point(0, 20), 2, 2);
+					return stayStill(input);
 				}
 			}
-		}
+		}		
 
 		wildfire.renderer.drawString2d("Smack", Color.WHITE, new Point(0, 20), 2, 2);
+				
+		//Avoid rebounding it off the wall back towards our goal
+		Vector2 wall = Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
+		if(wall != null){
+			if(wall.y < Utils.teamSign(input.car) * -2000){
+				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
+				double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position); 
+				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 2.25)), true);
+			}
+		}
+		
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
 		return drivePoint(input, wildfire.impactPoint.getPosition().flatten(), true);
 	}

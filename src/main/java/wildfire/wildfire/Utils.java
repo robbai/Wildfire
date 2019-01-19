@@ -139,6 +139,11 @@ public class Utils {
 	}
 
 	public static Vector3 getBounce(BallPrediction ballPrediction){
+		if(ballPrediction == null){
+			System.err.println("NullPointerException - Lookin' good!");
+			return null;
+		}
+		
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
 	    	Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 	    	if(location.z <= Utils.BALLRADIUS + 15) return location;
@@ -151,6 +156,11 @@ public class Utils {
 	 * measured in seconds
 	 */
 	public static double getBounceTime(BallPrediction ballPrediction){
+		if(ballPrediction == null){
+			System.err.println("NullPointerException - Lookin' good!");
+			return 360;
+		}
+		
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
 	    	if(Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location()).z <= Utils.BALLRADIUS + 15){
 	    		return (double)i / 60D;
@@ -174,12 +184,15 @@ public class Utils {
 		return false;
 	}
 	
-	/*
-	 * Awful heuristic for the max velocity given an amount of boost,
-	 * requires an update
+	/**
+	 * Estimates the max velocity for a car, given an amount of boost and current velocity
 	 */
 	public static double boostMaxSpeed(double initialVelocity, double boost){
-		return Math.min(2300, initialVelocity + 900D * Math.min(1D, boost / 35D));
+		double boostTime = (boost / 33);
+		double throttleTime = (1410 - initialVelocity) / 1000;
+		if(throttleTime > 0) boostTime -= throttleTime;
+		if(boostTime <= 0) return 1410;
+		return Math.min(2300, 1410 + 1000 * boostTime);
 	}
 	
 	// t = (-u +/- sqrt(u^2 + 2as)) / a
@@ -187,14 +200,14 @@ public class Utils {
 		double s = car.position.z - 60;
 		if(s <= 0) return 0;
 		
-		double a = 650;
+		double a = GRAVITY;
 		double u = -car.velocity.z;
 		
 		double t = Math.max((-u + Math.sqrt(u * u + 2 * a * s)) / a, (-u - Math.sqrt(u * u + 2 * a * s)) / a);
 		return t;
 	}
 	
-	/*
+	/**
 	 * Inspired by the wonderful Darxeal
 	 */
 	public static ControlsOutput driveDownWall(DataPacket input){
@@ -209,7 +222,7 @@ public class Utils {
 		one.state.currentAction = two;
 	}
 	
-	/*
+	/**
 	 * ATBA controller (no wiggle)
 	 */
 	public static ControlsOutput driveBall(DataPacket input){
@@ -228,7 +241,7 @@ public class Utils {
 	    return false;
 	}
 	
-	/*
+	/**
 	 * Returns a 2D vector of a point inside of the enemy's goal,
 	 * it should be a good place to shoot relative to this car
 	 */
@@ -273,8 +286,8 @@ public class Utils {
 	    return 156D + 0.1D * speed + 0.000069D * Math.pow(speed, 2) + 0.000000164D * Math.pow(speed, 3) -0.0000000000562D * Math.pow(speed, 4);
 	}
 	
-	public static boolean canShoot(CarData car, Vector3 ball){
-		Vector2 trace = traceToY(car.position.flatten(), ball.minus(car.position).flatten(), Utils.teamSign(car) * Utils.PITCHLENGTH);
+	public static boolean isInCone(CarData car, Vector3 target){
+		Vector2 trace = traceToY(car.position.flatten(), target.minus(car.position).flatten(), Utils.teamSign(car) * Utils.PITCHLENGTH);
 		if(trace == null) return false; //Facing the wrong way
 		return Math.abs(trace.x) < GOALHALFWIDTH;
 	}

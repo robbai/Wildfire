@@ -14,7 +14,7 @@ import wildfire.wildfire.Wildfire;
 public class WRenderer extends Renderer {
 	
 	private Renderer r;
-	public boolean twoD, threeD;
+	private boolean twoD, threeD;
 
 	public WRenderer(Wildfire wildfire, boolean twoD, boolean threeD){
 		super(wildfire.getIndex());
@@ -90,6 +90,22 @@ public class WRenderer extends Renderer {
     	double turningRadius = Utils.getTurnRadius(car.velocity.flatten().magnitude());
     	drawCircle(colour, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(turningRadius)).flatten(), turningRadius);
     	drawCircle(colour, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(-turningRadius)).flatten(), turningRadius);
+	}
+	
+	public boolean is2D(){
+		return twoD;
+	}
+
+	public void set2D(boolean twoD){
+		this.twoD = twoD;
+	}
+
+	public boolean is3D(){
+		return threeD;
+	}
+
+	public void set3D(boolean threeD){
+		this.threeD = threeD;
 	}
 
 }

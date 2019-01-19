@@ -9,11 +9,12 @@ public class HalfFlipAction extends Action {
 	
 	private final int throttleTime = 300;
 
-	public HalfFlipAction(State state){
-		super("Half Flip", state);
+	public HalfFlipAction(State state, float elapsedSeconds){
+		super("Half Flip", state, elapsedSeconds);
 		
-		if(state.wildfire.lastDodge + 2000 > timeStarted){
-			failed = true; //Dodge hasn't recharged yet
+		//No spamming!
+		if(state.wildfire.lastDodge + 2 > timeStarted){
+			failed = true; 
 		}else{
 			state.wildfire.lastDodge = timeStarted;
 		}
@@ -22,7 +23,7 @@ public class HalfFlipAction extends Action {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		ControlsOutput controller = new ControlsOutput().withThrottle(-1).withBoost(false);
-		long timeDifference = (System.currentTimeMillis() - timeStarted);
+		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
 		
 		if(timeDifference < throttleTime){
 			controller.withThrottle(-1);
@@ -47,7 +48,7 @@ public class HalfFlipAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return failed || (System.currentTimeMillis() >= 400 + throttleTime + timeStarted && input.car.hasWheelContact);
+		return failed || (input.car.hasWheelContact && timeDifference(input.elapsedSeconds) > 0.4 + throttleTime / 1000);
 	}
 
 }

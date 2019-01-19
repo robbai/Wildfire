@@ -17,7 +17,7 @@ import wildfire.wildfire.obj.State;
 public class WaitState extends State {
 	
 	/*How far we want to be from the ball's bounce*/
-	private final double desiredDistance = 30D;
+	private final double desiredDistance = 38D;
 	
 	private Vector2 bounce = null;
 	private double timeLeft = 0;
@@ -35,7 +35,7 @@ public class WaitState extends State {
 		timeLeft = Utils.getBounceTime(wildfire.ballPrediction);
 		
 		//Wall hit
-		if(timeLeft > 0.75 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 0 && Utils.distanceToWall(wildfire.impactPoint.getPosition()) < 400){
+		if(timeLeft > 0.85 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 0 && Utils.distanceToWall(wildfire.impactPoint.getPosition()) < 290 && Math.abs(wildfire.impactPoint.getPosition().x) > 1500){
 			return false;
 		}
 		
@@ -45,7 +45,7 @@ public class WaitState extends State {
 		//Teammate's closer
 		if(Utils.isTeammateCloser(input, bounce)) return false;
 		
-		return (Utils.isBallAirborne(input.ball) && input.ball.velocity.magnitude() < 6000) || (input.ball.position.z > 110 && input.ball.position.distanceFlat(input.car.position) < 220);
+		return (Utils.isBallAirborne(input.ball) && input.ball.velocity.flatten().magnitude() < 5000) || (input.ball.position.z > 110 && input.ball.position.distanceFlat(input.car.position) < 220);
 	}
 
 	@Override
@@ -55,7 +55,7 @@ public class WaitState extends State {
 		
 		//Aerial
 		double steerImpact = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 200 : 350) && Utils.isEnoughBoostForAerial(input.car, wildfire.impactPoint.getPosition()) && Math.signum(wildfire.impactPoint.getPosition().y - input.car.position.y) == Utils.teamSign(input.car) && input.car.hasWheelContact && Math.abs(steerImpact) < (onTarget ? 0.47 : 0.35) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1000 : -2000)){
+		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 200 : 350) && Utils.isEnoughBoostForAerial(input.car, wildfire.impactPoint.getPosition()) && Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(steerImpact) < (onTarget ? 0.47 : 0.35) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1000 : -2000)){
 			double maxRange = wildfire.impactPoint.getPosition().z * (onTarget ? 6 : 5);
 			double minRange = wildfire.impactPoint.getPosition().z * (onTarget ? 1 : 3);
 			wildfire.renderer.drawCircle(Color.ORANGE, wildfire.impactPoint.getPosition().flatten(), minRange);
@@ -73,33 +73,30 @@ public class WaitState extends State {
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Utils.driveDownWall(input);
 		}else if(!hasAction() && Utils.isCarAirborne(input.car)){
-			currentAction = new RecoveryAction(this);
+			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			return currentAction.getOutput(input);
 		}
 		
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s", Color.WHITE, new Point(0, 20), 2, 2);
 		
 		//Catch (don't move out the way anymore)
-		if(input.car.position.distanceFlat(bounce) < Utils.BALLRADIUS){
+		if(input.car.position.distanceFlat(bounce) < Utils.BALLRADIUS && Utils.correctSideOfTarget(input.car, bounce)){
 //			if(input.ball.velocity.z < -1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
 			wildfire.renderer.drawString2d("Catch", Color.WHITE, new Point(0, 40), 2, 2);
 			return new ControlsOutput().withBoost(false).withSteer((float)-Utils.aim(input.car, bounce) * 2F).withThrottle((float)-input.car.forwardMagnitude());
 		}
 		
+		boolean towardsOwnGoal = Utils.isTowardsOwnGoal(input.car, bounce);
+		
 		Vector2 enemyGoal = Utils.enemyGoal(input.car.team);
-
 		Vector2 target = null;
 		double velocityNeeded = -1;
 		
-		for(double length = 0.75; length > 0; length -= 0.05){
+		for(double length = (towardsOwnGoal ? 0.95 : 0.65); length > (towardsOwnGoal ? 0.15 : 0); length -= 0.05){
 			target = getNextPoint(input.car.position.flatten(), bounce, enemyGoal, length);
 			
-			//This curved pathway goes backwards, skip it
-//			if(target.distance(bounce) > input.car.position.distanceFlat(bounce)) continue;
-			boolean illegal = (target.distance(bounce) > input.car.position.distanceFlat(bounce));
-			
 			// v = 2s / t - u
-			double distance = getPathwayDistance(input.car.position.flatten(), bounce, enemyGoal, length, illegal ? Color.ORANGE : Color.YELLOW);
+			double distance = getPathwayDistance(input.car.position.flatten(), bounce, enemyGoal, length, Color.YELLOW);
 			double initialVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
 			double finalVelocity = (2 * distance) / timeLeft - initialVelocity;
 			
@@ -131,7 +128,7 @@ public class WaitState extends State {
 			boolean dribble = (input.ball.position.z > 120 && input.ball.position.distance(input.car.position) < 200);
 			
 			//Dodge
-			if(!hasAction() && !dribble && !Utils.isTowardsOwnGoal(input.car, target)){
+			if(!hasAction() && !dribble && !towardsOwnGoal){
 				if(Math.abs(steerRadians) < Math.PI * 0.2 && (input.car.position.distanceFlat(bounce) < 620 && input.ball.position.z < 300)){
 					currentAction = new DodgeAction(this, steerRadians, input);
 					if(!currentAction.failed) return currentAction.getOutput(input);
@@ -139,7 +136,7 @@ public class WaitState extends State {
 			}
 		}
 		
-		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 2);
+		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 2 && input.car.position.distanceFlat(bounce) > 1000);
 		double currentVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
 			
 		if(velocityNeeded > currentVelocity){
@@ -187,7 +184,7 @@ public class WaitState extends State {
 	}
 	
 	private Vector2 getNextPoint(Vector2 start, Vector2 bounce, Vector2 enemyGoal, double length){
-		double offset = 0.43 * bounce.distance(start);
+		double offset = 0.31 * bounce.distance(start);
 		Vector2 target = bounce.plus(bounce.minus(enemyGoal).scaledToMagnitude(offset));
 		target = start.plus(target.minus(start).scaled(length)).confine();
 		
