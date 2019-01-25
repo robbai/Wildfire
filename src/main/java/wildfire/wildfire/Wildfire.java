@@ -100,7 +100,7 @@ public class Wildfire implements Bot {
 //	    	bezier.render(BotLoopRenderer.forBotLoop(this), car.team == 0 ? Color.BLUE : Color.ORANGE);
 //    	}
     	
-//    	stateSetting.recovery(input);
+//    	stateSetting.orientationController(input);
     	
     	//Get the ball prediction
     	try{
@@ -217,13 +217,13 @@ public class Wildfire implements Bot {
 	/*
 	 * Intended so that the bot doesn't spam... too much
 	 */
-	public boolean sendQuickChat(byte... quickChatSelection){
+	public boolean sendQuickChat(boolean teamOnly, byte... quickChatSelection){
 		long currentTime = System.currentTimeMillis();
 		if(currentTime > lastQuickChat + quickChatCooldown && lastQuickChat != -1){
 			Random random = new Random();
 			
 			try{
-				RLBotDll.sendQuickChat(this.playerIndex, false, quickChatSelection[random.nextInt(quickChatSelection.length)]);
+				RLBotDll.sendQuickChat(this.playerIndex, teamOnly, quickChatSelection[random.nextInt(quickChatSelection.length)]);
 			}catch(Exception e){
 				System.err.println("Error when trying to send quick-chat [" + quickChatSelection.toString() + "]");
 			}
@@ -232,6 +232,9 @@ public class Wildfire implements Bot {
 			return true;
 		}
 		return false;
+	}
+	public boolean sendQuickChat(byte... quickChatSelection){
+		return this.sendQuickChat(false, quickChatSelection);
 	}
 
 }

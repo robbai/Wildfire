@@ -24,7 +24,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		if(input.car.boost > 30 || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) > 2150 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 4000 || Math.abs(wildfire.impactPoint.getPosition().x) < 1350 || input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten()) > 2000 || Utils.isInCone(input.car, wildfire.impactPoint.getPosition())){
+		if(input.car.boost > 30 || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2150 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 3800 || Math.abs(wildfire.impactPoint.getPosition().x) < 1300 || input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten()) > 1800 || Utils.isInCone(input.car, wildfire.impactPoint.getPosition())){
 			return false;
 		}
 		boost = getBoost(input);
@@ -33,7 +33,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean expire(DataPacket input){
-		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > 30 || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 4400;
+		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > 30 || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 3500;
 	}
 
 	@Override
@@ -45,26 +45,32 @@ public class BoostState extends State {
 		if(Utils.isOnWall(input.car)){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Utils.driveDownWall(input);
-		}else{
-			wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		}
+		
+		wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		
 		double distance = boost.getLocation().distanceFlat(input.car.position);
 		double steer = Utils.aim(input.car, boost.getLocation().flatten());
-		double throttle = Math.signum(Math.cos(steer));
 		
-		if(!hasAction() && input.car.hasWheelContact && distance > 1500){
-			if(input.car.magnitudeInDirection(boost.getLocation().minus(input.car.position).flatten()) > 700 && Math.abs(steer) < 0.3 * Math.PI){
+		double forwardVelocity = input.car.forwardMagnitude();
+		if(!hasAction() && input.car.hasWheelContact && distance > 2200 && !input.car.isSupersonic){			
+			if(Math.abs(steer) < 0.2 && forwardVelocity > 800){
 				currentAction = new DodgeAction(this, steer, input);
-			}else if(Math.abs(steer) > 0.7 * Math.PI){
+			}else if(Math.abs(steer) > 0.7 * Math.PI && forwardVelocity < -800){
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
 		
+		//Render
 		wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.flatten().toFramework(), boost.getLocation().flatten().toFramework());
 		wildfire.renderer.drawCircle(Color.BLUE, boost.getLocation().flatten(), 110);
-		return new ControlsOutput().withSteer((float)-(throttle > 0 ? steer : Utils.invertAim(steer)) * 2F).withThrottle((float)throttle).withBoost(Math.abs(steer) < 0.1);
+		
+		if(forwardVelocity >= 0){
+			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(1F).withBoost(Math.abs(steer) < 0.1);
+		}else{
+			return new ControlsOutput().withSteer((float)Utils.invertAim(steer) * 3).withThrottle(-1F).withBoost(false);
+		}
 	}
 
 	private BoostPad getBoost(DataPacket input){
@@ -73,9 +79,9 @@ public class BoostState extends State {
 		BoostPad bestBoost = null;
 		for(BoostPad boost : BoostManager.getFullBoosts()){
 			double distance = boost.getLocation().distanceFlat(input.car.position);
-			if(distance > maxDistance || !boost.isActive() || Math.signum(boost.getLocation().y - input.ball.position.y) == Utils.teamSign(input.car)){
-				continue;
-			}
+			if(distance > maxDistance || !boost.isActive()) continue;
+			if(Math.signum(boost.getLocation().y - input.ball.position.y) == Utils.teamSign(input.car)) continue;
+			if(input.car.magnitudeInDirection(boost.getLocation().minus(input.car.position).flatten()) > -200) continue;
 			if(bestBoost == null || distance < bestDistance){
 				bestBoost = boost;
 				bestDistance = distance;

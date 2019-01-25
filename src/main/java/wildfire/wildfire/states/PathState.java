@@ -18,7 +18,7 @@ public class PathState extends State {
 	 * Fresh and new path planning state
 	 */
 		
-	private final int maxPathLength = 100, targetPly = 8, confineBorder = 250;
+	private final int maxPathLength = 100, targetPly = 9, confineBorder = 250;
 	
 	private ArrayList<Vector2> path;
 

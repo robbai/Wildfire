@@ -1,6 +1,5 @@
 package wildfire.boost;
 
-
 import wildfire.vector.Vector3;
 
 public class BoostPad {

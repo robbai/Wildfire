@@ -15,7 +15,7 @@ import wildfire.wildfire.obj.State;
 
 public class FallbackState extends State {
 	
-	private int targetPly = 9;
+	private int targetPly = 8;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);
@@ -36,10 +36,12 @@ public class FallbackState extends State {
 		wildfire.renderer.drawCrosshair(input.car, goal.withZ(Utils.BALLRADIUS), Color.WHITE, 125);				
 		
 		if(!hasAction()){
-			if(distance < (wall ? 250 : 900) && input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten()) > 900){ //|| input.ball.position.z > 500
+			double velocityTowardsImpact = input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
+			if(distance < (wall ? 270 : (input.car.isSupersonic ? 1000 : 850)) && velocityTowardsImpact > 900){
 				double dodgeAngle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 				double goalAngle = Vector2.angle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), goal.minus(input.car.position.flatten()));
 				
+				//Check if we can go for a shot
 				Vector2 trace = Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH);
 				boolean shotOpportunity = (trace != null && Math.abs(trace.x) < 1200);
 				
@@ -48,13 +50,15 @@ public class FallbackState extends State {
 					if(Math.abs(dodgeAngle) < 1.22){ //70 degrees
 						dodgeAngle = Utils.clamp(dodgeAngle * 3.25D, -Math.PI, Math.PI);
 					}
-					
 					currentAction = new DodgeAction(this, dodgeAngle, input);
 				}
 			}else if(Utils.isCarAirborne(input.car)){
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			}else if(wall && Math.abs(input.car.position.x) < Utils.GOALHALFWIDTH - 50){
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
+			}else if(distance > 2600 && !input.car.isSupersonic && input.car.boost < 45 && velocityTowardsImpact > 1250 && 0.2 > Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten()))){
+				//Front flip for speed
+				currentAction = new DodgeAction(this, 0, input);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
@@ -82,12 +86,12 @@ public class FallbackState extends State {
 		double distance = wildfire.impactPoint.getPosition().distanceFlat(start);
 		
 		Vector2 end = wildfire.impactPoint.getPosition().flatten().plus(wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(distance * 0.39));
-		end = start.plus(end.minus(start).scaled(0.2)).confine();
+		end = start.plus(end.minus(start).scaled(0.2)).confine(25, 75);
 		
 		//Clamp the X when stuck in goal
 		boolean stuck = Math.abs(start.y) > Utils.PITCHLENGTH; 
 		if(stuck){
-			end = new Vector2(Math.max(-780, Math.min(780, end.x)), Math.signum(end.y) * Utils.PITCHLENGTH);
+			end = new Vector2(Math.max(-750, Math.min(750, end.x)), Math.signum(end.y) * Utils.PITCHLENGTH);
 		}
 		
 		wildfire.renderer.drawLine3d(Color.RED, start.toFramework(), end.toFramework());

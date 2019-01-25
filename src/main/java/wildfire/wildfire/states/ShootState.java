@@ -46,14 +46,14 @@ public class ShootState extends State {
 		
 		if(!hasAction()){
 			if(input.car.hasWheelContact){
-				double steerBall = Utils.aim(input.car, input.ball.position.flatten());
-				if(Math.abs(aimBall) > Math.PI * 0.7 && distance < 500){
+				double steerImpact = Utils.aim(input.car, input.ball.position.flatten());
+				if(Math.abs(aimBall) > Math.PI * 0.7 && distance < 550){
 					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
-				}else if(Math.abs(aimBall) > Math.PI * 0.6 && distance > 400 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
+				}else if(Math.abs(aimBall) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-				}else if(distance < 500 || (distance > 3000 && Math.abs(steerBall) < 0.09 && input.car.forwardMagnitude() > 500)){
+				}else if((distance < 520 && Math.abs(aimBall) < Math.PI * 0.4) || (distance > 2400 && Math.abs(steerImpact) < 0.2 && !input.car.isSupersonic)){
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
-					currentAction = new DodgeAction(this, steerBall, input);
+					if(input.car.forwardMagnitude() > 800) currentAction = new DodgeAction(this, steerImpact, input);
 				}
 			}else if(Utils.isCarAirborne(input.car)){
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);

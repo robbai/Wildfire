@@ -44,7 +44,7 @@ public class ReturnState extends State {
 		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000) return false;
 		
 		//Just hit it instead
-		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1200 && !Utils.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition().flatten())){
+		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1200 && !Utils.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition())){
 			return false;
 		}
 		

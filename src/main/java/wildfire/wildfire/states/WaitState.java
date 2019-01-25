@@ -12,6 +12,7 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.actions.SmartDodgeAction;
 import wildfire.wildfire.obj.State;
 
 public class WaitState extends State {
@@ -40,7 +41,7 @@ public class WaitState extends State {
 		}
 		
 		//Can't reach point, warning: very optimistic
-		if(bounce.distance(input.car.position.flatten()) / timeLeft > 2500) return false;
+		if(bounce.distance(input.car.position.flatten()) / timeLeft > 2450) return false;
 		
 		//Teammate's closer
 		if(Utils.isTeammateCloser(input, bounce)) return false;
@@ -54,8 +55,8 @@ public class WaitState extends State {
 		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
 		
 		//Aerial
-		double steerImpact = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 200 : 350) && Utils.isEnoughBoostForAerial(input.car, wildfire.impactPoint.getPosition()) && Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(steerImpact) < (onTarget ? 0.47 : 0.35) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1000 : -2000)){
+		double impactRadians = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 200 : 350) && Utils.isEnoughBoostForAerial(input.car, wildfire.impactPoint.getPosition()) && Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(impactRadians) < (onTarget ? 0.47 : 0.35) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1000 : -2000)){
 			double maxRange = wildfire.impactPoint.getPosition().z * (onTarget ? 6 : 5);
 			double minRange = wildfire.impactPoint.getPosition().z * (onTarget ? 1 : 3);
 			wildfire.renderer.drawCircle(Color.ORANGE, wildfire.impactPoint.getPosition().flatten(), minRange);
@@ -67,6 +68,15 @@ public class WaitState extends State {
 		}
 
 		wildfire.renderer.drawCircle(Color.YELLOW, bounce, Utils.BALLRADIUS);
+		boolean towardsOwnGoal = Utils.isTowardsOwnGoal(input.car, bounce.withZ(0));
+		
+		//Smart dodge (test)
+		boolean planSmartDodge = wildfire.isTestVersion() && !towardsOwnGoal && input.car.position.z < 240 && (input.ball.position.z > 360 || input.ball.velocity.z < -555) && (Math.min(bounce.distance(Utils.homeGoal(input.car.team)), bounce.distance(Utils.enemyGoal(input.car.team))) < 2000 || Utils.closestOpponentDistance(input, bounce.withZ(0)) < 900);
+		if(!hasAction() && planSmartDodge && input.car.hasWheelContact && bounce.distance(input.car.position.flatten()) < (200 + 400 * Math.cos(impactRadians / 2))){ // && input.car.velocity.magnitude() < 2100
+			currentAction = new SmartDodgeAction(this, input);
+			System.out.println(currentAction.failed);
+			if(!currentAction.failed) currentAction.getOutput(input);
+		}
 		
 		//Drive down the wall
 		if(Utils.isOnWall(input.car) && bounce.withZ(Utils.BALLRADIUS).distance(input.car.position) > 700){
@@ -81,12 +91,9 @@ public class WaitState extends State {
 		
 		//Catch (don't move out the way anymore)
 		if(input.car.position.distanceFlat(bounce) < Utils.BALLRADIUS && Utils.correctSideOfTarget(input.car, bounce)){
-//			if(input.ball.velocity.z < -1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
 			wildfire.renderer.drawString2d("Catch", Color.WHITE, new Point(0, 40), 2, 2);
 			return new ControlsOutput().withBoost(false).withSteer((float)-Utils.aim(input.car, bounce) * 2F).withThrottle((float)-input.car.forwardMagnitude());
 		}
-		
-		boolean towardsOwnGoal = Utils.isTowardsOwnGoal(input.car, bounce);
 		
 		Vector2 enemyGoal = Utils.enemyGoal(input.car.team);
 		Vector2 target = null;
@@ -136,19 +143,24 @@ public class WaitState extends State {
 			}
 		}
 		
-		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 2 && input.car.position.distanceFlat(bounce) > 1000);
+		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 2 && input.car.position.distanceFlat(bounce) > 500);
 		double currentVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
 			
-		if(velocityNeeded > currentVelocity){
-			if(velocityNeeded > currentVelocity + 500 || velocityNeeded > 1410){
-				controls.withThrottle(1).withBoost(Math.abs(steer) < 0.55F);
-			}else{
-				controls.withThrottle(1);
-			}
-		}else if(velocityNeeded < currentVelocity - 400){
-			controls.withThrottle(-1);
-		}else{
+		//Quick approach for a smart dodge
+		if(planSmartDodge && Math.abs(steerRadians) < 0.7 && velocityNeeded < 900){
 			controls.withThrottle(0);
+		}else{
+			if(velocityNeeded > currentVelocity){
+				if(velocityNeeded > currentVelocity + 500 || velocityNeeded > 1410){
+					controls.withThrottle(1).withBoost(Math.abs(steer) < 0.55F);
+				}else{
+					controls.withThrottle(1);
+				}
+			}else if(velocityNeeded < currentVelocity - 400){
+				controls.withThrottle(-1);
+			}else{
+				controls.withThrottle(0);
+			}
 		}
 		
 	    return controls;

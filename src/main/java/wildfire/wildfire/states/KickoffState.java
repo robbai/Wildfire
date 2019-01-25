@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.Random;
 
+import rlbot.flat.QuickChatSelection;
+import wildfire.boost.BoostManager;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
@@ -22,8 +24,9 @@ public class KickoffState extends State {
 	private final boolean fakeKickoffs = true;
 	
 	private Random random;
-	private boolean fake = false;
 	private KickoffSpawn spawn;
+	private boolean fake = false;
+	private float timeStarted;
 
 	public KickoffState(Wildfire wildfire){
 		super("Kickoff", wildfire);
@@ -35,10 +38,14 @@ public class KickoffState extends State {
 		if(!Utils.isKickoff(input)) return false;
 		
 		getSpawn(input.car.position);
+		timeStarted = input.elapsedSeconds;
 
 		//Choosing to fake
-		if(fakeKickoffs){
-			fake = Utils.isTeammateCloser(input) || (random.nextFloat() < 0.2F && !Utils.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Utils.hasOpponent(input));
+		if(Utils.isTeammateCloser(input)){
+			fake = true;
+			wildfire.sendQuickChat(true, QuickChatSelection.Custom_Useful_Faking, QuickChatSelection.Information_GoForIt);
+		}else if(fakeKickoffs){
+			fake = (random.nextFloat() < 0.2F && !Utils.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Utils.hasOpponent(input));
 		}else{
 			fake = false;
 		}
@@ -66,6 +73,12 @@ public class KickoffState extends State {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		wildfire.renderer.drawString2d(fake ? "Fake" : "Normal", Color.WHITE, new Point(0, 20), 2, 2);
+		
+		if(fake && input.elapsedSeconds - timeStarted > 10){
+			fake = false;
+			wildfire.sendQuickChat(QuickChatSelection.Reactions_Okay, QuickChatSelection.Custom_Toxic_WasteCPU);
+		}
+		
 		if(!fake){
 			Vector2 target;
 			boolean dodge;
@@ -96,21 +109,26 @@ public class KickoffState extends State {
 	        return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1).withBoost(true);
 		}else{
 			//Fake
-			if(input.car.boost > 40){
+			if(!BoostManager.getBoosts().get(input.car.team == 0 ? 0 : 33).isActive()){ //input.car.boost > 40
 				boolean reverse = (Math.abs(input.car.position.y) < 5200);
 				double steerCorrectionRadians = Utils.aim(input.car, reverse ? Utils.homeGoal(input.car.team) : wildfire.impactPoint.getPosition().flatten());
 				if(reverse){
 					steerCorrectionRadians = Utils.invertAim(steerCorrectionRadians);
-			        return new ControlsOutput().withSteer((float)steerCorrectionRadians * 0.5F).withThrottle(-1F).withBoost(false);
+					double forwardMagnitude = input.car.forwardMagnitude();
+			        return new ControlsOutput().withSteer((float)steerCorrectionRadians * 1.75F).withThrottle(-1F).withBoost(false).withSlide(forwardMagnitude < -200 && forwardMagnitude > -600);
 				}else{
-					return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1F).withBoost(false);
+					return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1F).withBoost(false).withSlide(false);
 				}
 			}else{
 				//Get the boost in front of us
 				Vector2 boost = new Vector2(0, -Utils.teamSign(input.car) * 4290);
 				wildfire.renderer.drawCircle(Color.WHITE, boost, 90);
 				double steerCorrectionRadians = Utils.aim(input.car, boost);
-				return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle((float)Math.cos(steerCorrectionRadians)).withBoost(false);
+				if(Math.cos(steerCorrectionRadians) > 0){
+					return new ControlsOutput().withSteer((float)steerCorrectionRadians * -3F).withThrottle(1F).withBoost(false);
+				}else{
+					return new ControlsOutput().withSteer((float)Utils.invertAim(steerCorrectionRadians) * 1.5F).withThrottle(-1F).withBoost(false);
+				}
 			}
 		}
 	}

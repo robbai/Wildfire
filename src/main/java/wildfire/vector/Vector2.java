@@ -105,12 +105,16 @@ public class Vector2 {
 		return new Vector3(x, y, z);
 	}
 	
-	public Vector2 confine(double border){
-		return new Vector2(Math.min(Utils.PITCHWIDTH - border, Math.max(-Utils.PITCHWIDTH + border, x)), Math.min(Utils.PITCHLENGTH - border, Math.max(-Utils.PITCHLENGTH + border, y)));
+	public Vector2 confine(double borderX, double borderY){
+		return new Vector2(Math.min(Utils.PITCHWIDTH - borderX, Math.max(-Utils.PITCHWIDTH + borderX, x)), Math.min(Utils.PITCHLENGTH - borderY, Math.max(-Utils.PITCHLENGTH + borderY, y)));
 	}
 	
 	public Vector2 confine(){
 		return this.confine(0);
+	}
+	
+	public Vector2 confine(double border){
+		return this.confine(border, border);
 	}
 	
 	public Vector2 withX(double x){

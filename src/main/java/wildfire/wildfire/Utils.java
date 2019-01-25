@@ -25,6 +25,7 @@ public class Utils {
 	public static Vector2 homeGoal(int team){
 		return new Vector2(0, teamSign(team) * -PITCHLENGTH);
 	}
+	
 	public static Vector2 enemyGoal(int team){
 		return new Vector2(0, teamSign(team) * PITCHLENGTH);
 	}
@@ -119,12 +120,12 @@ public class Utils {
 		return false;
 	}
 	
-	public static CarData closestOpponent(DataPacket input){
+	public static CarData closestOpponent(DataPacket input, Vector3 target){
 		CarData best = null;
 		double bestDistance = Double.MAX_VALUE;
 		for(CarData c : input.cars){
 			if(c.team == input.car.team) continue;
-			double distance = c.position.distance(input.ball.position);
+			double distance = c.position.distance(target);
 			if(distance < bestDistance){
 				best = c;
 				bestDistance = distance;
@@ -133,8 +134,8 @@ public class Utils {
 		return best;
 	}
 	
-	public static double closestOpponentDistance(DataPacket input){
-		CarData opponent = closestOpponent(input);
+	public static double closestOpponentDistance(DataPacket input, Vector3 target){
+		CarData opponent = closestOpponent(input, target);
 		return opponent == null ? Double.MAX_VALUE : opponent.position.distance(input.ball.position);
 	}
 
@@ -286,10 +287,30 @@ public class Utils {
 	    return 156D + 0.1D * speed + 0.000069D * Math.pow(speed, 2) + 0.000000164D * Math.pow(speed, 3) -0.0000000000562D * Math.pow(speed, 4);
 	}
 	
-	public static boolean isInCone(CarData car, Vector3 target){
+	/*
+	 * Returns whether the trace goes into the opponent's goal
+	 */
+	public static boolean isInCone(CarData car, Vector3 target, double threshold){
+		if(Utils.teamSign(car) * car.position.y > Utils.PITCHLENGTH) return false; //Inside enemy goal
 		Vector2 trace = traceToY(car.position.flatten(), target.minus(car.position).flatten(), Utils.teamSign(car) * Utils.PITCHLENGTH);
-		if(trace == null) return false; //Facing the wrong way
-		return Math.abs(trace.x) < GOALHALFWIDTH;
+		return trace != null && Math.abs(trace.x) < GOALHALFWIDTH + threshold;
+	}
+	
+	public static boolean isInCone(CarData car, Vector3 target){
+		return isInCone(car, target, 0);
+	}
+	
+	/*
+	 * Returns whether the trace goes into our own goal (inverse cone)
+	 */
+	public static boolean isTowardsOwnGoal(CarData car, Vector3 target, double threshold){
+		if(Utils.teamSign(car) * car.position.y < -Utils.PITCHLENGTH) return false; //Inside own goal
+		Vector2 trace = traceToY(car.position.flatten(), target.minus(car.position).flatten(), Utils.teamSign(car) * -Utils.PITCHLENGTH);
+		return trace != null && Math.abs(trace.x) < GOALHALFWIDTH + threshold;
+	}
+	
+	public static boolean isTowardsOwnGoal(CarData car, Vector3 target){
+		return isTowardsOwnGoal(car, target, -50);
 	}
 	
 	public static boolean isOpponentBehindBall(DataPacket input){
@@ -374,22 +395,6 @@ public class Utils {
 		
 		//Direction is zero or the start is outside of the map
 		return start.confine();
-	}
-	
-	/*
-	 * Returns whether the trace goes into our own goal
-	 */
-	public static boolean isTowardsOwnGoal(CarData car, Vector2 ball){
-		Vector2 trace = traceToY(car.position.flatten(), ball.minus(car.position.flatten()), teamSign(car) * -PITCHLENGTH);
-		return trace != null && Math.abs(trace.x) < GOALHALFWIDTH - 50;
-	}
-	
-	/*
-	 * Returns whether the trace goes into the opponent's goal
-	 */
-	public static boolean isTowardsEnemyGoal(CarData car, Vector2 ball){
-		Vector2 trace = traceToY(car.position.flatten(), ball.minus(car.position.flatten()), teamSign(car) * PITCHLENGTH);
-		return trace != null && Math.abs(trace.x) < GOALHALFWIDTH - 50;
 	}
 	
 	// https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line

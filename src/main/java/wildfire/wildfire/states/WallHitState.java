@@ -74,12 +74,12 @@ public class WallHitState extends State {
 				wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Information_Incoming);
 			}
 			
-			boolean sideWall = (Utils.PITCHWIDTH - Math.max(Math.abs(input.ball.position.x), Math.abs(wildfire.impactPoint.getPosition().x)) < maxWallDistance);
-			boolean backWall = (Utils.PITCHLENGTH - Math.max(Math.abs(input.ball.position.y), Math.abs(wildfire.impactPoint.getPosition().y)) < maxWallDistance);
+			boolean sideWall = (Utils.PITCHWIDTH - Math.abs(wildfire.impactPoint.getPosition().x) < maxWallDistance);
+			boolean backWall = (Utils.PITCHLENGTH - Math.abs(wildfire.impactPoint.getPosition().y) < maxWallDistance);
 			
 			Vector2 destination = wildfire.impactPoint.getPosition().minus(input.car.position).scaled(100).plus(input.car.position).flatten();
 			if(sideWall) destination = destination.withY(input.car.position.y);
-			if(backWall) destination = destination.withX(Math.abs(wildfire.impactPoint.getPosition().x) > 1100 ? wildfire.impactPoint.getPosition().x : Math.signum(wildfire.impactPoint.getPosition().x) * 1100);
+			if(backWall) destination = destination.withX(Math.abs(wildfire.impactPoint.getPosition().x) > 1200 ? wildfire.impactPoint.getPosition().x : Math.signum(wildfire.impactPoint.getPosition().x) * 1200);
 			
 			float steer = (float)Utils.aim(input.car, destination);
 			boolean reverse = false;
@@ -110,11 +110,15 @@ public class WallHitState extends State {
 	}
 	
 	private boolean isAppropriateWallHit(CarData car, Vector3 target){
-		if(target.z < Math.max(600, car.position.distanceFlat(target) / 2) || Utils.distanceToWall(target) > maxWallDistance) return false;
+		if(Utils.distanceToWall(target) > maxWallDistance) return false;
+		
+		boolean backWall = (target.y * Utils.teamSign(car) < -4400);
+		
+		if(target.z < Math.max(backWall ? 250 : 600, car.position.distanceFlat(target) / 3)) return false;
 		if(Math.abs(target.y) < 4350) return true;
 		
 		//Away from our back wall
-		return (Math.abs(target.x) > 1200 || car.position.z > 1000) && target.y * Utils.teamSign(car) < -4000; 
+		return (Math.abs(target.x) > 1200 || car.position.z > 900) && backWall; 
 	}
 	
 	private Vector3 local(CarData car, Vector3 ball){
