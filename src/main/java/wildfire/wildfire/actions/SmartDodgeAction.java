@@ -41,7 +41,7 @@ public class SmartDodgeAction extends Action {
 				double jumpHeight = (location.z - ripperHeight);
 				this.timeToPeak = timeToPeak(jumpHeight, timePressed);
 				
-				if(jumpHeight <= maxJumpHeight && jumpHeight >= minJumpHeight && Math.abs(timeToPeak - (ballTime + 0.1)) < 0.065){
+				if(jumpHeight <= maxJumpHeight && jumpHeight >= minJumpHeight && Math.abs(timeToPeak - (ballTime - 0.1)) < 0.065){
 					this.timePressed = timePressedForHeight(jumpHeight);
 					this.target = new PredictionSlice(location, i);
 					break;

@@ -67,7 +67,7 @@ public class BoostState extends State {
 		wildfire.renderer.drawCircle(Color.BLUE, boost.getLocation().flatten(), 110);
 		
 		if(forwardVelocity >= 0){
-			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(1F).withBoost(Math.abs(steer) < 0.1);
+			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(1F).withBoost(Math.abs(steer) < 0.1).withSlide(Math.abs(steer) > 1.2 && distance < 900);
 		}else{
 			return new ControlsOutput().withSteer((float)Utils.invertAim(steer) * 3).withThrottle(-1F).withBoost(false);
 		}

@@ -18,7 +18,7 @@ import wildfire.wildfire.obj.State;
 
 public class WallHitState extends State {
 	
-	private final double maxWallDistance = 290;
+	private final double maxWallDistance = 250;
 
 	public WallHitState(Wildfire wildfire){
 		super("Wall Hit", wildfire);
@@ -56,7 +56,7 @@ public class WallHitState extends State {
 				double aim = forward.correctionAngle(localTarget.flatten());
 				
 				//Dodge
-				if(wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 400 : 200)){
+				if((localTarget.z > 130 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 400 : 200)){
 					currentAction = new DodgeAction(this, aim, input);
 					if(!currentAction.failed){
 						if(input.car.position.z > 1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
@@ -114,7 +114,7 @@ public class WallHitState extends State {
 		
 		boolean backWall = (target.y * Utils.teamSign(car) < -4400);
 		
-		if(target.z < Math.max(backWall ? 250 : 600, car.position.distanceFlat(target) / 3)) return false;
+		if(target.z < Math.max(backWall ? 250 : 400, car.position.distanceFlat(target) / 6)) return false;
 		if(Math.abs(target.y) < 4350) return true;
 		
 		//Away from our back wall

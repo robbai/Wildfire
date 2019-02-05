@@ -115,7 +115,7 @@ public class KickoffState extends State {
 				if(reverse){
 					steerCorrectionRadians = Utils.invertAim(steerCorrectionRadians);
 					double forwardMagnitude = input.car.forwardMagnitude();
-			        return new ControlsOutput().withSteer((float)steerCorrectionRadians * 1.75F).withThrottle(-1F).withBoost(false).withSlide(forwardMagnitude < -200 && forwardMagnitude > -600);
+			        return new ControlsOutput().withSteer((float)steerCorrectionRadians * 3F).withThrottle(-1F).withBoost(false).withSlide(forwardMagnitude < -200 && forwardMagnitude > -600);
 				}else{
 					return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1F).withBoost(false).withSlide(false);
 				}

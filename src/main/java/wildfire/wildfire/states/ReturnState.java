@@ -38,13 +38,21 @@ public class ReturnState extends State {
 			if(Math.abs(aimBall) < Math.PI * 0.4){
 				if(Utils.isInCone(input.car, wildfire.impactPoint.getPosition())) return false;
 			}
-		}
-		
-		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
-		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000) return false;
+		}		
 		
 		//Just hit it instead
 		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1200 && !Utils.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition())){
+			return false;
+		}
+		
+		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
+//		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000) return false;
+		
+		Vector2 homeGoal = Utils.homeGoal(input.car.team);
+		if(input.car.position.distanceFlat(homeGoal) < 4000){
+			if(!onTarget && !Utils.isOpponentBehindBall(input)) return false;
+		}
+		if(Utils.teamSign(input.car.team) * input.ball.velocity.y > 2000 || input.ball.position.distanceFlat(homeGoal) > 3750){
 			return false;
 		}
 		

@@ -91,6 +91,7 @@ public class Wildfire implements Bot {
     private ControlsOutput processInput(DataPacket input){
     	//Get a renderer
     	renderer = new WRenderer(this, isTestVersion(), isTestVersion());
+//    	renderer = new WRenderer(this, false, false);
     	
 //    	//Bezier
 //    	for(CarData car : input.cars){

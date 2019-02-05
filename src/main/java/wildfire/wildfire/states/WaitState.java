@@ -143,7 +143,7 @@ public class WaitState extends State {
 			}
 		}
 		
-		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 2 && input.car.position.distanceFlat(bounce) > 500);
+		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 1.2 && input.car.position.distanceFlat(bounce) > 200);
 		double currentVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
 			
 		//Quick approach for a smart dodge

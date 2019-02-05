@@ -37,7 +37,7 @@ public class FallbackState extends State {
 		
 		if(!hasAction()){
 			double velocityTowardsImpact = input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
-			if(distance < (wall ? 270 : (input.car.isSupersonic ? 1000 : 850)) && velocityTowardsImpact > 900){
+			if(distance < (wall ? 270 : (input.car.isSupersonic ? 1000 : 800)) && velocityTowardsImpact > 900){
 				double dodgeAngle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 				double goalAngle = Vector2.angle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), goal.minus(input.car.position.flatten()));
 				
@@ -56,7 +56,7 @@ public class FallbackState extends State {
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			}else if(wall && Math.abs(input.car.position.x) < Utils.GOALHALFWIDTH - 50){
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-			}else if(distance > 2600 && !input.car.isSupersonic && input.car.boost < 45 && velocityTowardsImpact > 1250 && 0.2 > Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten()))){
+			}else if(distance > 2900 && !input.car.isSupersonic && input.car.boost < 45 && velocityTowardsImpact > 1250 && 0.2 > Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten()))){
 				//Front flip for speed
 				currentAction = new DodgeAction(this, 0, input);
 			}
@@ -77,7 +77,7 @@ public class FallbackState extends State {
 		wildfire.renderer.drawCircle(Color.ORANGE, target, Utils.BALLRADIUS * 0.25F);
         
 		double steer = Utils.aim(input.car, target);
-        return new ControlsOutput().withSteer((float)-steer * 2F).withThrottle(1).withBoost(Math.abs(steer) < 0.2F && !input.car.isSupersonic).withSlide(Math.abs(steer) > 1.2F);
+        return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle(1).withBoost(Math.abs(steer) < 0.2F && !input.car.isSupersonic).withSlide(Math.abs(steer) > 1.2F);
 	}
 	
 	private Vector2 getPosition(Vector2 start, Vector2 goal, int ply){

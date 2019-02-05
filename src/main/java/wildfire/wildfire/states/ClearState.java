@@ -52,7 +52,7 @@ public class ClearState extends State {
 		double steer = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 				
 		//Dodge or half-flip into the ball
-		if(!hasAction() && input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 420){
+		if(!hasAction() && input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 500){
 			double forwardVelocity = input.car.forwardMagnitude();
 			if(Math.abs(steer) < 0.75 * Math.PI){
 				if(forwardVelocity < 1500) currentAction = new DodgeAction(this, steer, input);
@@ -99,7 +99,7 @@ public class ClearState extends State {
 			if(wall.y < Utils.teamSign(input.car) * -2000){
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
 				double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position); 
-				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 2.5)), true);
+				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 2.75)), true);
 			}
 		}
 		

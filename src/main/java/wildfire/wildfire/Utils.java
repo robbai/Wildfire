@@ -212,7 +212,7 @@ public class Utils {
 	 * Inspired by the wonderful Darxeal
 	 */
 	public static ControlsOutput driveDownWall(DataPacket input){
-		return new ControlsOutput().withThrottle(1).withBoost(false).withSteer((float)input.car.orientation.eularRoll * 10F);
+		return new ControlsOutput().withThrottle(1).withBoost(false).withSteer((float)input.car.orientation.eularRoll * 60F);
 	}
 	
 	public static boolean isOnWall(CarData car){
