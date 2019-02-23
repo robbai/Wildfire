@@ -8,14 +8,16 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public class PortReader {
-    public static Integer readPortFromFile(String s) {
+	
+    public static Integer readPortFromFile(String s){
         Path path = Paths.get("port.cfg");
 
-        try (Stream<String> lines = Files.lines(path)) {
+        try(Stream<String> lines = Files.lines(path)){
             Optional<String> firstLine = lines.findFirst();
             return firstLine.map(Integer::parseInt).orElseThrow(() -> new RuntimeException("Port config file was empty!"));
-        } catch (final IOException e) {
+        }catch(final IOException e){
             throw new RuntimeException("Failed to read port file! Tried to find it at " + path.toAbsolutePath().toString());
         }
     }
+    
 }

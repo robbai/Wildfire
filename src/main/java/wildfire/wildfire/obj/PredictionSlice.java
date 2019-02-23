@@ -14,6 +14,12 @@ public class PredictionSlice {
 		this.time = (double)frame / 60;
 	}
 	
+	public PredictionSlice(Vector3 position, double time){
+		this.position = position;
+		this.time = time;
+		this.frame = (int)(time * 60);
+	}
+	
 	public PredictionSlice(rlbot.flat.PredictionSlice predictionSlice, int frame){
 		this.position = Vector3.fromFlatbuffer(predictionSlice.physics().location());
 		this.frame = frame;

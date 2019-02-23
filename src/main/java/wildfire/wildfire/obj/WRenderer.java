@@ -3,6 +3,7 @@ package wildfire.wildfire.obj;
 import java.awt.Color;
 import java.awt.Point;
 
+import rlbot.flat.BallPrediction;
 import rlbot.manager.BotLoopRenderer;
 import rlbot.render.Renderer;
 import wildfire.input.CarData;
@@ -106,6 +107,15 @@ public class WRenderer extends Renderer {
 
 	public void set3D(boolean threeD){
 		this.threeD = threeD;
+	}
+	
+	public void renderPrediction(BallPrediction p, Color c, int s, int e){
+		if(p == null || s == e) return;
+		for(int i = Math.max(1, s); i < Math.min(p.slicesLength(), e); i++){
+			Vector3 a = Vector3.fromFlatbuffer(p.slices(i - 1).physics().location());
+			Vector3 b = Vector3.fromFlatbuffer(p.slices(i).physics().location());
+			drawLine3d(c, a.toFramework(), b.toFramework());
+		}
 	}
 
 }

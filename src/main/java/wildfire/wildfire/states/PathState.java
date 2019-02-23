@@ -18,7 +18,9 @@ public class PathState extends State {
 	 * Fresh and new path planning state
 	 */
 		
-	private final int maxPathLength = 100, targetPly = 9, confineBorder = 250;
+	private final int maxPathLength = 100, targetPly = 12;
+	private final Vector2 confineBorder = new Vector2(150, 240);
+	private final double steerMultiplier = -2.75;
 	
 	private ArrayList<Vector2> path;
 
@@ -58,7 +60,7 @@ public class PathState extends State {
 		
 		double distanceImpact = input.car.position.distanceFlat(wildfire.impactPoint.getPosition());
 		double steer = Utils.aim(input.car, target);
-		return new ControlsOutput().withSteer((float)steer * -3).withThrottle(1).withBoost(!input.car.isSupersonic && Math.abs(steer) < 0.2 && distanceImpact > 1100);
+		return new ControlsOutput().withSteer((float)(steer * steerMultiplier)).withThrottle(1).withBoost(!input.car.isSupersonic && Math.abs(steer) < 0.2 && distanceImpact > 1100);
 	}
 
 	private void generatePath(DataPacket input){
@@ -73,11 +75,11 @@ public class PathState extends State {
 		path.add(start);
 		
 		double velocity = input.car.velocity.magnitude();
-		double scale = 0.04;
+		double scale = 0.03;
 		
 		Vector2 rotation = wildfire.impactPoint.getPosition().flatten().minus(Utils.enemyGoal(input.car.team)).scaledToMagnitude(velocity * scale);
 		for(int i = 0; i < maxPathLength; i++){
-			double s = Utils.aimFromPoint(start, rotation, finish) * -2;
+			double s = Utils.aimFromPoint(start, rotation, finish) * (steerMultiplier + 0.5);
 			rotation = rotation.rotate(-Utils.clampSign(s) / (0.4193 / scale));
 			
 			Vector2 end = start.plus(rotation).confine(confineBorder);
@@ -90,12 +92,12 @@ public class PathState extends State {
 	}
 	
 	private boolean requirements(DataPacket input){
-		if(Utils.isBallAirborne(input.ball) || Utils.isKickoff(input) || Utils.distanceToWall(input.car.position) < confineBorder - 50 || input.car.magnitudeInDirection(input.ball.position.minus(input.car.position).flatten()) < -800) return false;
+		if(Utils.isBallAirborne(input.ball) || Utils.isKickoff(input) || Utils.distanceToWall(input.car.position) < 350 || input.car.magnitudeInDirection(input.ball.position.minus(input.car.position).flatten()) < -800) return false;
 		
 		//This state isn't exactly the best defence
 		if(Utils.isOnTarget(wildfire.ballPrediction, input.car.team)) return false;
-		if(Utils.teamSign(input.car) * input.ball.velocity.y < -1000) return false;
-		if(Utils.teamSign(input.car) * input.ball.position.y < -3000 && Math.abs(wildfire.impactPoint.getPosition().x) < 1700){
+		if(Utils.teamSign(input.car) * input.ball.velocity.y < -1500) return false;
+		if(Utils.teamSign(input.car) * input.ball.position.y < -3200 && Math.abs(wildfire.impactPoint.getPosition().x) < 1700){
 			return false;
 		}
 		
@@ -104,15 +106,22 @@ public class PathState extends State {
 		//Avoid making an endless path
 		Vector2 carGoal = Utils.enemyGoal(input.car.team).minus(input.car.position.flatten());
 		Vector2 carBall = wildfire.impactPoint.getPosition().minus(input.car.position).flatten();
-		if(impactDistance < 1500 && carBall.angle(carGoal) > 1.4){
+		if(impactDistance < 1200 && carBall.angle(carGoal) > 1.6){
 			return false;
 		}
 		
-		//This occurs when we have to correct to face the ball, but its in a shooting position
 		Vector2 trace = Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH);
-		if(trace != null && Math.abs(trace.x) < Utils.GOALHALFWIDTH - 180){
+		
+		//Correct ourself to not save our own shot
+		if(Utils.isOnTarget(wildfire.ballPrediction, 1 - input.car.team)){
+//			return !Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition());
+			return trace == null || Math.abs(trace.x) > Utils.GOALHALFWIDTH - Utils.BALLRADIUS - 20;
+		}
+		
+		//This occurs when we have to correct to face the ball, but its in a shooting position		
+		if(trace != null && Math.abs(trace.x) < Utils.GOALHALFWIDTH - 140){
 			double steerImpact = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-			return impactDistance < 6000 && (impactDistance > 3000 || Math.abs(steerImpact) > 50 * (Math.PI / 180));
+			return impactDistance < 6000 && (impactDistance > 2200 || Math.abs(steerImpact) > 60 * (Math.PI / 180));
 		}
 		
 		//Shoot from the wing
@@ -120,10 +129,16 @@ public class PathState extends State {
 			return Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y > -1000 && impactDistance < 8000; 
 		}
 		
+		//Slight shot correction
+		if(trace != null && Math.abs(trace.x) < 1580 && Math.abs(trace.x) > 660){
+			return true;
+		}	
+		
 		//Arc to hit the ball
 		Vector2 goalBall = wildfire.impactPoint.getPosition().flatten().minus(Utils.enemyGoal(input.car.team));
 		Vector2 ballCar = input.car.position.minus(wildfire.impactPoint.getPosition()).flatten();
-		return impactDistance < 3000 && goalBall.angle(ballCar) < 70 * (Math.PI / 180); 
+		double arc = goalBall.angle(ballCar);
+		return impactDistance < 2800 && arc > 0.785398 && arc < 1.48353; //45, 85
 	}
 
 }

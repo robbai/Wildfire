@@ -1,7 +1,6 @@
 package wildfire.wildfire.states;
 
 import java.awt.Color;
-import java.awt.Point;
 
 import rlbot.flat.QuickChatSelection;
 import wildfire.input.DataPacket;
@@ -12,6 +11,7 @@ import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.actions.SmartDodgeAction;
 import wildfire.wildfire.obj.State;
 
 public class ShootState extends State {
@@ -29,13 +29,15 @@ public class ShootState extends State {
 		if(Utils.isOnTarget(wildfire.ballPrediction, input.car.team) && Math.abs(input.car.position.y) > 4500) return false;
 		
 		//Not while the ball is being awkward
-		if(wildfire.impactPoint.getPosition().z > 320) return false;
+		if(wildfire.impactPoint.getPosition().z > 300) return false;
 		
 		//Not during a weird dribble
-		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 80 && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 7000) return false;
+		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 110 && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 6000){
+			return false;
+		}
 		
 		double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-		if(Math.abs(aimBall) > Math.PI * 0.8 && input.car.velocity.magnitude() > 1100) return false;
+		if(Math.abs(aimBall) > Math.PI * 0.7 && input.car.velocity.magnitude() > 1100) return false;
 		return Utils.isInCone(input.car, wildfire.impactPoint.getPosition());
 	}
 
@@ -53,7 +55,13 @@ public class ShootState extends State {
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 				}else if((distance < 520 && Math.abs(aimBall) < Math.PI * 0.4) || (distance > 2400 && Math.abs(steerImpact) < 0.2 && !input.car.isSupersonic)){
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
-					if(input.car.forwardMagnitude() > 800) currentAction = new DodgeAction(this, steerImpact, input);
+					
+					double forwardVelocity = input.car.forwardMagnitude();
+					if(forwardVelocity > 50 && wildfire.impactPoint.getPosition().z - input.car.position.z > 250){
+						currentAction = new SmartDodgeAction(this, input);
+					}else if(forwardVelocity > 800){
+						currentAction = new DodgeAction(this, steerImpact, input);
+					}
 				}
 			}else if(Utils.isCarAirborne(input.car)){
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);
@@ -63,11 +71,9 @@ public class ShootState extends State {
 		
 		float throttle = (float)Math.abs(Math.cos(aimBall));
 		
+		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.BLACK, 0, wildfire.impactPoint.getFrame());
 		wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH).toFramework());
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.LIGHT_GRAY, 125);
-		
-		wildfire.renderer.drawString2d("Aim: " + Utils.round(aimBall), Color.WHITE, new Point(0, 20), 2, 2);
-		wildfire.renderer.drawString2d("Throttle: " + Utils.round(throttle), Color.WHITE, new Point(0, 40), 2, 2);
 		
         return new ControlsOutput().withSteer((float)-aimBall * 2F).withThrottle(throttle).withBoost(Math.abs(aimBall) < 0.15F).withSlide(Math.abs(aimBall) > 1.4F);
 	}

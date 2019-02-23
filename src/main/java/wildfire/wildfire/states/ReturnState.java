@@ -49,10 +49,11 @@ public class ReturnState extends State {
 //		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000) return false;
 		
 		Vector2 homeGoal = Utils.homeGoal(input.car.team);
-		if(input.car.position.distanceFlat(homeGoal) < 4000){
+		if(input.car.position.distanceFlat(homeGoal) < 3600){
 			if(!onTarget && !Utils.isOpponentBehindBall(input)) return false;
+			if(Utils.isTeammateCloser(input)) return wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 4500;
 		}
-		if(Utils.teamSign(input.car.team) * input.ball.velocity.y > 2000 || input.ball.position.distanceFlat(homeGoal) > 3750){
+		if(Utils.teamSign(input.car.team) * input.ball.velocity.y > 2400 || input.ball.position.distanceFlat(homeGoal) > 3400){
 			return false;
 		}
 		
@@ -87,7 +88,7 @@ public class ReturnState extends State {
 			wildfire.renderer.drawString2d("Attacker " + attacker.toString(), Color.WHITE, new Point(0, 20), 2, 2);
 
 			Vector2 target = Utils.getTarget(attacker, input.ball);
-			target = target.withY(Utils.teamSign(input.car) * -5000);
+			target = target.withY(Utils.teamSign(input.car) * -4900);
 
 			wildfire.renderer.drawLine3d(Color.RED, attacker.position.flatten().toFramework(), target.toFramework());
 			wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
@@ -101,18 +102,18 @@ public class ReturnState extends State {
 			}else{
 				//Get in the way of their predicted shot
 				wildfire.renderer.drawString2d("Align", Color.WHITE, new Point(0, 40), 2, 2);
-				if(target.distance(input.car.position.flatten()) < 200){
+				if(target.distance(input.car.position.flatten()) < 240){
 					return stayStill(input); //We there
 				}else{
 					wildfire.renderer.drawLine3d(Color.RED, input.car.position.flatten().toFramework(), target.toFramework());
-					return drivePoint(input, target, false); //We better get there
+					return drivePoint(input, target.withX(Math.max(-600, Math.min(600, target.x))), false); //We better get there!
 				}
 			}
 		}
 
 		//Get back to goal
 		Vector2 homeGoal = Utils.homeGoal(input.car.team);
-		wildfire.renderer.drawString2d("Return", Color.WHITE, new Point(0, 20), 2, 2);
+//		wildfire.renderer.drawString2d("Return", Color.WHITE, new Point(0, 20), 2, 2);
 		return homeGoal.distance(input.car.position.flatten()) < 200 ? stayStill(input) : drivePoint(input, homeGoal, false);
 	}
 

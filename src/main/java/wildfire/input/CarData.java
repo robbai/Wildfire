@@ -13,13 +13,18 @@ public class CarData {
     public final CarOrientation angularVelocity;
     
     public final double boost;
+
+    public final float elapsedSeconds;
     
     public final boolean hasWheelContact;
     public final boolean isSupersonic;
+    public final boolean isDemolished;
+    public final boolean doubleJumped;
     
     public final int team;
+    public final int index;
 
-    public CarData(rlbot.flat.PlayerInfo playerInfo){
+    public CarData(rlbot.flat.PlayerInfo playerInfo, float elapsedSeconds, int index){
         this.position = Vector3.fromFlatbuffer(playerInfo.physics().location());
         this.velocity = Vector3.fromFlatbuffer(playerInfo.physics().velocity());
         
@@ -27,9 +32,17 @@ public class CarData {
         this.angularVelocity = CarOrientation.fromFlatbufferAngularVelocity(playerInfo);
         
         this.boost = playerInfo.boost();
-        this.isSupersonic = playerInfo.isSupersonic();
-        this.team = playerInfo.team();
+        
+        this.elapsedSeconds = elapsedSeconds;
+        
         this.hasWheelContact = playerInfo.hasWheelContact();
+        this.isSupersonic = playerInfo.isSupersonic();
+        this.isDemolished = playerInfo.isDemolished();
+        this.doubleJumped = playerInfo.doubleJumped();
+        
+        this.team = playerInfo.team();
+        this.index = index;
+        
     }
     
     public double forwardMagnitude(){

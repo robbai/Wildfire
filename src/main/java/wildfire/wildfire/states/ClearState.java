@@ -24,7 +24,9 @@ public class ClearState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		if(Utils.isKickoff(input) || Utils.isCarAirborne(input.car) || !Utils.correctSideOfTarget(input.car, input.ball.position)) return false;
+		if(Utils.isKickoff(input) || Utils.isCarAirborne(input.car) || !Utils.correctSideOfTarget(input.car, input.ball.position) || Utils.teamSign(input.car) * input.ball.position.y > 2000){
+			return false;
+		}
 
 		//Check if we have a shot opportunity
 		if(!Utils.isOpponentBehindBall(input) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 2000){
@@ -52,7 +54,7 @@ public class ClearState extends State {
 		double steer = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 				
 		//Dodge or half-flip into the ball
-		if(!hasAction() && input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 500){
+		if(!hasAction() && input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 420){
 			double forwardVelocity = input.car.forwardMagnitude();
 			if(Math.abs(steer) < 0.75 * Math.PI){
 				if(forwardVelocity < 1500) currentAction = new DodgeAction(this, steer, input);
@@ -79,9 +81,9 @@ public class ClearState extends State {
 			//We don't want to wait too long for the ball to reach us
 			double ballTime = Math.abs((input.car.position.y - input.ball.position.y) / input.ball.velocity.y);
 			Vector2 intersect = Utils.traceToY(input.ball.position.flatten(), input.ball.velocity.flatten(), input.car.position.y);
-			if(ballTime < 1.6 && intersect != null){
+			if(ballTime < 1.7 && intersect != null){
 				//Check if our X-coordinate is close-by when we should intersect with the ball's path
-				boolean closeby = Math.abs(input.car.position.x - intersect.x) < 140;
+				boolean closeby = Math.abs(input.car.position.x - intersect.x) < 180;
 				wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten().toFramework(), intersect.toFramework());
 				if(closeby){
 					wildfire.sendQuickChat(QuickChatSelection.Information_InPosition);
@@ -91,7 +93,7 @@ public class ClearState extends State {
 			}
 		}		
 
-		wildfire.renderer.drawString2d("Smack", Color.WHITE, new Point(0, 20), 2, 2);
+//		wildfire.renderer.drawString2d("Smack", Color.WHITE, new Point(0, 20), 2, 2);
 				
 		//Avoid rebounding it off the wall back towards our goal
 		Vector2 wall = Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
@@ -99,7 +101,7 @@ public class ClearState extends State {
 			if(wall.y < Utils.teamSign(input.car) * -2000){
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
 				double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position); 
-				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 2.75)), true);
+				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 3.05)), true);
 			}
 		}
 		
@@ -111,11 +113,11 @@ public class ClearState extends State {
 		float steer = (float)Utils.aim(input.car, point);
 		float throttle = rush ? 1F : (float)Math.signum(Math.cos(steer));
 		boolean reverse = throttle < 0;
-		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic).withSteer(-(reverse ? (float)Utils.invertAim(steer) : steer) * 2F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
+		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic).withSteer(-(reverse ? (float)Utils.invertAim(steer) : steer) * 2F).withSlide(rush && Math.abs(steer) > Math.PI * 0.4);
 	}
 	
 	private ControlsOutput stayStill(DataPacket input){
-		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 100).withBoost(false);
+		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 80).withBoost(false);
 	}
 
 }

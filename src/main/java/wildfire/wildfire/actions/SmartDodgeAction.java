@@ -16,11 +16,12 @@ public class SmartDodgeAction extends Action {
 	
 	private final double maxJumpHeight = 230.76923076923077D, minJumpHeight = 69.23076923076923D;
 	private final double ripperHeight = 31.30D;
+	private final double tick = (1D / 60);
 	
 	/**
 	 * In 2D
 	 */
-	private final double maxTargetDistance = 500D;
+	private final double maxTargetDistance = 420D;
 	
 	private PredictionSlice target = null;
 	private double timePressed, timeToPeak;
@@ -29,7 +30,7 @@ public class SmartDodgeAction extends Action {
 		super("Smart Dodge", state, input.elapsedSeconds);
 		
 		BallPrediction ballPrediction = this.getBallPrediction();
-		if(ballPrediction != null && state.wildfire.lastDodge + 2.5 < timeStarted){
+		if(ballPrediction != null && wildfire.lastDodge + 2.5 < timeStarted){
 			for(int i = 0; i < ballPrediction.slicesLength(); i++){
 				Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 				location = location.plus(input.car.position.minus(location).scaledToMagnitude(Utils.BALLRADIUS));
@@ -39,10 +40,12 @@ public class SmartDodgeAction extends Action {
 				
 				double ballTime = (double)i / 60;
 				double jumpHeight = (location.z - ripperHeight);
-				this.timeToPeak = timeToPeak(jumpHeight, timePressed);
 				
-				if(jumpHeight <= maxJumpHeight && jumpHeight >= minJumpHeight && Math.abs(timeToPeak - (ballTime - 0.1)) < 0.065){
-					this.timePressed = timePressedForHeight(jumpHeight);
+				this.timePressed = timePressedForHeight(jumpHeight);
+				this.timeToPeak = timeToPeak(jumpHeight, timePressed);
+				this.timePressed += tick;
+				
+				if(jumpHeight <= maxJumpHeight && jumpHeight >= minJumpHeight && Math.abs(timeToPeak - (ballTime - 0.15)) < 0.05){
 					this.target = new PredictionSlice(location, i);
 					break;
 				}
@@ -50,7 +53,7 @@ public class SmartDodgeAction extends Action {
 		}
 		
 		this.failed = (target == null);
-		if(!failed) state.wildfire.lastDodge = timeStarted; //No spamming!
+		if(!failed) wildfire.lastDodge = timeStarted; //No spamming!
 	}
 
 	@Override
@@ -58,21 +61,23 @@ public class SmartDodgeAction extends Action {
 		ControlsOutput controller = new ControlsOutput().withBoost(false).withSlide(false).withJump(false).withSteer(0).withPitch(0).withRoll(0).withYaw(0).withThrottle(0);
 		double timeDifference = timeDifference(input.elapsedSeconds);
 		
-		state.wildfire.renderer.drawCrosshair(input.car, this.target.getPosition(), Color.ORANGE, 60);
-		state.wildfire.renderer.drawString2d("Press: " + Utils.round(timePressed) + "s", Color.WHITE, new Point(0, 40), 2, 2);
-		state.wildfire.renderer.drawString2d("Peak: " + Utils.round(timeToPeak) + "s", Color.WHITE, new Point(0, 60), 2, 2);
+		wildfire.renderer.drawCrosshair(input.car, this.target.getPosition(), Color.ORANGE, 60);
+		wildfire.renderer.drawString2d("Press: " + Utils.round(timePressed) + "s", Color.WHITE, new Point(0, 40), 2, 2);
+		wildfire.renderer.drawString2d("Peak: " + Utils.round(timeToPeak) + "s", Color.WHITE, new Point(0, 60), 2, 2);
 		
-		if(!input.car.hasWheelContact && (input.car.velocity.z < 100 || timeDifference > timeToPeak)){
+		if(!input.car.hasWheelContact && (input.car.velocity.z < 50 || timeDifference > timeToPeak)){
 			//Dodge
-			double angle = Utils.aim(input.car, state.wildfire.impactPoint.getPosition().flatten());
+			double angle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 			controller.withJump(System.currentTimeMillis() % 100 > 50);
 	        controller.withYaw((float)-Math.sin(angle));
 	        controller.withPitch((float)-Math.cos(angle)); 
 	        return controller;
 		}else if(timeDifference < timePressed){
-			return controller.withJump(true).withPitch((float)(0.9 - input.car.orientation.noseVector.z)); //Point up
+			return controller.withJump(true);
 		}else if(timeDifference > 2.5 + Math.max(0, timeToPeak)){
 			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+		}else if(input.car.velocity.z > 300){
+			controller.withPitch((float)(0.7 - input.car.orientation.noseVector.z) * 4.5F); //Point up
 		}
 		
 		return controller;
@@ -84,12 +89,12 @@ public class SmartDodgeAction extends Action {
 	}
 	
 	private BallPrediction getBallPrediction(){
-		return this.state.wildfire.ballPrediction;
+		return this.wildfire.ballPrediction;
 	}
 	
 	private double getJumpVelocity(double timePressed){
-//		return Math.pow(1400D * timePressed + 300D, 2) + Utils.GRAVITY * 1400D * timePressed * timePressed;
-		return 300 + 1400 * timePressed - Utils.GRAVITY * timePressed;
+		return Math.sqrt(Math.pow(1400D * timePressed + 300D, 2) - (Utils.GRAVITY * 1400D * Math.pow(timePressed, 2)));
+//		return 300 + 1400 * timePressed - Utils.GRAVITY * timePressed;
 	}
 	
 	private double timeToPeak(double height, double timePressed){
@@ -102,7 +107,7 @@ public class SmartDodgeAction extends Action {
 	 *  since WolframAlpha convinced me it's not worth it rearranging to have gravity on the other side
 	 */
 	private double timePressedForHeight(double h){
-		return 0.1D * Math.sqrt(13D / 105D) * Math.sqrt(h + 60D) - 0.4D;
+		return 0.035186577527449844D * Math.sqrt(h + 60D) - 0.4D;
 	}
 
 }

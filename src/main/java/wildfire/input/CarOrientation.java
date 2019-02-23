@@ -49,7 +49,6 @@ public class CarOrientation {
     }
     
     public DesiredRotation toDesired(){
-//    	return new DesiredRotation((float)noseVector.x, (float)noseVector.y, (float)noseVector.z);
     	return new DesiredRotation((float)eularPitch, (float)eularYaw, (float)eularRoll);
     }
     

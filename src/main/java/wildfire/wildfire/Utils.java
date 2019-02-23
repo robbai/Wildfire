@@ -212,11 +212,11 @@ public class Utils {
 	 * Inspired by the wonderful Darxeal
 	 */
 	public static ControlsOutput driveDownWall(DataPacket input){
-		return new ControlsOutput().withThrottle(1).withBoost(false).withSteer((float)input.car.orientation.eularRoll * 60F);
+		return new ControlsOutput().withThrottle(1).withBoost(false).withSteer((float)input.car.orientation.eularRoll * 160F);
 	}
 	
 	public static boolean isOnWall(CarData car){
-		return car.position.z > 200 && car.hasWheelContact;
+		return car.position.z > 130 && car.hasWheelContact;
 	}
 	
 	public static void transferAction(Action one, Action two){
@@ -227,7 +227,11 @@ public class Utils {
 	 * ATBA controller (no wiggle)
 	 */
 	public static ControlsOutput driveBall(DataPacket input){
-		return new ControlsOutput().withSteer((float)-aim(input.car, input.ball.position.flatten()) * 2F).withBoost(false);
+		return new ControlsOutput().withSteer((float)-aim(input.car, input.ball.position.flatten()) * 2.5F).withBoost(false).withThrottle(1);
+	}
+	
+	public static ControlsOutput atba(DataPacket input, Vector3 target){
+		return new ControlsOutput().withSteer((float)-Math.signum(aim(input.car, target.flatten()))).withBoost(false).withSlide(false).withThrottle(1);
 	}
 	
 	/*
@@ -271,7 +275,7 @@ public class Utils {
 	 * Terrible heuristic, needs to be changed
 	 */
 	public static boolean isEnoughBoostForAerial(CarData car, Vector3 target){
-		return car.boost > 18 && target.distance(car.position) < 135D * car.boost;  
+		return car.boost > 18 && target.distance(car.position) < 115D * car.boost;  
 	}
 	
 	public static boolean isPointWithinRange(Vector2 point, Vector2 target, double minRange, double maxRange){
@@ -297,7 +301,7 @@ public class Utils {
 	}
 	
 	public static boolean isInCone(CarData car, Vector3 target){
-		return isInCone(car, target, 0);
+		return isInCone(car, target, -Utils.BALLRADIUS);
 	}
 	
 	/*
@@ -310,7 +314,7 @@ public class Utils {
 	}
 	
 	public static boolean isTowardsOwnGoal(CarData car, Vector3 target){
-		return isTowardsOwnGoal(car, target, -50);
+		return isTowardsOwnGoal(car, target, Utils.BALLRADIUS);
 	}
 	
 	public static boolean isOpponentBehindBall(DataPacket input){
@@ -397,12 +401,15 @@ public class Utils {
 		return start.confine();
 	}
 	
-	// https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+	/*
+	 *  https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+	 */
 	public static double distanceFromLine(Vector2 point, Vector2 lineA, Vector2 lineB){
 		return Math.abs(point.x * (lineB.y - lineA.y) - point.y * (lineB.x - lineA.x) + lineB.x * lineA.y - lineB.y * lineA.x) / Math.sqrt(Math.pow(lineB.y - lineA.y, 2) + Math.pow(lineB.x - lineA.x, 2));
 	}
+	
 	public static boolean defendNotReturn(DataPacket input, Vector3 impactPoint, double homeZoneSize, boolean onTarget){
-		return onTarget || Utils.teamSign(input.car.team) * input.ball.velocity.y < -1200 || impactPoint.distanceFlat(Utils.homeGoal(input.car.team)) < homeZoneSize;
+		return onTarget || Utils.teamSign(input.car.team) * input.ball.velocity.y < -1600 || impactPoint.distanceFlat(Utils.homeGoal(input.car.team)) < homeZoneSize;
 	}
 
 }

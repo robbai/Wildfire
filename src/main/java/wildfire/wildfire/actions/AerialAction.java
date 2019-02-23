@@ -24,13 +24,13 @@ public class AerialAction extends Action {
 
 	public AerialAction(State state, DataPacket input, boolean doubleJump){
 		super("Aerial", state, input.elapsedSeconds);
-		this.target = state.wildfire.impactPoint.getPosition().plus(offset);
+		this.target = wildfire.impactPoint.getPosition().plus(offset);
 		this.startMidair = !input.car.hasWheelContact;
 		this.doubleJump = !startMidair && doubleJump;
 		
-		this.pitchPID = new PID(state.wildfire.renderer, Color.BLUE, 4, 0, 0.4);
-		this.yawPID = new PID(state.wildfire.renderer, Color.RED, 4.5, 0, 0.6);
-		this.rollPID = new PID(state.wildfire.renderer, Color.YELLOW, 2.4, 0, 0.6);
+		this.pitchPID = new PID(wildfire.renderer, Color.BLUE, 4, 0, 0.4);
+		this.rollPID = new PID(wildfire.renderer, Color.YELLOW, 2.4, 0, 0.6);
+		this.yawPID = new PID(wildfire.renderer, Color.RED, 4.4, 0, 0.9);
 	}
 
 	@Override
@@ -38,7 +38,7 @@ public class AerialAction extends Action {
 		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
 		
 		//Slight offset so we hit the centre
-		Vector3 impactPoint = state.wildfire.impactPoint.getPosition().plus(offset);
+		Vector3 impactPoint = wildfire.impactPoint.getPosition().plus(offset);
 		if(input.ball.velocity.flatten().isZero()){
 			target = input.ball.position.plus(offset);
 		}else if(target != null){
@@ -48,7 +48,7 @@ public class AerialAction extends Action {
 		}
 		
 		//Draw the crosshair
-		state.wildfire.renderer.drawCrosshair(input.car, target, Color.YELLOW, 125);
+		wildfire.renderer.drawCrosshair(input.car, target, Color.YELLOW, 125);
 		
 		ControlsOutput controller = new ControlsOutput().withThrottle(1).withBoost(false);
 		
@@ -70,7 +70,7 @@ public class AerialAction extends Action {
 			boolean pointStraight = (input.car.position.distance(target) / input.car.velocity.magnitude()) < 0.335D && input.car.velocity.magnitude() > 2000;
 			if(pointStraight){
 				//Redraw the crosshair
-				state.wildfire.renderer.drawCrosshair(input.car, target, Color.RED, 150);
+				wildfire.renderer.drawCrosshair(input.car, target, Color.RED, 150);
 			}
 			
 	        //Stay flat by rolling
@@ -84,8 +84,8 @@ public class AerialAction extends Action {
 			Vector3 path = pointStraight ? input.car.orientation.noseVector : simulate(input.car, 1D / 60D).scaledToMagnitude(targetRelative.magnitude());
 			
 			//Rendering
-//			state.wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), targetRelative.scaledToMagnitude(2000).plus(input.car.position).toFramework());
-//			if(!input.car.hasWheelContact && !pointStraight) state.wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.toFramework(), path.scaledToMagnitude(2000).plus(input.car.position).toFramework());
+//			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), targetRelative.scaledToMagnitude(2000).plus(input.car.position).toFramework());
+//			if(!input.car.hasWheelContact && !pointStraight) wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.toFramework(), path.scaledToMagnitude(2000).plus(input.car.position).toFramework());
 			renderFall(Color.PINK, input.car.position, input.car.velocity, null);
 			renderFall(Color.CYAN, input.car.position, input.car.velocity, input.car.orientation.noseVector);
 			
@@ -126,7 +126,7 @@ public class AerialAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return timeDifference(input.elapsedSeconds) * 1000 > 600 + timeStarted && input.car.hasWheelContact && input.car.position.z < 1000;
+		return timeDifference(input.elapsedSeconds) > 0.4 && input.car.hasWheelContact && input.car.position.z < 600;
 	}
 	
 	private Vector3 simulate(CarData car, double scale){
@@ -150,7 +150,7 @@ public class AerialAction extends Action {
 		if(nose != null) velocity = velocity.plus(nose.scaledToMagnitude(1000D * scale)); //Boost
 		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
 		Vector3 next = start.plus(velocity.scaled(scale));
-		state.wildfire.renderer.drawLine3d(colour, start.toFramework(), next.toFramework());
+		wildfire.renderer.drawLine3d(colour, start.toFramework(), next.toFramework());
 		renderFall(colour, next, velocity, nose);
 	}
 

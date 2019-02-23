@@ -50,13 +50,12 @@ public class WallHitState extends State {
 			}else{
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.CYAN, 125);
 				Vector3 localTarget = local(input.car, wildfire.impactPoint.getPosition());
-				wildfire.renderer.drawString2d("Local = " + localTarget.toString(), Color.WHITE, new Point(0, 20), 2, 2);
 				
 				Vector2 forward = new Vector2(0, 1);
 				double aim = forward.correctionAngle(localTarget.flatten());
 				
 				//Dodge
-				if((localTarget.z > 130 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 400 : 200)){
+				if((localTarget.z > 130 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 460 : 260)){
 					currentAction = new DodgeAction(this, aim, input);
 					if(!currentAction.failed){
 						if(input.car.position.z > 1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
@@ -64,7 +63,7 @@ public class WallHitState extends State {
 					}
 				}
 				
-				return new ControlsOutput().withThrottle(1).withBoost(Math.abs(aim) < 0.3).withSteer((float)-aim * 2F).withSlide(false);
+				return new ControlsOutput().withThrottle(1).withBoost(Math.abs(aim) < 0.2).withSteer((float)-aim * 3F).withSlide(false);
 			}
 		}else{
 			//Drive towards the wall
@@ -74,8 +73,8 @@ public class WallHitState extends State {
 				wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Information_Incoming);
 			}
 			
-			boolean sideWall = (Utils.PITCHWIDTH - Math.abs(wildfire.impactPoint.getPosition().x) < maxWallDistance);
-			boolean backWall = (Utils.PITCHLENGTH - Math.abs(wildfire.impactPoint.getPosition().y) < maxWallDistance);
+			boolean sideWall = (Utils.PITCHWIDTH - Math.abs(wildfire.impactPoint.getPosition().x) < maxWallDistance + 50);
+			boolean backWall = (Utils.PITCHLENGTH - Math.abs(wildfire.impactPoint.getPosition().y) < maxWallDistance + 50);
 			
 			Vector2 destination = wildfire.impactPoint.getPosition().minus(input.car.position).scaled(100).plus(input.car.position).flatten();
 			if(sideWall) destination = destination.withY(input.car.position.y);
@@ -105,7 +104,7 @@ public class WallHitState extends State {
 			}
 			
 			if(reverse) steer = (float)Utils.invertAim(steer);
-			return new ControlsOutput().withThrottle(reverse ? -1 : 1).withBoost(Math.abs(steer) < 0.2).withSteer(-steer * 2F).withSlide(!reverse && Math.abs(steer) > Math.PI * 0.6);
+			return new ControlsOutput().withThrottle(reverse ? -1 : 1).withBoost(Math.abs(steer) < 0.1).withSteer(-steer * 3F).withSlide(!reverse && Math.abs(steer) > Math.PI * 0.6);
 		}
 	}
 	

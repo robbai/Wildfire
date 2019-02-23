@@ -23,12 +23,12 @@ public class DataPacket {
         //Get all the cars
         this.cars = new CarData[request.playersLength()];
         for(int i = 0; i < request.playersLength(); i++){
-            this.cars[i] = new CarData(request.players(i));
+            this.cars[i] = new CarData(request.players(i), elapsedSeconds, i);
         }
         
         //This bot's info
         this.playerIndex = playerIndex;
-        this.car = new CarData(request.players(playerIndex));
+        this.car = new CarData(request.players(playerIndex), elapsedSeconds, playerIndex);
     }
     
 }

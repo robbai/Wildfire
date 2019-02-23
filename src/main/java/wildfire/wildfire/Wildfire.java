@@ -21,12 +21,14 @@ import wildfire.wildfire.obj.StateSettingManager;
 import wildfire.wildfire.obj.WRenderer;
 import wildfire.wildfire.states.BoostState;
 import wildfire.wildfire.states.ClearState;
+import wildfire.wildfire.states.DemoState;
 import wildfire.wildfire.states.FallbackState;
 import wildfire.wildfire.states.KickoffState;
 import wildfire.wildfire.states.PathState;
 import wildfire.wildfire.states.ReturnState;
 import wildfire.wildfire.states.ShadowState;
 import wildfire.wildfire.states.ShootState;
+import wildfire.wildfire.states.IdleState;
 import wildfire.wildfire.states.WaitState;
 import wildfire.wildfire.states.WallHitState;
 
@@ -57,7 +59,7 @@ public class Wildfire implements Bot {
 	public float lastDodge = 0;
 	
 	//Measured in milliseconds
-	private final long quickChatCooldown = 60000L;
+	private final long quickChatCooldown = 40000L;
 	private long lastQuickChat = 0L;
 
     public Wildfire(int playerIndex, int team, boolean test){
@@ -68,6 +70,7 @@ public class Wildfire implements Bot {
         
         //Initialise all the states
         states = new ArrayList<State>();
+        new IdleState(this);
         new KickoffState(this);
         new WallHitState(this);
         new WaitState(this);
@@ -76,6 +79,7 @@ public class Wildfire implements Bot {
         new ReturnState(this);
         new BoostState(this);
         new PathState(this);
+        new DemoState(this);
         new ShadowState(this);
         fallbackState = new FallbackState(this);
         
@@ -84,24 +88,15 @@ public class Wildfire implements Bot {
 //        new TestState(this);
 //     	  new TestState2(this);
 //        fallbackState = new CircleState(this);
-//        fallbackState = new StayStillState(this);
 //        fallbackState = new PathState(this);
+//        fallbackState = new DemoState(this);
     }
 
     private ControlsOutput processInput(DataPacket input){
     	//Get a renderer
-    	renderer = new WRenderer(this, isTestVersion(), isTestVersion());
-//    	renderer = new WRenderer(this, false, false);
+    	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	//Bezier
-//    	for(CarData car : input.cars){
-//    		Vector2 trace = Utils.traceToY(car.position.flatten(), input.ball.position.minus(car.position).flatten(), Utils.PITCHLENGTH * Utils.teamSign(car));
-//    		double offset = (trace == null ? 2000 : Math.max(0, Math.abs(trace.x) - Utils.GOALHALFWIDTH) / 4);
-//	    	BezierCurve bezier = new BezierCurve(car.position.flatten(), input.ball.position.plus(input.ball.position.minus(Utils.enemyGoal(car.team).withZ(0)).scaledToMagnitude(offset)).flatten().confine(), input.ball.position.flatten());
-//	    	bezier.render(BotLoopRenderer.forBotLoop(this), car.team == 0 ? Color.BLUE : Color.ORANGE);
-//    	}
-    	
-//    	stateSetting.orientationController(input);
+//    	stateSetting.recovery(input);
     	
     	//Get the ball prediction
     	try{
@@ -113,7 +108,13 @@ public class Wildfire implements Bot {
     	//GG
     	if(input.gameInfo.isMatchEnded()){
     		try{
-				if(lastQuickChat != -1) RLBotDll.sendQuickChat(this.playerIndex, false, QuickChatSelection.PostGame_Gg);
+				if(lastQuickChat != -1){
+					if(Utils.isTeammateCloser(input)){
+						RLBotDll.sendQuickChat(this.playerIndex, false, (new Random()).nextBoolean() ? QuickChatSelection.PostGame_ThatWasFun : QuickChatSelection.PostGame_WhatAGame);
+					}else{
+						RLBotDll.sendQuickChat(this.playerIndex, false, QuickChatSelection.PostGame_Gg);
+					}
+				}
 				lastQuickChat = -1;
 			}catch(Exception e){
 				e.printStackTrace();
@@ -201,7 +202,11 @@ public class Wildfire implements Bot {
 	@Override
     public ControllerState processInput(GameTickPacket packet){
         if(packet.playersLength() <= playerIndex || packet.ball() == null) return new ControlsOutput();
-        BoostManager.loadGameTickPacket(packet);
+        try{
+        	BoostManager.loadGameTickPacket(packet);
+        }catch(Exception e){
+        	System.err.println("Those dang contributors broke the boost pads :(");
+        }
         DataPacket dataPacket = new DataPacket(packet, playerIndex);
         return processInput(dataPacket);
     }

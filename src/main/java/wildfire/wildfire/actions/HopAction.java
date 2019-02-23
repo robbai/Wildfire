@@ -37,7 +37,7 @@ public class HopAction extends Action {
 		
 		if(timeDifference <= throttleTime){
 			controller.withThrottle((float)-Math.signum(input.car.forwardMagnitude()));
-		}else if(timeDifference < throttleTime + 40){
+		}else if(timeDifference < throttleTime + 30){
 			controller.withJump(true);
 		}else{
 			double targetAngle = Utils.aim(input.car, target);
@@ -49,7 +49,7 @@ public class HopAction extends Action {
 			controller.withRoll((float)input.car.orientation.rightVector.z * 0.5F);
 
 			//Avoid turtling 
-			controller.withThrottle(timeDifference > 2000 ? 1 : 0);
+			controller.withThrottle(timeDifference > Math.min(440, throttleTime + 120) ? 1 : 0);
 		}
 		return controller;
 	}

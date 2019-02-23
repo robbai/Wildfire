@@ -13,10 +13,10 @@ public class HalfFlipAction extends Action {
 		super("Half Flip", state, elapsedSeconds);
 		
 		//No spamming!
-		if(state.wildfire.lastDodge + 2 > timeStarted){
+		if(wildfire.lastDodge + 2 > timeStarted){
 			failed = true; 
 		}else{
-			state.wildfire.lastDodge = timeStarted;
+			wildfire.lastDodge = timeStarted;
 		}
 	}
 

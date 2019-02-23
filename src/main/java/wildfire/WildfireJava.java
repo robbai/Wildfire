@@ -18,12 +18,14 @@ import wildfire.util.PortReader;
 public class WildfireJava {
 
     public static void main(String[] args){
+    	//Bot Manager
         BotManager botManager = new BotManager();
         PythonInterface pythonInterface = new WildfirePythonInterface(botManager);
         Integer port = PortReader.readPortFromFile("port.cfg");
         PythonServer pythonServer = new PythonServer(pythonInterface, port);
         pythonServer.start();
         
+        //JFrame
         JFrame frame = new JFrame("Wildfire");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JPanel panel = new JPanel();
@@ -40,9 +42,9 @@ public class WildfireJava {
             Set<Integer> runningBotIndices = botManager.getRunningBotIndices();
             OptionalInt maxIndex = runningBotIndices.stream().mapToInt(k -> k).max();
             String botsStr = "None";
-            if (maxIndex.isPresent()) {
+            if(maxIndex.isPresent()){
                 StringBuilder botsStrBuilder = new StringBuilder();
-                for (int i = 0; i <= maxIndex.getAsInt(); i++) {
+                for(int i = 0; i <= maxIndex.getAsInt(); i++){
                     botsStrBuilder.append(runningBotIndices.contains(i) ? "(true) " : "(false) ");
                 }
                 botsStr = botsStrBuilder.toString();

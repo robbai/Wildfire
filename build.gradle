@@ -10,7 +10,7 @@ repositories {
     jcenter()
 }
 
-mainClassName = 'rlbotexample.WildfireJava'
+mainClassName = 'wildfire.WildfireJava'
 
 // This directory will be created and the interface dll copied into it at runtime.
 // The end result is that the interface dll will be available for loading.

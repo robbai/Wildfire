@@ -1,6 +1,7 @@
-.idea/
+.gradle
+.settings/
+bin/
 out/
 build/
-.gradle
 __pycache__
 *.iml

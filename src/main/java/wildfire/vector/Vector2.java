@@ -117,6 +117,10 @@ public class Vector2 {
 		return this.confine(border, border);
 	}
 	
+	public Vector2 confine(Vector2 border){
+		return this.confine(border.x, border.y);
+	}
+	
 	public Vector2 withX(double x){
 		return new Vector2(x, this.y);
 	}

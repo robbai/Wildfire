@@ -29,8 +29,8 @@ public class JumpAction extends Action {
 		if(timeDifference(input.elapsedSeconds) * 1000 > jumpTime * 1000D + tick){
 			Utils.transferAction(this, new RecoveryAction(state, input.elapsedSeconds));
 		}
-		state.wildfire.renderer.drawString2d("Height: " + (int)height + "uu", Color.WHITE, new Point(0, 40), 2, 2);
-		state.wildfire.renderer.drawString2d("Jump: " + (int)jumpTime + "ms", Color.WHITE, new Point(0, 60), 2, 2);
+		wildfire.renderer.drawString2d("Height: " + (int)height + "uu", Color.WHITE, new Point(0, 40), 2, 2);
+		wildfire.renderer.drawString2d("Jump: " + (int)jumpTime + "ms", Color.WHITE, new Point(0, 60), 2, 2);
 		return new ControlsOutput().withBoost(false).withThrottle(0).withJump(true);
 	}
 
