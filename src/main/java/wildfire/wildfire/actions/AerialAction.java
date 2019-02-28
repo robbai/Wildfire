@@ -30,7 +30,7 @@ public class AerialAction extends Action {
 		
 		this.pitchPID = new PID(wildfire.renderer, Color.BLUE, 4, 0, 0.4);
 		this.rollPID = new PID(wildfire.renderer, Color.YELLOW, 2.4, 0, 0.6);
-		this.yawPID = new PID(wildfire.renderer, Color.RED, 4.4, 0, 0.9);
+		this.yawPID = new PID(wildfire.renderer, Color.RED, 4.4, 0, 1.1);
 	}
 
 	@Override

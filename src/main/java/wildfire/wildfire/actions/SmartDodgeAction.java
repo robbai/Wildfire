@@ -21,7 +21,7 @@ public class SmartDodgeAction extends Action {
 	/**
 	 * In 2D
 	 */
-	private final double maxTargetDistance = 420D;
+	private final double maxTargetDistance = 460D;
 	
 	private PredictionSlice target = null;
 	private double timePressed, timeToPeak;
@@ -45,7 +45,7 @@ public class SmartDodgeAction extends Action {
 				this.timeToPeak = timeToPeak(jumpHeight, timePressed);
 				this.timePressed += tick;
 				
-				if(jumpHeight <= maxJumpHeight && jumpHeight >= minJumpHeight && Math.abs(timeToPeak - (ballTime - 0.15)) < 0.05){
+				if(jumpHeight <= maxJumpHeight && jumpHeight >= minJumpHeight && Math.abs(timeToPeak - (ballTime - 0.12)) < 0.04){
 					this.target = new PredictionSlice(location, i);
 					break;
 				}
@@ -65,7 +65,7 @@ public class SmartDodgeAction extends Action {
 		wildfire.renderer.drawString2d("Press: " + Utils.round(timePressed) + "s", Color.WHITE, new Point(0, 40), 2, 2);
 		wildfire.renderer.drawString2d("Peak: " + Utils.round(timeToPeak) + "s", Color.WHITE, new Point(0, 60), 2, 2);
 		
-		if(!input.car.hasWheelContact && (input.car.velocity.z < 50 || timeDifference > timeToPeak)){
+		if(!input.car.hasWheelContact && (input.car.velocity.z < -50 || timeDifference > timeToPeak)){
 			//Dodge
 			double angle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 			controller.withJump(System.currentTimeMillis() % 100 > 50);

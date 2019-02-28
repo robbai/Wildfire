@@ -17,7 +17,7 @@ import wildfire.wildfire.obj.State;
 
 public class FallbackState extends State {
 	
-	private int targetPly = 6;
+	private final int targetPly = 7;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);
@@ -98,7 +98,7 @@ public class FallbackState extends State {
 		
 		double distance = impactPoint.distanceFlat(start);
 		
-		Vector2 end = impactPoint.flatten().plus(impactPoint.flatten().minus(goal).scaledToMagnitude(distance * 0.39));
+		Vector2 end = impactPoint.flatten().plus(impactPoint.flatten().minus(goal).scaledToMagnitude(distance * 0.36));
 		end = start.plus(end.minus(start).scaled(0.2)).confine(35, 50);
 		
 		//Clamp the X when stuck in goal

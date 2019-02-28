@@ -20,9 +20,9 @@ public class ReturnState extends State {
 	private final double maxAttackingAngle = 0.5 * Math.PI;
 	
 	/*How small the difference of the angle from the attacker to the ball and the attacker to the goal has to be*/
-	private final double maxShootingAngle = 0.4 * Math.PI;
+	private final double maxShootingAngle = 0.45 * Math.PI;
 	
-	private final double homeZoneSize = 3500D;
+	private final double homeZoneSize = 3650D;
 
 	public ReturnState(Wildfire wildfire){
 		super("Return", wildfire);
@@ -106,7 +106,7 @@ public class ReturnState extends State {
 					return stayStill(input); //We there
 				}else{
 					wildfire.renderer.drawLine3d(Color.RED, input.car.position.flatten().toFramework(), target.toFramework());
-					return drivePoint(input, target.withX(Math.max(-600, Math.min(600, target.x))), false); //We better get there!
+					return drivePoint(input, target.withX(Math.max(-500, Math.min(500, target.x))), false); //We better get there!
 				}
 			}
 		}
@@ -118,7 +118,7 @@ public class ReturnState extends State {
 	}
 
 	private CarData getAttacker(DataPacket input){
-		double shortestDistance = 4000;
+		double shortestDistance = 4500;
 		CarData attacker = null;
 		for(CarData c : input.cars){
 			if(c == null || c.team == input.car.team) continue;
@@ -140,8 +140,9 @@ public class ReturnState extends State {
 	private ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
 		float steer = (float)Utils.aim(input.car, point);
 		float throttle = rush ? 1F : (float)Math.signum(Math.cos(steer));
+		double distance = input.car.position.distanceFlat(point);
 		boolean reverse = throttle < 0;
-		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic).withSteer(-(reverse ? (float)Utils.invertAim(steer) : steer) * 2F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
+		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > 900).withSteer(-(reverse ? (float)Utils.invertAim(steer) : steer) * 2F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
 	}
 	
 	private ControlsOutput stayStill(DataPacket input){

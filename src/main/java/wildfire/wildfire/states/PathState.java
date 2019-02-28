@@ -18,7 +18,7 @@ public class PathState extends State {
 	 * Fresh and new path planning state
 	 */
 		
-	private final int maxPathLength = 100, targetPly = 12;
+	private final int maxPathLength = 100, targetPly = 9;
 	private final Vector2 confineBorder = new Vector2(150, 240);
 	private final double steerMultiplier = -2.75;
 	

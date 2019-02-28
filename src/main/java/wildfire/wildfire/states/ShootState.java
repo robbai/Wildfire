@@ -29,7 +29,7 @@ public class ShootState extends State {
 		if(Utils.isOnTarget(wildfire.ballPrediction, input.car.team) && Math.abs(input.car.position.y) > 4500) return false;
 		
 		//Not while the ball is being awkward
-		if(wildfire.impactPoint.getPosition().z > 300) return false;
+		if(wildfire.impactPoint.getPosition().z > 220) return false;
 		
 		//Not during a weird dribble
 		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 110 && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 6000){
@@ -38,7 +38,7 @@ public class ShootState extends State {
 		
 		double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(Math.abs(aimBall) > Math.PI * 0.7 && input.car.velocity.magnitude() > 1100) return false;
-		return Utils.isInCone(input.car, wildfire.impactPoint.getPosition());
+		return Utils.isInCone(input.car, wildfire.impactPoint.getPosition(), -120);
 	}
 
 	@Override
@@ -57,9 +57,9 @@ public class ShootState extends State {
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 					
 					double forwardVelocity = input.car.forwardMagnitude();
-					if(forwardVelocity > 50 && wildfire.impactPoint.getPosition().z - input.car.position.z > 250){
+					if(forwardVelocity > 0 && wildfire.impactPoint.getPosition().z - input.car.position.z > 200){
 						currentAction = new SmartDodgeAction(this, input);
-					}else if(forwardVelocity > 800){
+					}else if(forwardVelocity > 1200){
 						currentAction = new DodgeAction(this, steerImpact, input);
 					}
 				}

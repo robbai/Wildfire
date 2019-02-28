@@ -32,14 +32,14 @@ public class RecoveryAction extends Action {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		//whatisaphone's Secret Recipe
-		boolean boostDown = (Utils.timeToHitGround(input.car) > (input.car.doubleJumped ? 0.45 : 0.55) && input.car.boost > 5 && Utils.distanceToWall(input.car.position) > 100 && input.car.position.z > 300);
+		boolean boostDown = (Utils.timeToHitGround(input.car) > (input.car.doubleJumped ? 0.475 : 0.575) && input.car.boost > 5 && Utils.distanceToWall(input.car.position) > 100 && input.car.position.z > 300);
 		
 		double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
 		wildfire.renderer.drawString2d("Coefficient: " + Utils.round(angularCoefficient), Color.WHITE, new Point(0, 40), 2, 2);
 				
 		double yaw = 0;
 		
-		boolean planWaveDash = (!input.car.doubleJumped && !boostDown && input.car.velocity.z < -20 && input.car.orientation.roofVector.normalized().z > 0.4);
+		boolean planWaveDash = (!input.car.doubleJumped && !boostDown && input.car.velocity.z < -220 && input.car.orientation.roofVector.normalized().z > 0.6);
 		wildfire.renderer.drawString2d("Plan Wave-Dash: " + planWaveDash, Color.WHITE, new Point(0, 60), 2, 2);
 		
 		if(input.car.position.z > 140){

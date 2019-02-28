@@ -18,7 +18,7 @@ import wildfire.wildfire.obj.State;
 
 public class BoostState extends State {
 
-	private double maxBoost = 40;
+	private double maxBoost = 32;
 	private BoostPad boost = null;
 
 	public BoostState(Wildfire wildfire){
@@ -28,7 +28,7 @@ public class BoostState extends State {
 	@Override
 	public boolean ready(DataPacket input){
 		//World's longest line
-		if(input.car.boost > maxBoost || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2200 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 3800 || Math.abs(wildfire.impactPoint.getPosition().x) < 1400 || input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten()) > 2000 || (Utils.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 6800) || Math.abs(input.car.position.y) > Utils.PITCHLENGTH){
+		if(input.car.boost > maxBoost || Utils.isKickoff(input) || input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2200 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 3900 || Math.abs(wildfire.impactPoint.getPosition().x) < 1500 || input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten()) > 2000 || (Utils.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 6800) || Math.abs(input.car.position.y) > Utils.PITCHLENGTH){
 			return false;
 		}
 		boost = getBoost(input);
@@ -37,7 +37,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean expire(DataPacket input){
-		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 3600 || Math.abs(wildfire.impactPoint.getPosition().x) < 1000;
+		return boost == null || !boost.isActive() || Utils.isKickoff(input) || input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) < 3600 || Math.abs(wildfire.impactPoint.getPosition().x) < 1200;
 	}
 
 	@Override
@@ -87,17 +87,19 @@ public class BoostState extends State {
 	}
 
 	private BoostPad getBoost(DataPacket input){
-		double maxDistance = input.car.position.distanceFlat(input.ball.position) + 1000;
-		boolean discardSpeed = input.car.velocity.magnitude() < 800;
+//		double maxDistance = input.car.position.distanceFlat(input.ball.position) + 1000;
+		double maxDistance = (input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) + 800);
+		boolean discardSpeed = (input.car.velocity.magnitude() < 800);
 		
 		double bestDistance = 0;
 		BoostPad bestBoost = null;
 		for(BoostPad boost : BoostManager.getFullBoosts()){
-			double distance = boost.getLocation().distanceFlat(input.car.position);
+//			double distance = boost.getLocation().distanceFlat(input.car.position);
+			double distance = boost.getLocation().distanceFlat(wildfire.impactPoint.getPosition());
 			if(distance > maxDistance || !boost.isActive()) continue;
 			if(Math.signum(boost.getLocation().y - input.ball.position.y) == Utils.teamSign(input.car)) continue;
 			
-			if(!discardSpeed && input.car.magnitudeInDirection(boost.getLocation().minus(input.car.position).flatten()) > -250) continue;
+			if(!discardSpeed && input.car.magnitudeInDirection(boost.getLocation().minus(input.car.position).flatten()) < -250) continue;
 			
 			if(bestBoost == null || distance < bestDistance){
 				bestBoost = boost;

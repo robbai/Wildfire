@@ -18,7 +18,7 @@ import wildfire.wildfire.obj.State;
 
 public class WallHitState extends State {
 	
-	private final double maxWallDistance = 250;
+	private final double maxWallDistance = 240;
 
 	public WallHitState(Wildfire wildfire){
 		super("Wall Hit", wildfire);
@@ -78,7 +78,7 @@ public class WallHitState extends State {
 			
 			Vector2 destination = wildfire.impactPoint.getPosition().minus(input.car.position).scaled(100).plus(input.car.position).flatten();
 			if(sideWall) destination = destination.withY(input.car.position.y);
-			if(backWall) destination = destination.withX(Math.abs(wildfire.impactPoint.getPosition().x) > 1200 ? wildfire.impactPoint.getPosition().x : Math.signum(wildfire.impactPoint.getPosition().x) * 1200);
+			if(backWall) destination = destination.withX(Math.abs(wildfire.impactPoint.getPosition().x) > 1400 ? wildfire.impactPoint.getPosition().x : Math.signum(wildfire.impactPoint.getPosition().x) * 1400);
 			
 			float steer = (float)Utils.aim(input.car, destination);
 			boolean reverse = false;
@@ -113,7 +113,7 @@ public class WallHitState extends State {
 		
 		boolean backWall = (target.y * Utils.teamSign(car) < -4400);
 		
-		if(target.z < Math.max(backWall ? 250 : 400, car.position.distanceFlat(target) / 6)) return false;
+		if(target.z < Math.max(backWall ? 380 : 400, car.position.distanceFlat(target) / 5)) return false;
 		if(Math.abs(target.y) < 4350) return true;
 		
 		//Away from our back wall

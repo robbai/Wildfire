@@ -70,15 +70,15 @@ public class Wildfire implements Bot {
         
         //Initialise all the states
         states = new ArrayList<State>();
-        new IdleState(this);
+        if(!isTestVersion()) new IdleState(this);
         new KickoffState(this);
         new WallHitState(this);
         new WaitState(this);
         new ShootState(this);
         new ClearState(this);
         new ReturnState(this);
-        new BoostState(this);
         new PathState(this);
+        new BoostState(this);
         new DemoState(this);
         new ShadowState(this);
         fallbackState = new FallbackState(this);
