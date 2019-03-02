@@ -83,7 +83,7 @@ public class ClearState extends State {
 			Vector2 intersect = Utils.traceToY(input.ball.position.flatten(), input.ball.velocity.flatten(), input.car.position.y);
 			if(ballTime < 1.7 && intersect != null){
 				//Check if our X-coordinate is close-by when we should intersect with the ball's path
-				boolean closeby = Math.abs(input.car.position.x - intersect.x) < 180;
+				boolean closeby = (Math.abs(input.car.position.x - intersect.x) < 160);
 				wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten().toFramework(), intersect.toFramework());
 				if(closeby){
 					wildfire.sendQuickChat(QuickChatSelection.Information_InPosition);
@@ -101,7 +101,7 @@ public class ClearState extends State {
 			if(wall.y < Utils.teamSign(input.car) * -2000){
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
 				double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position); 
-				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 3.15)), true);
+				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 3.35)), true);
 			}
 		}
 		

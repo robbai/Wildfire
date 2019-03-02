@@ -1,8 +1,10 @@
 package wildfire.wildfire.states;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.util.ArrayList;
 
+import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
@@ -18,9 +20,9 @@ public class PathState extends State {
 	 * Fresh and new path planning state
 	 */
 		
-	private final int maxPathLength = 100, targetPly = 9;
+	private final int maxPathLength = 100;
 	private final Vector2 confineBorder = new Vector2(150, 240);
-	private final double steerMultiplier = -2.75;
+	private final double steerMultiplier = -3;
 	
 	private ArrayList<Vector2> path;
 
@@ -31,6 +33,11 @@ public class PathState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
+		//This is to avoid starting a path when there is a shooter
+		if(Utils.closestOpponentDistance(input, input.ball.position) < 1000 && Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < 2000 && Utils.isOpponentBehindBall(input)){
+			return false;
+		}
+		
 		if(!requirements(input)) return false;
 		
 		//Generate the path
@@ -38,6 +45,13 @@ public class PathState extends State {
 				
 		//Good/bad path
 		return path.size() < maxPathLength + 2;
+	}
+	
+	@Override
+	public boolean expire(DataPacket input){	
+		if(!requirements(input)) return true;
+		generatePath(input);
+		return path.size() >= maxPathLength + 2;
 	}
 
 	@Override
@@ -51,16 +65,22 @@ public class PathState extends State {
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
 		
+		boolean cone = Utils.isInCone(input.car, wildfire.impactPoint.getPosition());
+		wildfire.renderer.drawString2d("Path Size: " + path.size(), Color.WHITE, new Point(0, 20), 2, 2);
+		wildfire.renderer.drawLine3d((cone ? Color.GREEN : Color.YELLOW), input.car.position.flatten().toFramework(), Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).toFramework());
+		
 		//Impact point
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.WHITE, 90);
 		
 		//Make a target from the path
+		int targetPly = getTargetPly(input.car) - 2;
+		wildfire.renderer.drawString2d("Target Ply: " + targetPly, Color.WHITE, new Point(0, 40), 2, 2);
 		Vector2 target = (path.size() >= targetPly ? path.get(path.size() - targetPly) : path.get(0));
-		wildfire.renderer.drawCircle(input.car.team == 0 ? Color.CYAN : Color.RED, target, 20);
+		wildfire.renderer.drawCircle(input.car.team == 0 ? Color.CYAN : Color.RED, target, 15);
 		
 		double distanceImpact = input.car.position.distanceFlat(wildfire.impactPoint.getPosition());
 		double steer = Utils.aim(input.car, target);
-		return new ControlsOutput().withSteer((float)(steer * steerMultiplier)).withThrottle(1).withBoost(!input.car.isSupersonic && Math.abs(steer) < 0.2 && distanceImpact > 1100);
+		return new ControlsOutput().withSteer((float)(steer * steerMultiplier)).withThrottle(1).withBoost(!input.car.isSupersonic && Math.abs(steer) < 0.08 && (distanceImpact > 1700 || cone));
 	}
 
 	private void generatePath(DataPacket input){
@@ -74,7 +94,7 @@ public class PathState extends State {
 		start = start.plus(start.minus(Utils.enemyGoal(input.car.team)).scaledToMagnitude(Math.min(475, start.distance(finish) / 2))).confine(confineBorder);
 		path.add(start);
 		
-		double velocity = input.car.velocity.magnitude();
+		double velocity = Math.max(input.car.velocity.magnitude(), 1410);
 		double scale = 0.03;
 		
 		Vector2 rotation = wildfire.impactPoint.getPosition().flatten().minus(Utils.enemyGoal(input.car.team)).scaledToMagnitude(velocity * scale);
@@ -91,12 +111,23 @@ public class PathState extends State {
 		}
 	}
 	
+	private int getTargetPly(CarData car){
+		double velocity = car.velocity.magnitude();
+		if(velocity < 1500){
+			return 10;
+		}else if(velocity < 1900){
+			return 10 + (int)(((velocity - 1500) / 300) * 3); //Max 13
+		}else{
+			return 13 + (int)(((velocity - 1900) / 400) * 4); //Max 17
+		}
+	}
+	
 	private boolean requirements(DataPacket input){
-		if(Utils.isBallAirborne(input.ball) || Utils.isKickoff(input) || Utils.distanceToWall(input.car.position) < 350 || input.car.magnitudeInDirection(input.ball.position.minus(input.car.position).flatten()) < -800) return false;
+		if(Utils.isBallAirborne(input.ball) || input.ball.velocity.flatten().magnitude() > 3000 || Utils.isKickoff(input) || Utils.distanceToWall(input.car.position) < 350 || input.car.magnitudeInDirection(input.ball.position.minus(input.car.position).flatten()) < -800) return false;
 		
 		//This state isn't exactly the best defence
 		if(Utils.isOnTarget(wildfire.ballPrediction, input.car.team)) return false;
-		if(Utils.teamSign(input.car) * input.ball.velocity.y < -1500) return false;
+		if(Utils.teamSign(input.car) * input.ball.velocity.y < (Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) ? -1500 : -900)) return false;
 		if(Utils.teamSign(input.car) * input.ball.position.y < -3200 && Math.abs(wildfire.impactPoint.getPosition().x) < 1700){
 			return false;
 		}

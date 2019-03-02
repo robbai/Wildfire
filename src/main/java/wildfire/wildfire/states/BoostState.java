@@ -58,13 +58,13 @@ public class BoostState extends State {
 		double distance = input.car.position.distanceFlat(boostLocation);
 		double steer = Utils.aim(input.car, boostLocation);
 		
-		if(distance > 2000) wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
+		if(distance > 2000 && input.car.velocity.magnitude() < 1000) wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		
 		double forwardVelocity = input.car.forwardMagnitude();
 		if(!hasAction() && input.car.hasWheelContact && distance > 2200 && !input.car.isSupersonic){			
 			if(Math.abs(steer) < 0.2 && forwardVelocity > 800){
 				currentAction = new DodgeAction(this, steer, input);
-			}else if(Math.abs(steer) > 0.85 * Math.PI && forwardVelocity < -800){
+			}else if(Math.abs(steer) > 0.9 * Math.PI && forwardVelocity < -800){
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
@@ -97,7 +97,7 @@ public class BoostState extends State {
 //			double distance = boost.getLocation().distanceFlat(input.car.position);
 			double distance = boost.getLocation().distanceFlat(wildfire.impactPoint.getPosition());
 			if(distance > maxDistance || !boost.isActive()) continue;
-			if(Math.signum(boost.getLocation().y - input.ball.position.y) == Utils.teamSign(input.car)) continue;
+			if(boost.getLocation().y * Utils.teamSign(input.car) > wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car)) continue;
 			
 			if(!discardSpeed && input.car.magnitudeInDirection(boost.getLocation().minus(input.car.position).flatten()) < -250) continue;
 			

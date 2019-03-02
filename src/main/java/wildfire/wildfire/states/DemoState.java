@@ -41,6 +41,8 @@ public class DemoState extends State {
 		target = getTarget(input);
 		
 		if(target != null){
+			if(target.position.isOutOfBounds()) return false;
+			
 			//Run-up
 			if(target.position.distance(input.car.position) < 2800) return false;
 			
@@ -146,7 +148,7 @@ public class DemoState extends State {
 		//Stuck in goal
 		Vector2 target = impact.flatten();
 		if(Math.max(Math.abs(target.y), Math.abs(input.car.position.y)) > Utils.PITCHLENGTH){
-			target = new Vector2(Utils.clamp(target.x, -600, 600), Utils.clamp(target.y, -Utils.PITCHLENGTH + 200, Utils.PITCHLENGTH - 200));
+			target = new Vector2(Utils.clamp(target.x, -600, 600), target.y);
 		}
 		
 		//Controls

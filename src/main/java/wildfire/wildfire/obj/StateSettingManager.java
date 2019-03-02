@@ -107,6 +107,7 @@ public class StateSettingManager {
 			carState.withPhysics(carPhysics);
 			gameState.withCarState(input.playerIndex, carState);
 			
+			RLBotDll.setGameState(gameState.buildPacket());
 			resetCooldown(input.elapsedSeconds);
 		}
 	}
@@ -123,6 +124,19 @@ public class StateSettingManager {
 		}
 		gameState.withBallState(new BallState().withPhysics(ballPhysics));		
 		RLBotDll.setGameState(gameState.buildPacket());    	
+	}
+
+	public void path(DataPacket input){
+		if(!input.ball.velocity.isZero() || getCooldown(input) > 20){
+			final double border = 1000;
+					
+			GameState gameState = new GameState();
+			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(new Vector3().toDesired()).withLocation(new Vector3(Utils.random(-Utils.PITCHWIDTH + border, Utils.PITCHWIDTH - border), Utils.random(-Utils.PITCHLENGTH + border, Utils.PITCHLENGTH - border), Utils.BALLRADIUS).toDesired())));
+			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(new Vector3().toDesired()).withLocation(new Vector3(Utils.random(-Utils.PITCHWIDTH + border, Utils.PITCHWIDTH - border), Utils.random(-Utils.PITCHLENGTH + border, Utils.PITCHLENGTH - border), 20).toDesired())));
+			
+			RLBotDll.setGameState(gameState.buildPacket());
+			resetCooldown(input.elapsedSeconds);
+		}
 	}
 
 }

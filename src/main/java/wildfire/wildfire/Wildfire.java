@@ -96,7 +96,7 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	stateSetting.recovery(input);
+//    	stateSetting.path(input);
     	
     	//Get the ball prediction
     	try{

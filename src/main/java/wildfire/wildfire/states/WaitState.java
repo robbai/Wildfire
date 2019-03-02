@@ -3,6 +3,7 @@ package wildfire.wildfire.states;
 import java.awt.Color;
 import java.awt.Point;
 
+import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
@@ -18,7 +19,7 @@ import wildfire.wildfire.obj.State;
 public class WaitState extends State {
 	
 	/*How far we want to be from the ball's bounce*/
-	private final double desiredDistance = 38D, desiredDistanceSmartDodge = 320D;
+	private final double desiredDistance = 38D, desiredDistanceSmartDodge = 270D;
 	
 	private Vector2 bounce = null;
 	private double timeLeft = 0;
@@ -70,8 +71,9 @@ public class WaitState extends State {
 		boolean towardsOwnGoal = Utils.isTowardsOwnGoal(input.car, bounce.withZ(0), 240);
 		
 		//Smart dodge (test)
-		boolean planSmartDodge = (!towardsOwnGoal && input.car.position.z < 240 && (input.ball.position.z > 320 || input.ball.velocity.z < -400) && (Math.min(bounce.distance(Utils.homeGoal(input.car.team)), bounce.distance(Utils.enemyGoal(input.car.team))) < 2400 || Utils.closestOpponentDistance(input, bounce.withZ(0)) < 1100));
+		boolean planSmartDodge = (!towardsOwnGoal && !input.car.isSupersonic && input.car.hasWheelContact && input.car.position.z < 220 && (input.ball.position.z > 300 || input.ball.velocity.z < -400) && (Math.min(bounce.distance(Utils.homeGoal(input.car.team)), bounce.distance(Utils.enemyGoal(input.car.team))) < 2400 || Utils.closestOpponentDistance(input, bounce.withZ(0)) < 1100));
 		wildfire.renderer.drawString2d("Plan Smart Dodge: " + planSmartDodge, Color.WHITE, new Point(0, 40), 2, 2);
+		if(planSmartDodge) renderJump(input.car);
 		if(!hasAction() && planSmartDodge && input.car.hasWheelContact && bounce.distance(input.car.position.flatten()) < (400 + 300 * Math.cos(impactRadians / 2))){ // && input.car.velocity.magnitude() < 2100
 			currentAction = new SmartDodgeAction(this, input);
 			if(!currentAction.failed) currentAction.getOutput(input);
@@ -97,7 +99,7 @@ public class WaitState extends State {
 		Vector2 enemyGoal = Utils.enemyGoal(input.car.team);
 		Vector2 target = null;
 		double velocityNeeded = -1;
-		double timeEffective = (planSmartDodge ? timeLeft - 0.4 : timeLeft);
+		double timeEffective = (planSmartDodge ? timeLeft - 0.39 : timeLeft);
 		
 		for(double length = (towardsOwnGoal ? 0.95 : (planSmartDodge ? 0.4 : 0.75)); length > (towardsOwnGoal ? 0.15 : 0); length -= 0.05){
 			target = getNextPoint(input.car.position.flatten(), bounce, enemyGoal, length);
@@ -205,6 +207,24 @@ public class WaitState extends State {
 		}
 		
 		return target;
+	}
+	
+	private void renderJump(CarData car){
+		Vector3 velocity = car.velocity.withZ(547.7225575); //Max jump velocity
+		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
+		continueRender(car, car.position, velocity);
+	}
+	
+	private void continueRender(CarData car, Vector3 start, Vector3 velocity){
+		final double scale = (1D / 40);
+		if(start.isOutOfBounds()) return;	
+		boolean up = (velocity.z > 0);
+		velocity = velocity.plus(new Vector3(0, 0, -Utils.GRAVITY * scale)); //Gravity
+		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
+		Vector3 next = start.plus(velocity.scaled(scale));
+		if(up && velocity.z <= 0) wildfire.renderer.drawCrosshair(car, next, Color.WHITE, 35);
+		wildfire.renderer.drawLine3d((velocity.z > 0 ? Color.CYAN : Color.GRAY), start.toFramework(), next.toFramework());
+		continueRender(car, next, velocity);
 	}
 
 }

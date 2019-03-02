@@ -33,7 +33,7 @@ public class DodgeAction extends Action {
 			controller.withJump(true);
 	        controller.withYaw((float)-Math.sin(angle));
 	        controller.withPitch((float)-Math.cos(angle)); 
-		}else if(input.car.position.z > 250 || timeDifference >= 2600){
+		}else if(input.car.position.z > 160 || timeDifference >= 2400){
 			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 		}
 	        

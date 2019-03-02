@@ -126,7 +126,7 @@ public class AerialAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return timeDifference(input.elapsedSeconds) > 0.4 && input.car.hasWheelContact && input.car.position.z < 600;
+		return timeDifference(input.elapsedSeconds) > 0.4 && input.car.hasWheelContact;
 	}
 	
 	private Vector3 simulate(CarData car, double scale){

@@ -99,7 +99,7 @@ public class Utils {
 		double ourDistance = target.distance(input.car.position);
 		for(byte i = 0; i < input.cars.length; i++){
 			CarData c = input.cars[i];
-			if(i == input.playerIndex || c == null || c.team != input.car.team) continue;
+			if(i == input.playerIndex || c == null || c.isDemolished || c.team != input.car.team) continue;
 			if(ourDistance > target.distance(c.position)) return true;
 		}
 		return false;
@@ -124,7 +124,7 @@ public class Utils {
 		CarData best = null;
 		double bestDistance = Double.MAX_VALUE;
 		for(CarData c : input.cars){
-			if(c.team == input.car.team) continue;
+			if(c == null || c.isDemolished || c.team == input.car.team) continue;
 			double distance = c.position.distance(target);
 			if(distance < bestDistance){
 				best = c;

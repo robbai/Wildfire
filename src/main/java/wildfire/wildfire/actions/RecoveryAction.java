@@ -19,14 +19,14 @@ public class RecoveryAction extends Action {
 	 */	
 	private PID rollPID, pitchPID, yawPID;
 	
-	private final double renderScale = (1D / 40);
+	private final double renderScale = (1D / 50);
 
 	public RecoveryAction(State state, float elapsedSeconds){
 		super("Recovery", state, elapsedSeconds);
 		
 		this.pitchPID = new PID(3.8, 0, 0.52);
 		this.rollPID = new PID(1.6, 0, 0.24);
-		this.yawPID = new PID(5.3, 0, 1.6);
+		this.yawPID = new PID(5.4, 0, 1.6);
 	}
 
 	@Override
@@ -39,10 +39,10 @@ public class RecoveryAction extends Action {
 				
 		double yaw = 0;
 		
-		boolean planWaveDash = (!input.car.doubleJumped && !boostDown && input.car.velocity.z < -220 && input.car.orientation.roofVector.normalized().z > 0.6);
+		boolean planWaveDash = (!input.car.doubleJumped && !boostDown && input.car.velocity.z < -420 && input.car.orientation.roofVector.normalized().z > 0.6);
 		wildfire.renderer.drawString2d("Plan Wave-Dash: " + planWaveDash, Color.WHITE, new Point(0, 60), 2, 2);
 		
-		if(input.car.position.z > 140){
+		if(input.car.position.z > 120){
 			renderFall(boostDown ? (input.car.orientation.noseVector.z < -0.75 ? Color.RED : Color.YELLOW) : Color.WHITE, input.car.position, input.car.velocity);
 			
 			Vector2 yawIdealDirection = (input.car.velocity.flatten().magnitude() > 600 ? input.car.velocity.flatten() : wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
