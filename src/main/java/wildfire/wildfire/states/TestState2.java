@@ -32,13 +32,13 @@ public class TestState2 extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(!hasAction() && wildfire.stateSetting.getCooldown(input) < 1){
-//			currentAction = new HopAction(this, origin, input.car.velocity);
+		if(!hasAction() && System.currentTimeMillis() % 1000 < 50){
 			currentAction = new JumpAction(this, input.elapsedSeconds, 250);
-			if(!currentAction.failed) return currentAction.getOutput(input); 
+			if(!currentAction.failed){
+				return currentAction.getOutput(input); 
+			}
 		}
-		
-		return new ControlsOutput().withThrottle(0).withBoost(false);
+		return new ControlsOutput().withNone();
 	}
 	
 	@SuppressWarnings("unused")

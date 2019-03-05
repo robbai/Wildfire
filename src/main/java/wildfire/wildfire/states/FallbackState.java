@@ -17,7 +17,8 @@ import wildfire.wildfire.obj.State;
 
 public class FallbackState extends State {
 	
-	private final int targetPly = 7;
+	private final boolean smartDodgeEnabled = false;
+	private final int targetPly = 6;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);
@@ -40,19 +41,19 @@ public class FallbackState extends State {
 		if(!hasAction()){
 			double velocityTowardsImpact = input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
 			if(distance < (wall ? 270 : (input.car.isSupersonic ? 800 : 600)) && velocityTowardsImpact > 900){
-				if(wildfire.impactPoint.getPosition().z - input.car.position.z > 240){
-					currentAction = new SmartDodgeAction(this, input);
+				double dodgeAngle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+				double goalAngle = Vector2.angle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), goal.minus(input.car.position.flatten()));
+				
+				//Check if we can go for a shot
+				Vector2 trace = Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH);
+				boolean shotOpportunity = (trace != null && Math.abs(trace.x) < 1200);
+				
+				if(wildfire.impactPoint.getPosition().z - input.car.position.z > 240 && smartDodgeEnabled){
+					currentAction = new SmartDodgeAction(this, input, shotOpportunity);
 				}else{
-					double dodgeAngle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-					double goalAngle = Vector2.angle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), goal.minus(input.car.position.flatten()));
-					
-					//Check if we can go for a shot
-					Vector2 trace = Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH);
-					boolean shotOpportunity = (trace != null && Math.abs(trace.x) < 1200);
-					
 					if((Math.abs(dodgeAngle) < 0.3 && !shotOpportunity) || goalAngle < 0.5 || Utils.teamSign(input.car) * input.ball.velocity.y < -500 ||  Utils.teamSign(input.car) * input.car.position.y < -3000){
 						//If the dodge angle is small, make it big - trust me, it works
-						if(Math.abs(dodgeAngle) < 1.22){ //70 degrees
+						if(Math.abs(dodgeAngle) < 1.39626){ //80 degrees
 							dodgeAngle = Utils.clamp(dodgeAngle * 3.25D, -Math.PI, Math.PI);
 						}
 						currentAction = new DodgeAction(this, dodgeAngle, input);
@@ -79,8 +80,10 @@ public class FallbackState extends State {
 		Vector3 impactPoint = wildfire.impactPoint.getPosition();
 		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.yellow, 0, wildfire.impactPoint.getFrame());
 		wildfire.renderer.drawCrosshair(input.car, impactPoint, Color.MAGENTA, 125);
+		
+		//Avoid own-goaling
 		Vector2 trace = Utils.traceToY(input.car.position.flatten(), impactPoint.minus(input.car.position).flatten(), Utils.teamSign(input.car) * -Utils.PITCHLENGTH);
-		if(trace != null && Math.abs(trace.x) < Utils.GOALHALFWIDTH + 400){
+		if(trace != null && Math.abs(trace.x) < Utils.GOALHALFWIDTH + 600){
 			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Math.max(60, Math.min(1200, distance / 3.6)), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(input.car, impactPoint, Color.PINK, 125);
 		}

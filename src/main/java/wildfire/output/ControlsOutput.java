@@ -124,4 +124,10 @@ public class ControlsOutput implements ControllerState {
     public boolean holdHandbrake() {
         return slideDepressed;
     }
+    
+    public ControlsOutput withNone(){
+    	this.withBoost(false).withSlide(false).withJump(false).withSteer(0).withPitch(0).withRoll(0).withYaw(0).withThrottle(0);
+    	return this;
+    }
+    
 }

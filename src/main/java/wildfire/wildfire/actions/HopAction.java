@@ -12,24 +12,28 @@ import wildfire.wildfire.obj.State;
 public class HopAction extends Action {	
 
 	private Vector2 target;
-	private int throttleTime;
-	private PID yawPID;
+	private double throttleTime;
+	
+	private PID yawPID, pitchPID, rollPID;
 
 	public HopAction(State state, DataPacket input, Vector2 target){
 		super("Hop", state, input.elapsedSeconds);
 		this.target = target;
-		this.throttleTime = (int)Math.min(300, input.car.velocity.flatten().magnitude() / 6);
+		this.throttleTime = Math.min(3, input.car.velocity.flatten().magnitude() / 6000);
+		
 		this.yawPID = new PID(3.2, 0, 1.1);
+		this.pitchPID = new PID(3.8, 0, 0.52);
+		this.rollPID = new PID(1.6, 0, 0.24);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		ControlsOutput controller = new ControlsOutput().withThrottle(0).withBoost(false);
 		
-		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
+		float timeDifference = timeDifference(input.elapsedSeconds);
 		
 		//Switch to recovery
-		if(timeDifference > 1500 && input.car.position.z > 400){
+		if(timeDifference > 1.5 && input.car.position.z > 400){
 			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 		}
 		
@@ -37,26 +41,27 @@ public class HopAction extends Action {
 		
 		if(timeDifference <= throttleTime){
 			controller.withThrottle((float)-Math.signum(input.car.forwardMagnitude()));
-		}else if(timeDifference < throttleTime + 30){
+		}else if(timeDifference < throttleTime + 0.0167){
 			controller.withJump(true);
 		}else{
+			double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
+			
 			double targetAngle = Utils.aim(input.car, target);
 			double yaw = yawPID.getOutput(input.elapsedSeconds, targetAngle, 0);
-			controller.withYaw((float)yaw);
+			controller.withYaw((float)(angularCoefficient * yaw));
 
-			//This is a very rough recovery, no PID controllers, just pure multiplication
-			controller.withPitch((float)-input.car.orientation.noseVector.z * 0.5F);
-			controller.withRoll((float)input.car.orientation.rightVector.z * 0.5F);
+			controller.withRoll((float)rollPID.getOutput(input.elapsedSeconds, -input.car.orientation.rightVector.z, 0));
+			controller.withPitch((float)(angularCoefficient * pitchPID.getOutput(input.elapsedSeconds, input.car.orientation.noseVector.z, 0)));
 
 			//Avoid turtling 
-			controller.withThrottle(timeDifference > Math.min(440, throttleTime + 120) ? 1 : 0);
+			controller.withThrottle(timeDifference > Math.min(0.44, throttleTime + 0.12) ? 1 : 0);
 		}
 		return controller;
 	}
 
 	@Override
 	public boolean expire(DataPacket input){
-		return timeDifference(input.elapsedSeconds) * 1000 > 160 + throttleTime && input.car.hasWheelContact;
+		return timeDifference(input.elapsedSeconds) > 0.16 + throttleTime && input.car.hasWheelContact;
 	}
 	
 	@SuppressWarnings("unused")

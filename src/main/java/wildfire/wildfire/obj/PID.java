@@ -14,7 +14,7 @@ public class PID {
 	private Color colour;
 	
 	private float lastTime;
-	private double errorSum, lastError;
+	public double errorSum, lastError;
 	private double kp, ki, kd;
 	
 	public PID(Renderer renderer, Color colour, double kp, double ki, double kd){
@@ -96,6 +96,11 @@ public class PID {
 		lastTime = time;
 
 		return output;
+	}
+	
+	public PID withRender(boolean render){
+		this.render = (render && this.renderer != null);
+		return this;
 	}
 
 }

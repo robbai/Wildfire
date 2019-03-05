@@ -21,6 +21,7 @@ public class Utils {
 	public static final float CEILING = 2044F;
 	public static final float GOALHEIGHT = 642.775F;
 	public static final float GOALHALFWIDTH = 892.755F;
+	public static final float BOOSTACC = (911F + (2F / 3));
 	
 	public static Vector2 homeGoal(int team){
 		return new Vector2(0, teamSign(team) * -PITCHLENGTH);
@@ -216,7 +217,7 @@ public class Utils {
 	}
 	
 	public static boolean isOnWall(CarData car){
-		return car.position.z > 130 && car.hasWheelContact;
+		return car.position.z > 160 && car.hasWheelContact;
 	}
 	
 	public static void transferAction(Action one, Action two){
@@ -270,13 +271,6 @@ public class Utils {
     	}
 		return Utils.enemyGoal(car.team);
     }
-	
-	/*
-	 * Terrible heuristic, needs to be changed
-	 */
-	public static boolean isEnoughBoostForAerial(CarData car, Vector3 target){
-		return car.boost > 18 && target.distance(car.position) < 115D * car.boost;  
-	}
 	
 	public static boolean isPointWithinRange(Vector2 point, Vector2 target, double minRange, double maxRange){
 		double range = point.distance(target);
@@ -410,6 +404,11 @@ public class Utils {
 	
 	public static boolean defendNotReturn(DataPacket input, Vector3 impactPoint, double homeZoneSize, boolean onTarget){
 		return onTarget || Utils.teamSign(input.car.team) * input.ball.velocity.y < -1600 || impactPoint.distanceFlat(Utils.homeGoal(input.car.team)) < homeZoneSize;
+	}
+	
+	public static Vector3 capMagnitude(Vector3 vec, double maxMagnitude){
+		if(vec.magnitude() > maxMagnitude) return vec.scaledToMagnitude(maxMagnitude);
+		return vec;
 	}
 
 }

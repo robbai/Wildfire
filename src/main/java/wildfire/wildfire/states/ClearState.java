@@ -9,7 +9,7 @@ import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.AerialAction;
+import wildfire.wildfire.actions.AerialAction2;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.obj.State;
@@ -65,12 +65,19 @@ public class ClearState extends State {
 		}
 		
 		//Aerial
-		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle((input.car.position.minus(input.ball.position).flatten()))); 
-		if(!hasAction() && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 700 ? 230 : 400) && Utils.isEnoughBoostForAerial(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(angleImpact) < 0.3 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1200){
-			double maxRange = wildfire.impactPoint.getPosition().z * 5;
-			double minRange = wildfire.impactPoint.getPosition().z * 1.2;
-			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
-				currentAction = new AerialAction(this, input, wildfire.impactPoint.getPosition().z > 800);
+		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle(input.car.position.minus(input.ball.position).flatten())); 
+		if(!hasAction() && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 700 ? 230 : 400) && input.car.hasWheelContact && Math.abs(angleImpact) < 0.3 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1200){
+//			double maxRange = wildfire.impactPoint.getPosition().z * 5;
+//			double minRange = wildfire.impactPoint.getPosition().z * 1.2;
+//			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
+//				currentAction = new AerialAction(this, input, wildfire.impactPoint.getPosition().z > 800);
+//			}
+
+			currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 800);
+			if(currentAction != null && !currentAction.failed){
+				return currentAction.getOutput(input);
+			}else{
+				currentAction = null;
 			}
 		}
 		
@@ -98,10 +105,10 @@ public class ClearState extends State {
 		//Avoid rebounding it off the wall back towards our goal
 		Vector2 wall = Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
 		if(wall != null){
-			if(wall.y < Utils.teamSign(input.car) * -2000){
+			if(wall.y < Utils.teamSign(input.car) * -1500){
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
 				double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position); 
-				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 3.35)), true);
+				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 3.65)), true);
 			}
 		}
 		

@@ -44,7 +44,7 @@ public class DemoState extends State {
 			if(target.position.isOutOfBounds()) return false;
 			
 			//Run-up
-			if(target.position.distance(input.car.position) < 2800) return false;
+			if(target.position.distance(input.car.position) < 3000) return false;
 			
 			//Vulnerable target (slow, or returning back to their half)
 			if(target.velocity.magnitude() > 1200 && Utils.teamSign(input.car) * target.velocity.y > -800) return false;

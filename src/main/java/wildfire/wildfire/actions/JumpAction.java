@@ -11,10 +11,10 @@ import wildfire.wildfire.obj.State;
 
 public class JumpAction extends Action {
 	
-	private final double tick = (1D / 60);
-	
 	// h = (10500 * T * T) / 13 + (8400 * T) / 13 + 900 / 13
 	// T = 0.1 * sqrt(13 / 105) * sqrt(h + 60) - 0.4
+	
+	private final double tick = (1D / 60), maxSingleJumpHeight = 230.76923076923077D;
 	
 	private double height, jumpTime;
 
@@ -26,18 +26,23 @@ public class JumpAction extends Action {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(timeDifference(input.elapsedSeconds) * 1000 > jumpTime * 1000D + tick){
+		float timeDifference = timeDifference(input.elapsedSeconds);
+		
+		if(timeDifference > jumpTime + tick && !input.car.hasWheelContact){
 			Utils.transferAction(this, new RecoveryAction(state, input.elapsedSeconds));
 		}
+		
 		wildfire.renderer.drawString2d("Height: " + (int)height + "uu", Color.WHITE, new Point(0, 40), 2, 2);
 		wildfire.renderer.drawString2d("Jump: " + (int)jumpTime + "ms", Color.WHITE, new Point(0, 60), 2, 2);
-		return new ControlsOutput().withBoost(false).withThrottle(0).withJump(true);
+		ControlsOutput controller = new ControlsOutput().withNone().withJump(timeDifference < jumpTime + tick && timeDifference > tick);
+//		if(!controller.holdJump()) controller.withJump(input.car.velocity.z <= 0 && !input.car.doubleJumped);
+		return controller;
 	}
 
 	@Override
 	public boolean expire(DataPacket input){
-		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
-		return (input.car.hasWheelContact && timeDifference > jumpTime + 100) || timeDifference > 2000;
+		float timeDifference = timeDifference(input.elapsedSeconds);
+		return (input.car.hasWheelContact && timeDifference > jumpTime + tick);
 	}
 
 }

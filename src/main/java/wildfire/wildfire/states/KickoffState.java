@@ -40,6 +40,7 @@ public class KickoffState extends State {
 	public boolean ready(DataPacket input){
 		if(!Utils.isKickoff(input)) return false;
 		
+		wildfire.unlimitedBoost = (input.car.boost > 99);
 		getSpawn(input.car.position);
 		timeStarted = input.elapsedSeconds;
 
@@ -50,6 +51,7 @@ public class KickoffState extends State {
 			wildfire.sendQuickChat(true, QuickChatSelection.Custom_Useful_Faking, QuickChatSelection.Information_GoForIt);
 		}else if(fakeKickoffs){
 			fake = ((random.nextFloat() < 0.2F || isUnfairKickoff(input)) && !Utils.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Utils.hasOpponent(input));
+//			fake = spawn != KickoffSpawn.CORNER;
 		}else{
 			fake = false;
 		}

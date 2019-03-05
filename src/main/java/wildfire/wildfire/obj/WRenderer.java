@@ -57,7 +57,7 @@ public class WRenderer extends Renderer {
     }
     
     public void drawCrosshair(CarData car, Vector3 point, Color colour, double size){
-    	if(!threeD) return;
+    	if(!threeD || car.position.minus(point).isZero()) return;
     	drawLine3d(colour, point.withZ(point.z - size / 2).toFramework(), point.withZ(point.z + size / 2).toFramework());
     	Vector3 orthogonal = car.position.minus(point).scaledToMagnitude(size / 2).rotateHorizontal(Math.PI / 2).withZ(0);
     	drawLine3d(colour, point.plus(orthogonal).toFramework(), point.minus(orthogonal).toFramework());
@@ -75,12 +75,13 @@ public class WRenderer extends Renderer {
 		for(double i = 0; i < pointCount; i += 1){
             double angle = 2 * Math.PI * i / pointCount;
             Vector3 latest = new Vector3(centre.x + radius * Math.cos(angle), centre.y + radius * Math.sin(angle), centre.z);
-            if(last != null) drawLine3d(colour, last.toFramework(), latest.toFramework());
+            if(last != null && !last.isOutOfBounds() && !latest.isOutOfBounds()) drawLine3d(colour, last.toFramework(), latest.toFramework());
             last = latest;
         }
 		
 		//Connect the end to the start
-		drawLine3d(colour, last.toFramework(), new Vector3(centre.x + radius, centre.y, centre.z).toFramework());
+		Vector3 start = new Vector3(centre.x + radius, centre.y, centre.z);
+		if(!last.isOutOfBounds() && !start.isOutOfBounds()) drawLine3d(colour, last.toFramework(), start.toFramework());
 	}
 	
 	/*

@@ -5,10 +5,12 @@ import java.util.Random;
 import rlbot.cppinterop.RLBotDll;
 import rlbot.gamestate.BallState;
 import rlbot.gamestate.CarState;
+import rlbot.gamestate.DesiredRotation;
 import rlbot.gamestate.GameState;
 import rlbot.gamestate.PhysicsState;
 import wildfire.input.CarOrientation;
 import wildfire.input.DataPacket;
+import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
@@ -38,26 +40,32 @@ public class StateSettingManager {
 	}
 	
 	public void aerial(DataPacket input){
-		if((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact && !Utils.isOnTarget(wildfire.ballPrediction, 0) && !Utils.isOnTarget(wildfire.ballPrediction, 1)){
+		// && !Utils.isOnTarget(wildfire.ballPrediction, 0) && !Utils.isOnTarget(wildfire.ballPrediction, 1)
+		if(((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact) || getCooldown(input) > 18){
     		GameState gameState = new GameState();
-    		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(Utils.random(-3500, 3500), -4000, 10).toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, Utils.randomRotation(), 0).toDesired())));
-    		double xVel = Utils.random(-1000, 1000);
-    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(Utils.clamp(-xVel * 2.75, 200 - Utils.PITCHWIDTH, Utils.PITCHWIDTH - 200), 0, 100).toDesired()).withVelocity(new Vector3(xVel, 0, Utils.random(1200, 2000)).toDesired())));
+    		Vector3 carPosition = new Vector3(Utils.random(-3500, 3500), -4000, 10);
+    		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(new DesiredRotation(0F, (float)carPosition.flatten().correctionAngle(new Vector2()), 0F))));
+    		
+    		Vector3 ballVelocity = new Vector3(Utils.random(-2750, 2750), Utils.random(-1500, 1500), Utils.random(1200, 2000));
+    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(ballVelocity.scaled(-1.5).confine().toDesired()).withVelocity(ballVelocity.toDesired())));
+    		
     		RLBotDll.setGameState(gameState.buildPacket());
+    		resetCooldown(input.elapsedSeconds);
     	}
 	}
 
-	public void dribbleCatch(DataPacket input){
+	public void catchTest(DataPacket input, boolean dribble){
 		int teamSign = Utils.teamSign(input.car);
-		if((input.ball.position.z < 99 && Math.signum(input.ball.velocity.y) != teamSign) || input.ball.velocity.isZero()){
+		if((dribble && input.ball.position.z < 99) || input.ball.position.magnitude() > 3000){
 			GameState gameState = new GameState();
-			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(0, -800 * teamSign, 10).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, teamSign * Math.PI / 2, 0).toDesired())));
-			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(0, 1200 * teamSign, 200).toDesired()).withVelocity(new Vector3(Utils.random(-100, 100), 0, Utils.random(1000, 1500)).toDesired())));
+			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(Utils.random(-2500, 2500), Utils.random(200, 4900) * -teamSign, 10).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, teamSign * Math.PI / 2, 0).toDesired())));
+			Vector2 ballLocation = new Vector2(Utils.random(-1500, 1500), Utils.random(-1500, 1500));
+			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(ballLocation.x, ballLocation.y, 200).toDesired()).withVelocity(new Vector3(-ballLocation.x / 2, -ballLocation.y / 2, Utils.random(1000, 1500)).toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
 		}
 	}
 
-	public void hop(DataPacket input) {
+	public void hop(DataPacket input){
 		boolean velocity = false;
 		double distance = 2000;
 		if(input.car.hasWheelContact && getCooldown(input) > 1){

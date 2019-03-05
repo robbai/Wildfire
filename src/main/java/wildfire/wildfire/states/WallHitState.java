@@ -18,7 +18,7 @@ import wildfire.wildfire.obj.State;
 
 public class WallHitState extends State {
 	
-	private final double maxWallDistance = 240;
+	private final double maxWallDistance = 230;
 
 	public WallHitState(Wildfire wildfire){
 		super("Wall Hit", wildfire);
@@ -55,7 +55,7 @@ public class WallHitState extends State {
 				double aim = forward.correctionAngle(localTarget.flatten());
 				
 				//Dodge
-				if((localTarget.z > 120 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 460 : 260)){
+				if((localTarget.z > 110 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 460 : 260)){
 					currentAction = new DodgeAction(this, aim, input);
 					if(!currentAction.failed){
 						if(input.car.position.z > 1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);

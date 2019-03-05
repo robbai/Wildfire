@@ -23,12 +23,12 @@ import wildfire.wildfire.states.BoostState;
 import wildfire.wildfire.states.ClearState;
 import wildfire.wildfire.states.DemoState;
 import wildfire.wildfire.states.FallbackState;
+import wildfire.wildfire.states.IdleState;
 import wildfire.wildfire.states.KickoffState;
 import wildfire.wildfire.states.PathState;
 import wildfire.wildfire.states.ReturnState;
 import wildfire.wildfire.states.ShadowState;
 import wildfire.wildfire.states.ShootState;
-import wildfire.wildfire.states.IdleState;
 import wildfire.wildfire.states.WaitState;
 import wildfire.wildfire.states.WallHitState;
 
@@ -46,7 +46,6 @@ public class Wildfire implements Bot {
 	public WRenderer renderer;
 	public BallPrediction ballPrediction;
 	public PredictionSlice impactPoint;
-	
 	public StateSettingManager stateSetting;
 	
 	//State info
@@ -61,12 +60,15 @@ public class Wildfire implements Bot {
 	//Measured in milliseconds
 	private final long quickChatCooldown = 40000L;
 	private long lastQuickChat = 0L;
+	
+	public boolean unlimitedBoost;
 
     public Wildfire(int playerIndex, int team, boolean test){
         this.playerIndex = playerIndex;
         this.team = team;
         this.test = test;
         this.stateSetting = new StateSettingManager(this);
+        this.unlimitedBoost = false;
         
         //Initialise all the states
         states = new ArrayList<State>();
@@ -96,7 +98,7 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	stateSetting.path(input);
+//    	stateSetting.aerial(input);
     	
     	//Get the ball prediction
     	try{

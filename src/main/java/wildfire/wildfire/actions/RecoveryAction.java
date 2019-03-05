@@ -24,26 +24,26 @@ public class RecoveryAction extends Action {
 	public RecoveryAction(State state, float elapsedSeconds){
 		super("Recovery", state, elapsedSeconds);
 		
-		this.pitchPID = new PID(3.8, 0, 0.52);
+		this.pitchPID = new PID(4.4, 0, 1.1);
 		this.rollPID = new PID(1.6, 0, 0.24);
-		this.yawPID = new PID(5.4, 0, 1.6);
+		this.yawPID = new PID(5.5, 0, 1.6);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		//whatisaphone's Secret Recipe
-		boolean boostDown = (Utils.timeToHitGround(input.car) > (input.car.doubleJumped ? 0.475 : 0.575) && input.car.boost > 5 && Utils.distanceToWall(input.car.position) > 100 && input.car.position.z > 300);
+		boolean boostDown = (Utils.timeToHitGround(input.car) > (input.car.doubleJumped ? 0.5 : 0.575) && input.car.boost > 5 && Utils.distanceToWall(input.car.position) > 100 && input.car.position.z > 300);
 		
 		double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
-		wildfire.renderer.drawString2d("Coefficient: " + Utils.round(angularCoefficient), Color.WHITE, new Point(0, 40), 2, 2);
+//		wildfire.renderer.drawString2d("Coefficient: " + Utils.round(angularCoefficient), Color.WHITE, new Point(0, 60), 2, 2);
 				
 		double yaw = 0;
 		
 		boolean planWaveDash = (!input.car.doubleJumped && !boostDown && input.car.velocity.z < -420 && input.car.orientation.roofVector.normalized().z > 0.6);
-		wildfire.renderer.drawString2d("Plan Wave-Dash: " + planWaveDash, Color.WHITE, new Point(0, 60), 2, 2);
+		wildfire.renderer.drawString2d("Plan Wave-Dash: " + planWaveDash, Color.WHITE, new Point(0, 40), 2, 2);
 		
-		if(input.car.position.z > 120){
-			renderFall(boostDown ? (input.car.orientation.noseVector.z < -0.75 ? Color.RED : Color.YELLOW) : Color.WHITE, input.car.position, input.car.velocity);
+		if(input.car.position.z > 50){
+			if(input.car.position.z > 120) renderFall(boostDown ? (input.car.orientation.noseVector.z < -0.75 ? Color.RED : Color.YELLOW) : Color.WHITE, input.car.position, input.car.velocity);
 			
 			Vector2 yawIdealDirection = (input.car.velocity.flatten().magnitude() > 600 ? input.car.velocity.flatten() : wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
 			double yawCorrection = -input.car.orientation.noseVector.flatten().correctionAngle(yawIdealDirection);

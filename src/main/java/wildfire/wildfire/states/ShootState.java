@@ -15,6 +15,8 @@ import wildfire.wildfire.actions.SmartDodgeAction;
 import wildfire.wildfire.obj.State;
 
 public class ShootState extends State {
+	
+	private final boolean smartDodgeEnabled = true;
 
 	public ShootState(Wildfire wildfire){
 		super("Shoot", wildfire);
@@ -29,7 +31,7 @@ public class ShootState extends State {
 		if(Utils.isOnTarget(wildfire.ballPrediction, input.car.team) && Math.abs(input.car.position.y) > 4500) return false;
 		
 		//Not while the ball is being awkward
-		if(wildfire.impactPoint.getPosition().z > 220) return false;
+		if(wildfire.impactPoint.getPosition().z > 200) return false;
 		
 		//Not during a weird dribble
 		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 110 && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 6000){
@@ -53,12 +55,12 @@ public class ShootState extends State {
 					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 				}else if(Math.abs(aimBall) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-				}else if((distance < 520 && Math.abs(aimBall) < Math.PI * 0.4) || (distance > 2400 && Math.abs(steerImpact) < 0.2 && !input.car.isSupersonic)){
+				}else if((distance < 550 && Math.abs(aimBall) < Math.PI * 0.4) || (distance > 2400 && Math.abs(steerImpact) < 0.2 && !input.car.isSupersonic)){
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 					
 					double forwardVelocity = input.car.forwardMagnitude();
-					if(forwardVelocity > 0 && wildfire.impactPoint.getPosition().z - input.car.position.z > 200){
-						currentAction = new SmartDodgeAction(this, input);
+					if(forwardVelocity >= 0 && (wildfire.impactPoint.getPosition().z - input.car.position.z) > 220 && smartDodgeEnabled){
+						currentAction = new SmartDodgeAction(this, input, true);
 					}else if(forwardVelocity > 1200){
 						currentAction = new DodgeAction(this, steerImpact, input);
 					}
