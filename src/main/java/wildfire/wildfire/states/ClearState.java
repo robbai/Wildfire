@@ -57,7 +57,7 @@ public class ClearState extends State {
 		if(!hasAction() && input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 460){
 			double forwardVelocity = input.car.forwardMagnitude();
 			if(Math.abs(angleImpact) < 0.75 * Math.PI){
-				if(forwardVelocity < 1600) currentAction = new DodgeAction(this, angleImpact, input);
+				if(forwardVelocity < 1600 && forwardVelocity > -50) currentAction = new DodgeAction(this, angleImpact, input);
 			}else{
 				if(forwardVelocity < -500) currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
@@ -66,7 +66,7 @@ public class ClearState extends State {
 		
 		//Aerial
 		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle(input.car.position.minus(input.ball.position).flatten())); 
-		if(!hasAction() && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 700 ? 230 : 400) && input.car.hasWheelContact && Math.abs(angleImpact) < 0.3 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1200){
+		if(!hasAction() && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 700 ? 230 : 400) && input.car.hasWheelContact && Math.abs(angleImpact) < 0.3 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1200 && input.car.position.z < 200){
 //			double maxRange = wildfire.impactPoint.getPosition().z * 5;
 //			double minRange = wildfire.impactPoint.getPosition().z * 1.2;
 //			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){

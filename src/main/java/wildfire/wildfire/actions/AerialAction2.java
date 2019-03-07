@@ -166,10 +166,10 @@ public class AerialAction2 extends Action {
 		double boostRequired = ((averageAcceleration * t) / Utils.BOOSTACC * (100D / 3));
 				
 		if(wildfire.unlimitedBoost){
-			System.out.println("Boost required for aerial: " + (int)boostRequired + ", current boost: unlimited");
+//			System.out.println("Boost required for aerial: " + (int)boostRequired + ", current boost: unlimited");
 			return true;
 		}	
-		System.out.println("Boost required for aerial: " + (int)boostRequired + ", current boost: " + (int)car.boost);		
+//		System.out.println("Boost required for aerial: " + (int)boostRequired + ", current boost: " + (int)car.boost);		
 		return car.boost >= boostRequired;
 	}
 	

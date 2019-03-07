@@ -35,6 +35,7 @@ public class WaitState extends State {
 		
 		bounce = bounce3.flatten();
 		timeLeft = Utils.getBounceTime(wildfire.ballPrediction);
+		double bounceDistance = bounce.distance(input.car.position.flatten());
 		
 		//Wall hit
 		double wallDistance = Utils.distanceToWall(wildfire.impactPoint.getPosition());
@@ -43,7 +44,7 @@ public class WaitState extends State {
 		}
 		
 		//Can't reach point (optimistic)
-		if(bounce.distance(input.car.position.flatten()) / timeLeft > 2550) return false;
+		if(bounceDistance / timeLeft > 2550) return false;
 		
 		//Teammate's closer
 		if(Utils.isTeammateCloser(input, bounce)) return false;
@@ -82,13 +83,13 @@ public class WaitState extends State {
 		
 		//Smart dodge (test)
 		boolean planSmartDodge = false, smartDodgeCone = false;
-		if(!towardsOwnGoal && !input.car.isSupersonic && input.car.hasWheelContact && input.car.position.z < 200 && (input.ball.position.z > 150 || input.ball.velocity.z < -400)){
-			if(Utils.closestOpponentDistance(input, bounce.withZ(0)) < 1100){
+		if(!towardsOwnGoal && !input.car.isSupersonic && input.car.hasWheelContact && input.car.position.z < 200 && (input.ball.position.z > 130 || input.ball.velocity.z < -400)){
+			if(Utils.closestOpponentDistance(input, bounce.withZ(0)) < 1500){
 				planSmartDodge = true;
-			}else if(bounce.distance(Utils.enemyGoal(input.car.team)) < 2200){
+			}else if(bounce.distance(Utils.enemyGoal(input.car.team)) < 2300){
 				planSmartDodge = true;
 				smartDodgeCone = true;
-			}else if(bounce.distance(Utils.homeGoal(input.car.team)) < 2200){
+			}else if(bounce.distance(Utils.homeGoal(input.car.team)) < 2300){
 				planSmartDodge = true;
 			} 
 		}

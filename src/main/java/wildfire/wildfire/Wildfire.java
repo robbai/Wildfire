@@ -26,6 +26,7 @@ import wildfire.wildfire.states.FallbackState;
 import wildfire.wildfire.states.IdleState;
 import wildfire.wildfire.states.KickoffState;
 import wildfire.wildfire.states.PathState;
+import wildfire.wildfire.states.PatienceState;
 import wildfire.wildfire.states.ReturnState;
 import wildfire.wildfire.states.ShadowState;
 import wildfire.wildfire.states.ShootState;
@@ -75,6 +76,7 @@ public class Wildfire implements Bot {
         if(!isTestVersion()) new IdleState(this);
         new KickoffState(this);
         new WallHitState(this);
+        new PatienceState(this);
         new WaitState(this);
         new ShootState(this);
         new ClearState(this);
@@ -98,7 +100,7 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	stateSetting.aerial(input);
+//    	stateSetting.path(input);
     	
     	//Get the ball prediction
     	try{

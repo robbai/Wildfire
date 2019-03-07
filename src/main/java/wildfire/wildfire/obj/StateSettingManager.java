@@ -135,11 +135,13 @@ public class StateSettingManager {
 	}
 
 	public void path(DataPacket input){
-		if(!input.ball.velocity.isZero() || getCooldown(input) > 20){
+		//!input.ball.velocity.isZero() || 
+		if(getCooldown(input) > 10 || Math.abs(input.ball.position.y) > 4800){ // || input.ball.position.z > Utils.BALLRADIUS + 5){
 			final double border = 1000;
 					
 			GameState gameState = new GameState();
-			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(new Vector3().toDesired()).withLocation(new Vector3(Utils.random(-Utils.PITCHWIDTH + border, Utils.PITCHWIDTH - border), Utils.random(-Utils.PITCHLENGTH + border, Utils.PITCHLENGTH - border), Utils.BALLRADIUS).toDesired())));
+			Vector3 ballLocation = new Vector3(Utils.random(-Utils.PITCHWIDTH + border, Utils.PITCHWIDTH - border), Utils.random(-Utils.PITCHLENGTH + border, Utils.PITCHLENGTH - border), Utils.BALLRADIUS);
+			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(ballLocation.withZ(0).scaled(-0.5).toDesired()).withLocation(ballLocation.toDesired())));
 			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(new Vector3().toDesired()).withLocation(new Vector3(Utils.random(-Utils.PITCHWIDTH + border, Utils.PITCHWIDTH - border), Utils.random(-Utils.PITCHLENGTH + border, Utils.PITCHLENGTH - border), 20).toDesired())));
 			
 			RLBotDll.setGameState(gameState.buildPacket());

@@ -17,7 +17,7 @@ import wildfire.wildfire.obj.State;
 
 public class FallbackState extends State {
 	
-	private final boolean smartDodgeEnabled = false;
+	private final boolean smartDodgeEnabled = true;
 	private final int targetPly = 6;
 
 	public FallbackState(Wildfire wildfire){
