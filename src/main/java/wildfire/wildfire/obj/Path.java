@@ -57,8 +57,8 @@ public class Path {
 		for(int i = wildfire.impactPoint.getFrame(); i < ballPrediction.slicesLength(); i++){
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			Path p = new Path(car, location.flatten(), destination);
-//			if(p.isBadPath()) return null;
-			if(p.isBadPath()) continue;
+			if(p.isBadPath()) return null;
+//			if(p.isBadPath()) continue;
 			
 			double displacement = (p.getDistance() - Utils.BALLRADIUS);
 			double time = (double)i / 60D;
