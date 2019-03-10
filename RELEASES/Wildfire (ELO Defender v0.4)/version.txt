@@ -1,1 +1,0 @@
-This version of Wildfire that requires its port to be changed!
