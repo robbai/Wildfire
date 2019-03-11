@@ -1,6 +1,8 @@
 package wildfire;
 
+import java.awt.Dimension;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -8,6 +10,8 @@ import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
@@ -15,43 +19,93 @@ import rlbot.manager.BotManager;
 import rlbot.pyinterop.PythonInterface;
 import rlbot.pyinterop.PythonServer;
 import wildfire.util.PortReader;
+import wildfire.wildfire.Wildfire;
+
 public class WildfireJava {
+	
+	private final static boolean enabled = true;
+	
+	public static ArrayList<Wildfire> bots = new ArrayList<Wildfire>();
 
     public static void main(String[] args){
     	//Bot Manager
-        BotManager botManager = new BotManager();
-        PythonInterface pythonInterface = new WildfirePythonInterface(botManager);
-        Integer port = PortReader.readPortFromFile("port.cfg");
-        PythonServer pythonServer = new PythonServer(pythonInterface, port);
-        pythonServer.start();
+    	BotManager botManager = new BotManager();
+    	Integer port = PortReader.readPortFromFile("port.cfg");
+    	if(enabled){
+	        PythonInterface pythonInterface = new WildfirePythonInterface(botManager);
+	        PythonServer pythonServer = new PythonServer(pythonInterface, port);
+	        pythonServer.start();
+    	}
         
-        //JFrame
+        //Frame
         JFrame frame = new JFrame("Wildfire");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        //Panel
         JPanel panel = new JPanel();
-        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        final int borderSize = 10;
+        panel.setBorder(new EmptyBorder(borderSize, borderSize, borderSize, borderSize));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(new JLabel("This is the GUI for Wildfire, keep this open!"));
-        panel.add(new JLabel("Listening on port " + port));
-        JLabel botsRunning = new JLabel("Bots running: ");
-        panel.add(botsRunning);
+        
+        //Labels
+        panel.add(new JLabel("Wildfire, a Java bot by r0bbi3#0269"));
+        panel.add(new JLabel("Port Number: " + port));
+        panel.add(new JLabel("Bots Running:"));
+        
+        //Table
+        String column[] = {"Index", "Name", "Team"};
+        JTable table = new JTable(new String[][] {}, column);    
+        table.setBounds(borderSize, borderSize, borderSize, borderSize);     
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setPreferredSize(new Dimension(80, 120));
+        panel.add(scrollPane);
+        
         frame.add(panel);
         frame.pack();
         frame.setVisible(true);
+        
+        //Listener
         ActionListener myListener = e -> {
             Set<Integer> runningBotIndices = botManager.getRunningBotIndices();
             OptionalInt maxIndex = runningBotIndices.stream().mapToInt(k -> k).max();
-            String botsStr = "None";
+            
             if(maxIndex.isPresent()){
-                StringBuilder botsStrBuilder = new StringBuilder();
-                for(int i = 0; i <= maxIndex.getAsInt(); i++){
-                    botsStrBuilder.append(runningBotIndices.contains(i) ? "(true) " : "(false) ");
+            	int maxIndexInt = maxIndex.getAsInt();
+            	int botListSize = 0;
+            	ArrayList<String[]> data = new ArrayList<String[]>(); 
+                
+                //Iterate through all the bots
+                for(int i = 0; i <= maxIndexInt; i++){
+                	Wildfire bot = getBotAtIndex(i);
+                	if(bot == null || !runningBotIndices.contains(i)) continue;
+                	data.add(new String[] {i + "", !bot.isTestVersion() ? "Wildfire" : "WildfireTest", bot.team == 0 ? "Blue" : "Orange"});
+                    botListSize ++;
                 }
-                botsStr = botsStrBuilder.toString();
+                
+                //Update the table
+                JTable newTable = new JTable(toDataArray(data), column);
+                newTable.setRowHeight(newTable.getRowHeight() * 2);
+                scrollPane.getViewport().add(newTable);
+                scrollPane.setBounds(scrollPane.getX(), scrollPane.getY(), scrollPane.getWidth(), Math.min(newTable.getRowHeight() * (botListSize + 2), scrollPane.getHeight()));
+                panel.add(scrollPane);
             }
-            botsRunning.setText("Bots running: " + botsStr);
         };
         new Timer(1000, myListener).start();
+    }
+    
+    private static String[][] toDataArray(ArrayList<String[]> arrayList){
+    	String[][] array = new String[arrayList.size()][];
+    	for(int i = 0; i < arrayList.size(); i++){
+    	    array[i] = arrayList.get(i);
+    	}
+    	return array;
+	}
+
+	private static Wildfire getBotAtIndex(int index){
+    	for(Wildfire w : bots){
+    		if(w != null && w.playerIndex == index) return w;
+    	}
+    	return null;
     }
     
 }
