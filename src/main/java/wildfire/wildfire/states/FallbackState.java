@@ -40,7 +40,8 @@ public class FallbackState extends State {
 		
 		if(!hasAction()){
 			double velocityTowardsImpact = input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
-			if(distance < (wall ? 270 : (input.car.isSupersonic ? 800 : 600)) && velocityTowardsImpact > 900){
+			double forwardsComponent = Math.cos(input.car.orientation.noseVector.flatten().correctionAngle(input.car.velocity.flatten()));
+			if(distance < (wall ? 380 : (input.car.isSupersonic ? 800 : 500)) && velocityTowardsImpact > 1200 && forwardsComponent > 0.95){
 				double dodgeAngle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 				double goalAngle = Vector2.angle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), goal.minus(input.car.position.flatten()));
 				
@@ -48,7 +49,10 @@ public class FallbackState extends State {
 				Vector2 trace = Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH);
 				boolean shotOpportunity = (trace != null && Math.abs(trace.x) < 1200);
 				
-				if(wildfire.impactPoint.getPosition().z - input.car.position.z > 240 && smartDodgeEnabled){
+				double zDifference = (wildfire.impactPoint.getPosition().z - input.car.position.z);
+//				wildfire.renderer.drawString3d((int)zDifference + "uu", Color.WHITE, wildfire.impactPoint.getPosition().toFramework(), 2, 2);
+				
+				if(zDifference > 400 && smartDodgeEnabled){
 					currentAction = new SmartDodgeAction(this, input, shotOpportunity);
 				}else{
 					if((Math.abs(dodgeAngle) < 0.3 && !shotOpportunity) || goalAngle < 0.5 || Utils.teamSign(input.car) * input.ball.velocity.y < -500 ||  Utils.teamSign(input.car) * input.car.position.y < -3000){
@@ -63,10 +67,11 @@ public class FallbackState extends State {
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			}else if(wall && Math.abs(input.car.position.x) < Utils.GOALHALFWIDTH - 50){
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-			}else if(distance > 3700 && !input.car.isSupersonic && input.car.boost < 45 && velocityTowardsImpact > 1250 && 0.2 > Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten()))){
+			}else if(distance > 4000 && !input.car.isSupersonic && input.car.boost < 45 && velocityTowardsImpact > 1250 && 0.2 > Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten()))){
 				//Front flip for speed
 				currentAction = new DodgeAction(this, 0, input);
 			}
+			
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
 		
@@ -93,7 +98,7 @@ public class FallbackState extends State {
 		wildfire.renderer.drawCircle(Color.ORANGE, target, Utils.BALLRADIUS * 0.2F);
         
 		double steer = Utils.aim(input.car, target);
-        return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle(1).withBoost(Math.abs(steer) < 0.2F && !input.car.isSupersonic).withSlide(Math.abs(steer) > 1.2F && input.car.forwardMagnitude() > 0);
+        return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle(1).withBoost(Math.abs(steer) < 0.2F && !input.car.isSupersonic).withSlide(Math.abs(steer) > 1.2F && input.car.forwardMagnitude() > 800 && !input.car.isSupersonic);
 	}
 	
 	private Vector2 getPosition(Vector2 start, Vector2 goal, int ply, Vector3 impactPoint){

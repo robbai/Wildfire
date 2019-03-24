@@ -31,7 +31,7 @@ public class PathState extends State {
 	@Override
 	public boolean ready(DataPacket input){
 		//This is to avoid starting a path when there is a shooter
-		if(Utils.closestOpponentDistance(input, input.ball.position) < 1100 && Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < 1200 && Utils.isOpponentBehindBall(input)){
+		if(Utils.closestOpponentDistance(input, input.ball.position) < 1300 && Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < 1200 && Utils.isOpponentBehindBall(input)){
 			return false;
 		}
 		

@@ -12,6 +12,7 @@ import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.actions.AerialAction2;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.obj.State;
@@ -88,14 +89,22 @@ public class WallHitState extends State {
 				//This should be replaced with the distance to the entry point, at some point
 				double wallDistance = Utils.distanceToWall(input.car.position);
 				
-				if(wallDistance > Math.max(2500, 1.35 * input.car.velocity.magnitude())){ //Max = 3105
+				Vector3 carVelocity = input.car.velocity;
+				
+				//Aerial of our back wall
+				if(backWall && Math.abs(steer) < 0.1 && !input.car.isSupersonic && wallDistance > 1000){
+					AerialAction2 aerial = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wallDistance < 2000);
+					if(aerial != null) currentAction = aerial;
+				}
+				
+				if(wallDistance > Math.max(2500, 1.35 * carVelocity.magnitude())){ //Max = 3105
 					if(Math.abs(steer) < 0.12){
-						if(input.car.velocity.magnitude() > 900){
+						if(carVelocity.magnitude() > 900){
 							currentAction = new DodgeAction(this, steer, input);
 						}
 					}else if(Math.abs(steer) > 2.6){
 						reverse = true;
-						if(input.car.forwardMagnitude() < -400){
+						if(carVelocity.flatten().magnitudeInDirection(input.car.orientation.noseVector.flatten()) < -400){
 							currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 						}
 					}

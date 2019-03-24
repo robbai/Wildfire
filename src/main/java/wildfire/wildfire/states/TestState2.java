@@ -9,7 +9,7 @@ import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.JumpAction;
+import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.obj.State;
 
 public class TestState2 extends State {
@@ -32,13 +32,24 @@ public class TestState2 extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(!hasAction() && System.currentTimeMillis() % 1000 < 50){
-			currentAction = new JumpAction(this, input.elapsedSeconds, 250);
+		double aim = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+		
+		if(!hasAction() && wildfire.impactPoint.getTime() < 1.25 && Math.cos(aim) < 0){
+			currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			if(!currentAction.failed){
 				return currentAction.getOutput(input); 
 			}
 		}
-		return new ControlsOutput().withNone();
+		
+		boolean forward = input.car.forwardMagnitude() > 1100;
+		
+		if(forward){
+			aim = -aim;
+		}else{
+			aim = Utils.invertAim(aim);
+		}
+		
+		return new ControlsOutput().withSteer((float)aim * 3F).withBoost(false).withThrottle(forward ? 1 : -1);
 	}
 	
 	@SuppressWarnings("unused")

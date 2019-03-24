@@ -22,7 +22,7 @@ public class ReturnState extends State {
 	/*How small the difference of the angle from the attacker to the ball and the attacker to the goal has to be*/
 	private final double maxShootingAngle = 0.45 * Math.PI;
 	
-	private final double homeZoneSize = 3650D;
+//	private final double homeZoneSize = 3650D;
 
 	public ReturnState(Wildfire wildfire){
 		super("Return", wildfire);
@@ -41,7 +41,7 @@ public class ReturnState extends State {
 		}		
 		
 		//Just hit it instead
-		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1200 && !Utils.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition())){
+		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < (input.car.isSupersonic ? 2000 : 1200) && !Utils.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition())){
 			return false;
 		}
 		
@@ -53,11 +53,12 @@ public class ReturnState extends State {
 			if(!onTarget && !Utils.isOpponentBehindBall(input)) return false;
 			if(Utils.isTeammateCloser(input)) return wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 4500;
 		}
-		if(Utils.teamSign(input.car.team) * input.ball.velocity.y > 2400 || input.ball.position.distanceFlat(homeGoal) > 3400){
+		if(Utils.teamSign(input.car.team) * input.ball.velocity.y > 2400 || Utils.teamSign(input.car.team) * input.ball.position.y > -2900){
 			return false;
 		}
 		
-		return !Utils.defendNotReturn(input, wildfire.impactPoint.getPosition(), homeZoneSize, onTarget);
+//		return !Utils.defendNotReturn(input, wildfire.impactPoint.getPosition(), homeZoneSize, onTarget);
+		return wildfire.impactPoint.getPosition().distanceFlat(Utils.homeGoal(input.car.team)) > 4800 && !onTarget;
 	}
 
 	@Override
@@ -79,7 +80,6 @@ public class ReturnState extends State {
 			}
 			if(!currentAction.failed) return currentAction.getOutput(input);
 		}
-
 
 		//Block the attack!
 		CarData attacker = getAttacker(input);
@@ -106,6 +106,19 @@ public class ReturnState extends State {
 					return stayStill(input); //We there
 				}else{
 					wildfire.renderer.drawLine3d(Color.RED, input.car.position.flatten().toFramework(), target.toFramework());
+					
+					//Front flip for speed
+					if(!hasAction() && Utils.homeGoal(input.car.team).distance(input.car.position.flatten()) > 2800 && !input.car.isSupersonic && input.car.boost < 45){
+						if(Math.abs(Utils.aim(input.car, Utils.homeGoal(input.car.team))) < 0.4 && input.car.velocity.magnitude() > 1000){
+							currentAction = new DodgeAction(this, 0, input);
+							if(currentAction == null || currentAction.failed){
+								currentAction = null;
+							}else{
+								return currentAction.getOutput(input);
+							}
+						}
+					}
+					
 					return drivePoint(input, target.withX(Math.max(-500, Math.min(500, target.x))), false); //We better get there!
 				}
 			}
@@ -113,7 +126,6 @@ public class ReturnState extends State {
 
 		//Get back to goal
 		Vector2 homeGoal = Utils.homeGoal(input.car.team);
-//		wildfire.renderer.drawString2d("Return", Color.WHITE, new Point(0, 20), 2, 2);
 		return homeGoal.distance(input.car.position.flatten()) < 200 ? stayStill(input) : drivePoint(input, homeGoal, false);
 	}
 
@@ -139,14 +151,18 @@ public class ReturnState extends State {
 	
 	private ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
 		float steer = (float)Utils.aim(input.car, point);
-		float throttle = rush ? 1F : (float)Math.signum(Math.cos(steer));
+		
+		float throttle = (rush ? 1F : (float)Math.signum(Math.cos(steer)));
 		double distance = input.car.position.distanceFlat(point);
-		boolean reverse = throttle < 0;
-		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > 900).withSteer(-(reverse ? (float)Utils.invertAim(steer) : steer) * 2F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
+		
+		boolean reverse = (throttle < 0);
+		if(reverse) steer = (float)-Utils.invertAim(steer);
+		
+		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > (rush ? 1200 : 2000)).withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
 	}
 	
 	private ControlsOutput stayStill(DataPacket input){
-		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 100).withBoost(false);
+		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 2500).withBoost(false);
 	}
 
 }

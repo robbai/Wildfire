@@ -12,11 +12,13 @@ import wildfire.wildfire.obj.State;
 
 public class PatienceState extends State {
 	
-	private Vector3 point;
-
 	/**
 	 * Don't rush the ball if it's on the backboard
 	 */
+	
+	private final double maxWaitingSeconds = 1.75;
+	
+	private Vector3 point;
 
 	public PatienceState(Wildfire wildfire){
 		super("Patience", wildfire);
@@ -29,13 +31,13 @@ public class PatienceState extends State {
 		double impactDistance = input.car.position.distanceFlat(wildfire.impactPoint.getPosition());
 		if(impactDistance > 4500) return false;
 		
-		if(Utils.isInCone(input.car, wildfire.impactPoint.getPosition()) || Math.abs(wildfire.impactPoint.getPosition().x) < 1200) return false;
-		if(wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 4500 || input.car.position.z > 200) return false;
+		if(Utils.isInCone(input.car, wildfire.impactPoint.getPosition()) || Math.abs(wildfire.impactPoint.getPosition().x) < 1000) return false;
+		if(wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 4300 || input.car.position.z > 200) return false;
 		
 		int startFrame = wildfire.impactPoint.getFrame();
-		for(int i = startFrame; i < Math.min(wildfire.ballPrediction.slicesLength(), startFrame + 250); i++){
+		for(int i = startFrame; i < Math.min(wildfire.ballPrediction.slicesLength(), startFrame + (maxWaitingSeconds * 60)); i++){
 			Vector3 location = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(i).physics().location());
-			if(Math.abs(location.x) < 1100 && (location.y * Utils.teamSign(input.car) < 4200 || location.z < 600)){
+			if(Math.abs(location.x) < 900 && (location.y * Utils.teamSign(input.car) < 4100 || location.z < 600)){
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.GREEN, startFrame, i);
 				wildfire.renderer.drawCrosshair(input.car, location, Color.green, 50);
 				point = location;
@@ -57,8 +59,9 @@ public class PatienceState extends State {
 		if(Math.abs(steer) > Math.toRadians(40)){
 			return new ControlsOutput().withNone().withSteer((float)steer * -3F).withBoost(false).withThrottle(1);
 		}else{
-			boolean slow = (input.car.forwardMagnitude() > 1100 || input.car.position.distanceFlat(Utils.enemyGoal(input.car.team)) < 2600);
-			return new ControlsOutput().withNone().withSteer((float)steer * -3F).withBoost(false).withThrottle(slow ? 0 : 1);
+			double forwardSpeed = input.car.forwardMagnitude();
+			boolean slowDown = (forwardSpeed > 1100 || input.car.position.distanceFlat(Utils.enemyGoal(input.car.team)) < 3400);
+			return new ControlsOutput().withNone().withSteer((float)steer * -3F).withBoost(false).withThrottle(slowDown ? (float)-forwardSpeed / 2000 : 1);
 		}
 	}
 

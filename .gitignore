@@ -5,3 +5,4 @@ out/
 build/
 __pycache__
 *.iml
+*.log

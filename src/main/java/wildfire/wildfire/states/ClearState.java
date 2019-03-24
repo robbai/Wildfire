@@ -37,7 +37,7 @@ public class ClearState extends State {
 		}
 		
 		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
-		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000) return false;
+		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000 && Utils.teamSign(input.car.team) * input.ball.position.y > -4500) return false;
 		
 		return Utils.defendNotReturn(input, wildfire.impactPoint.getPosition(), homeZoneSize, onTarget);
 	}
@@ -67,17 +67,15 @@ public class ClearState extends State {
 		//Aerial
 		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle(input.car.position.minus(input.ball.position).flatten())); 
 		if(!hasAction() && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 700 ? 230 : 400) && input.car.hasWheelContact && Math.abs(angleImpact) < 0.3 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1200 && input.car.position.z < 200){
-//			double maxRange = wildfire.impactPoint.getPosition().z * 5;
-//			double minRange = wildfire.impactPoint.getPosition().z * 1.2;
-//			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
-//				currentAction = new AerialAction(this, input, wildfire.impactPoint.getPosition().z > 800);
-//			}
-
-			currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 800);
-			if(currentAction != null && !currentAction.failed){
-				return currentAction.getOutput(input);
-			}else{
-				currentAction = null;
+			double maxRange = wildfire.impactPoint.getPosition().z * 5;
+			double minRange = wildfire.impactPoint.getPosition().z * 1.2;
+			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
+				currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 800);
+				if(currentAction != null && !currentAction.failed){
+					return currentAction.getOutput(input);
+				}else{
+					currentAction = null;
+				}
 			}
 		}
 		

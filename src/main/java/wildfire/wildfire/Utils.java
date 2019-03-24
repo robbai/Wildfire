@@ -31,6 +31,10 @@ public class Utils {
 		return new Vector2(0, teamSign(team) * PITCHLENGTH);
 	}
 	
+	public static Vector2 enemyGoal(CarData car){
+		return new Vector2(0, teamSign(car) * PITCHLENGTH);
+	}
+	
 	public static double aim(CarData car, Vector2 point){
 		Vector2 carPosition = car.position.flatten();
         Vector2 carDirection = car.orientation.noseVector.flatten();
@@ -217,7 +221,7 @@ public class Utils {
 	}
 	
 	public static boolean isOnWall(CarData car){
-		return car.position.z > 160 && car.hasWheelContact;
+		return car.position.z > 240 && car.hasWheelContact;
 	}
 	
 	public static void transferAction(Action one, Action two){
@@ -409,6 +413,17 @@ public class Utils {
 	public static Vector3 capMagnitude(Vector3 vec, double maxMagnitude){
 		if(vec.magnitude() > maxMagnitude) return vec.scaledToMagnitude(maxMagnitude);
 		return vec;
+	}
+	
+	public static boolean isOnPrediction(BallPrediction ballPrediction, Vector3 vec){
+		for(int i = 0; i < ballPrediction.slicesLength(); i++){
+			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			Vector3 velocity = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().velocity());
+			
+			double distance = vec.distance(location);
+			if(distance < velocity.scaled(1D / 60).magnitude()) return true;
+		}
+		return false;
 	}
 
 }

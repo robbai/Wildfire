@@ -141,5 +141,10 @@ public class Vector2 {
 	public boolean isOutOfBounds(){
 		 return Math.abs(x) > Utils.PITCHWIDTH || Math.abs(y) > Utils.PITCHLENGTH;
 	}
+	
+	public double magnitudeInDirection(Vector2 direction){
+    	double component = Math.cos(direction.correctionAngle(this));
+    	return this.magnitude() * component;
+    }
     
 }

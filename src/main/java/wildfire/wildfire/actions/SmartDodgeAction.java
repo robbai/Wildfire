@@ -28,14 +28,14 @@ public class SmartDodgeAction extends Action {
 	 */
 	private final double maxTargetDistance = 300D;
 	
-	private PredictionSlice target = null;
+	public PredictionSlice target = null;
 	private double timePressed, timeToPeak;
 
 	public SmartDodgeAction(State state, DataPacket input, boolean coneRequired){
 		super("Smart Dodge", state, input.elapsedSeconds);
 		
 		BallPrediction ballPrediction = this.getBallPrediction();
-		if(ballPrediction != null && wildfire.lastDodge + 1.5 < timeStarted && input.car.hasWheelContact){
+		if(ballPrediction != null && wildfire.lastDodgeTime(input.elapsedSeconds) > 1.5 && input.car.hasWheelContact){
 			for(int i = 0; i < ballPrediction.slicesLength(); i++){
 				Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 				location = location.plus(input.car.position.minus(location).scaledToMagnitude(Utils.BALLRADIUS));
@@ -106,14 +106,14 @@ public class SmartDodgeAction extends Action {
 		if(timeDifference < timePressed){
 			return controller.withJump(true);
 		}else if(!input.car.hasWheelContact && timeDifference > timeToPeak){
-			if(timeDifference > 0.5 + timeToPeak) Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+			if(timeDifference > 0.04 + timeToPeak || input.car.doubleJumped || input.car.velocity.z < -1000) Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 			
 			//Dodge
 			double angle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-			controller.withJump(System.currentTimeMillis() % 100 > 50);
+			controller.withJump(true);
 	        controller.withRoll((float)-Math.sin(angle) * 2);
 	        controller.withPitch((float)-Math.cos(angle));
-	        wildfire.lastDodge = timeStarted; //No spamming!
+	        wildfire.resetDodgeTime(input.elapsedSeconds); //No spamming!
 	        return controller;
 		}else if(input.car.velocity.z > 200){
 			//Point up
@@ -127,7 +127,6 @@ public class SmartDodgeAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-//		return this.failed || (timeDifference(input.elapsedSeconds) > timePressed + 0.1 && input.car.hasWheelContact) || (target.getPosition().distanceFlat(input.car.position) > maxTargetDistance);
 		return this.failed || (timeDifference(input.elapsedSeconds) > timePressed + 0.25 && input.car.hasWheelContact);
 	}
 	

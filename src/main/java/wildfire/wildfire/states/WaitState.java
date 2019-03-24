@@ -44,13 +44,13 @@ public class WaitState extends State {
 		}
 		
 		//Can't reach point (optimistic)
-		if(bounceDistance / timeLeft > 2550) return false;
+		if(bounceDistance / timeLeft > 2800) return false;
 		
 		//Teammate's closer
 		if(Utils.isTeammateCloser(input, bounce)) return false;
 		
 		//Opponent's corner
-		if(Utils.teamSign(input.car) * bounce.y > 4000 && Utils.enemyGoal(input.car.team).distance(bounce) > 1800 && !Utils.isInCone(input.car, bounce3, 1000)) return false;
+		if(Utils.teamSign(input.car) * bounce.y > 4000 && Utils.enemyGoal(input.car.team).distance(bounce) > 1800 && !Utils.isInCone(input.car, bounce3, 1000)) return bounceDistance < 2400;
 		
 		return (Utils.isBallAirborne(input.ball) && input.ball.velocity.flatten().magnitude() < 5000) || (input.ball.position.z > 110 && input.ball.position.distanceFlat(input.car.position) < 220 && wallDistance > 450);
 	}
@@ -60,16 +60,7 @@ public class WaitState extends State {
 		//Aerial
 		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
 		double impactRadians = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 200 : 350) && Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(impactRadians) < (onTarget ? 0.42 : 0.32) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1000 : -2000)){
-//			double maxRange = wildfire.impactPoint.getPosition().z * (onTarget ? 7 : 6);
-//			double minRange = wildfire.impactPoint.getPosition().z * (onTarget ? 1 : 2);
-//			wildfire.renderer.drawCircle(Color.ORANGE, wildfire.impactPoint.getPosition().flatten(), minRange);
-//			wildfire.renderer.drawCircle(Color.ORANGE, wildfire.impactPoint.getPosition().flatten(), maxRange);
-//			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
-//				currentAction = new AerialAction(this, input, wildfire.impactPoint.getPosition().z > 600);
-//				return currentAction.getOutput(input);
-//			}
-			
+		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 220 : 700) && Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(impactRadians) < (onTarget ? 0.42 : 0.32) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1500 : -2500)){
 			currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 420);
 			if(currentAction != null && !currentAction.failed){
 				return currentAction.getOutput(input);
@@ -83,13 +74,13 @@ public class WaitState extends State {
 		
 		//Smart dodge (test)
 		boolean planSmartDodge = false, smartDodgeCone = false;
-		if(!towardsOwnGoal && !input.car.isSupersonic && input.car.hasWheelContact && input.car.position.z < 200 && (input.ball.position.z > 130 || input.ball.velocity.z < -400)){
+		if(!towardsOwnGoal && !input.car.isSupersonic && input.car.hasWheelContact && input.car.position.z < 200 && input.ball.position.z > 180){
 			if(Utils.closestOpponentDistance(input, bounce.withZ(0)) < 1500){
 				planSmartDodge = true;
-			}else if(bounce.distance(Utils.enemyGoal(input.car.team)) < 2300){
+			}else if(bounce.distance(Utils.enemyGoal(input.car.team)) < 2500){
 				planSmartDodge = true;
 				smartDodgeCone = true;
-			}else if(bounce.distance(Utils.homeGoal(input.car.team)) < 2300){
+			}else if(bounce.distance(Utils.homeGoal(input.car.team)) < 2500){
 				planSmartDodge = true;
 			} 
 		}
@@ -97,8 +88,11 @@ public class WaitState extends State {
 		if(planSmartDodge) renderJump(input.car);
 		if(!hasAction() && planSmartDodge){
 			currentAction = new SmartDodgeAction(this, input, smartDodgeCone);
-//			System.out.println(currentAction.failed);
-			if(!currentAction.failed) currentAction.getOutput(input);
+			if(!currentAction.failed && ((SmartDodgeAction)currentAction).target.getPosition().z > 200){
+				currentAction.getOutput(input);
+			}else{
+				currentAction = null;
+			}
 		}
 		
 		//Drive down the wall

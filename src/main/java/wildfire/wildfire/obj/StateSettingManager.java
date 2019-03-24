@@ -40,8 +40,7 @@ public class StateSettingManager {
 	}
 	
 	public void aerial(DataPacket input){
-		// && !Utils.isOnTarget(wildfire.ballPrediction, 0) && !Utils.isOnTarget(wildfire.ballPrediction, 1)
-		if(((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact) || getCooldown(input) > 18){
+		if(((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact) || getCooldown(input) > 18 || Math.abs(input.ball.position.y) > 4900){
     		GameState gameState = new GameState();
     		Vector3 carPosition = new Vector3(Utils.random(-3500, 3500), -4000, 10);
     		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(new DesiredRotation(0F, (float)carPosition.flatten().correctionAngle(new Vector2()), 0F))));
@@ -148,5 +147,21 @@ public class StateSettingManager {
 			resetCooldown(input.elapsedSeconds);
 		}
 	}
+
+	//TODO
+//	public void rollingShot(DataPacket input){
+//		if(getCooldown(input) > 10 || Utils.distanceToWall(input.ball.position) < 200 || input.ball.position.isOutOfBounds()){
+//			final double carDistanceGoal = 3000;
+//			
+//			Vector2 enemyGoal = Utils.enemyGoal(input.car);
+//			
+//			Vector2 carPosition = new Vector2(Utils.random(-1, 1), Utils.random(0, -Utils.teamSign(input.car))).scaledToMagnitude(carDistanceGoal);
+//			carPosition = enemyGoal.plus(carPosition);
+//			
+//			Vector2 carAngle = enemyGoal.minus(carPosition).normalized();
+//			
+//			Vector2 ballAngle = input.b
+//		}
+//	}
 
 }

@@ -9,7 +9,6 @@ import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.AerialAction2;
 
 public class Path {
 	
@@ -76,7 +75,8 @@ public class Path {
 		points.clear();
 		
 		Vector2 start = ball;
-		Vector2 finish = car.position.plus(car.velocity.scaled(1D / 60)).flatten();
+//		Vector2 finish = ar.position.plus(car.velocity.scaled(1D / 60)).flatten();
+		Vector2 finish = car.position.flatten();
 		points.add(start);
 		
 		//Offset, this is so we line up the goal before we reach the ball

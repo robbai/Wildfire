@@ -13,11 +13,11 @@ public class DodgeAction extends Action {
 	public DodgeAction(State state, double angle, DataPacket input){
 		super("Dodge", state, input.elapsedSeconds);
 				
-		if(wildfire.lastDodge + 2 > timeStarted || input.car.velocity.z < -1){
+		if(wildfire.lastDodgeTime(input.elapsedSeconds) < 1.5 || input.car.velocity.z < -1){
 			failed = true; 
 		}else{
 			this.angle = angle;
-			wildfire.lastDodge = timeStarted;
+			wildfire.resetDodgeTime(input.elapsedSeconds);
 		}
 	}
 

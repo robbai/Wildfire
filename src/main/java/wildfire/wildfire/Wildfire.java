@@ -57,8 +57,8 @@ public class Wildfire implements Bot {
 	private State lastPrintedState = null;
 	
 	//Measured in elapsed seconds
-	public float lastDodge = 0;
-	
+	private float lastDodge = 0;
+
 	//Measured in milliseconds
 	private final long quickChatCooldown = 40000L;
 	private long lastQuickChat = 0L;
@@ -101,7 +101,7 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	stateSetting.path(input);
+//    	stateSetting.rollingShot(input);
     	
     	//Get the ball prediction
     	try{
@@ -245,8 +245,18 @@ public class Wildfire implements Bot {
 		}
 		return false;
 	}
+	
 	public boolean sendQuickChat(byte... quickChatSelection){
 		return this.sendQuickChat(false, quickChatSelection);
+	}
+	
+	public float lastDodgeTime(float elapsedSeconds){
+		if(elapsedSeconds < this.lastDodge) resetDodgeTime(elapsedSeconds);
+		return elapsedSeconds - this.lastDodge;
+	}
+
+	public void resetDodgeTime(float elapsedSeconds){
+		this.lastDodge = elapsedSeconds;
 	}
 
 }

@@ -42,14 +42,19 @@ public class AerialAction2 extends Action {
 		}
 	}
 	
-	public static AerialAction2 fromBallPrediction(State state, CarData car, BallPrediction ballPrediction, boolean doubleJump){
+	public static AerialAction2 fromBallPrediction(State state, CarData car, BallPrediction ballPrediction, boolean forceDoubleJump){
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-//		for(int i = (ballPrediction.slicesLength() - 1); i > -1; i--){
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			if(location.isOutOfBounds()) continue;
 			location = location.plus(car.position.minus(location).scaledToMagnitude(Utils.BALLRADIUS));
 			
-			AerialAction2 a = new AerialAction2(state, car, location, (double)i / 60, doubleJump);
+			//Double jumping
+			AerialAction2 a;
+			if(!forceDoubleJump){
+				a = new AerialAction2(state, car, location, (double)i / 60, false);
+				if(!a.failed) return a;
+			}
+			a = new AerialAction2(state, car, location, (double)i / 60, true);
 			if(!a.failed) return a;
 		}
 		return null;
@@ -61,11 +66,7 @@ public class AerialAction2 extends Action {
 		float timeDifference = timeDifference(input.elapsedSeconds);
 		
 		double timeLeft = this.time - timeDifference;
-		if(timeLeft < 0){
-//			AerialAction2 doubleTouch = (input.ball.position.distance(input.car.position) < 400 ? null : AerialAction2.fromBallPrediction(this.state, input.car, wildfire.ballPrediction));
-			AerialAction2 doubleTouch = null;
-			Utils.transferAction(this, doubleTouch != null ? doubleTouch : new RecoveryAction(this.state, input.elapsedSeconds));
-		}
+		if(timeLeft < 0) Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s, Double Jump: " + this.doubleJump, Color.WHITE, new Point(0, 40), 2, 2);
 		
 		//Draw the crosshair
@@ -77,7 +78,7 @@ public class AerialAction2 extends Action {
 //			return controls;
 		}
 		
-		//Point towards the target
+		//Point towards the target, and stop boosting
 		Vector3 connection = renderFall(Color.ORANGE, input.car.position, input.car.velocity, timeDifference);
 		if(connection != null){
 			wildfire.renderer.drawCrosshair(input.car, connection, Color.YELLOW, 150);
@@ -99,16 +100,10 @@ public class AerialAction2 extends Action {
 		Vector3 dir = acc.normalized();
 		
 		double accelerationReq = acc.magnitude();
-		double accelerationForwards = Math.cos(input.car.orientation.noseVector.flatten().correctionAngle(acc.flatten()));
+		double accelerationReqForwards = accelerationReq * Math.cos(input.car.orientation.noseVector.flatten().correctionAngle(acc.flatten()));
 		
 		wildfire.renderer.drawString2d("Avg. Acceleration: " + (int)averageAcceleration + "uu/s^2", Color.WHITE, new Point(0, 60), 2, 2);
 		wildfire.renderer.drawString2d("Acceleration Req.: " + (int)accelerationReq + "uu/s^2", Color.WHITE, new Point(0, 80), 2, 2);
-		
-		//Line rendering
-//		final double lineRenderLength = 600;
-//		wildfire.renderer.drawLine3d(Color.GREEN, input.car.position.toFramework(), input.car.position.plus(dir.scaledToMagnitude(lineRenderLength)).toFramework());
-//		wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.toFramework(), input.car.position.plus(input.car.orientation.noseVector.scaledToMagnitude(lineRenderLength)).toFramework());
-//		wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), input.car.position.plus(target.minus(input.car.position).scaledToMagnitude(lineRenderLength)).toFramework());
 				
 		//For handling the car when upside down
 		double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
@@ -128,7 +123,7 @@ public class AerialAction2 extends Action {
 		}
 		
 		//Boost
-		controls.withBoost(Math.abs(pitch) + Math.abs(yaw) < 1.8 && accelerationForwards > 0);
+		controls.withBoost(Math.abs(pitch) + Math.abs(yaw) < 1.9 && accelerationReqForwards > Utils.BOOSTACC / 60);
 		
 		return controls;
 	}
@@ -140,11 +135,6 @@ public class AerialAction2 extends Action {
 	
 	private boolean isAerialPossible(CarData car, Vector3 target, double t){
 		Vector3 carPosition = car.position;
-//		if(car.hasWheelContact){
-//			//Jump
-//			carPosition = carPosition.plus(car.orientation.roofVector.scaledToMagnitude(jumpHeight));
-//		}
-			
 		Vector3 s = target.minus(carPosition);
 		
 		Vector3 u = car.velocity;
@@ -154,12 +144,14 @@ public class AerialAction2 extends Action {
 			u = Utils.capMagnitude(u, 2300);
 		}
 		
-		t -= jumpTime;
+		//Compensate for turning by reducing the time we have left
+		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalized();
+		double angleDifference = car.orientation.noseVector.minus(generalDirection).withZ(0).magnitude();
+		double angleTime = Math.min(1.5, angleDifference * 1.75);
+		System.out.println("Angular time: " + Utils.round(angleTime) + "s");
+		t -= angleTime;
 		
-		double aX = acceleration(s.x, u.x, t);
-		double aY = acceleration(s.y, u.y, t);
-		double aZ = accelerationGravity(s.z, u.z, t);
-		Vector3 a = new Vector3(aX, aY, aZ);
+		Vector3 a = new Vector3(acceleration(s.x, u.x, t), acceleration(s.y, u.y, t), accelerationGravity(s.z, u.z, t));
 		averageAcceleration = a.magnitude();
 		if(averageAcceleration > Utils.BOOSTACC) return false;
 		
@@ -184,7 +176,7 @@ public class AerialAction2 extends Action {
 	private final double renderScale = (1D / 50);
 	private Vector3 renderFall(Color colour, Vector3 start, Vector3 velocity, double t){
 		if(start.isOutOfBounds()) return null;
-		if(start.distance(target) < 38 && Math.abs(t - time) < renderScale) return start;
+		if(start.distance(target) < 40 && Math.abs(t - time) < renderScale) return start;
 		
 		velocity = velocity.plus(new Vector3(0, 0, -Utils.GRAVITY * renderScale)); //Gravity
 		velocity = Utils.capMagnitude(velocity, 2300);
