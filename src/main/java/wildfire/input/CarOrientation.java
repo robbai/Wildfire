@@ -3,6 +3,7 @@ package wildfire.input;
 
 import rlbot.flat.PlayerInfo;
 import rlbot.gamestate.DesiredRotation;
+import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 
 public class CarOrientation {
@@ -50,6 +51,23 @@ public class CarOrientation {
     
     public DesiredRotation toDesired(){
     	return new DesiredRotation((float)eularPitch, (float)eularYaw, (float)eularRoll);
+    }
+    
+    public static CarOrientation fromVector(Vector3 nose){
+    	nose = nose.normalized();
+    	double pitch = Math.asin(nose.z);
+		double yaw = -Math.atan2(nose.y, nose.x);
+    	
+//    	// y = cos(pitch) * sin(yaw)
+//    	// y / cos(pitch) = sin(yaw)
+//    	// yaw = sin^-1(y / cos(pitch))
+//    	double yaw = Math.sinh(nose.y / Math.cos(pitch));
+    	
+		return convert(pitch, yaw, 0);
+    }
+    
+    public static CarOrientation fromVector(Vector2 nose){
+    	return fromVector(nose.withZ(0));
     }
     
 }

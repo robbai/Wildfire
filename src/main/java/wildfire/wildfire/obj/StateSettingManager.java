@@ -19,10 +19,12 @@ public class StateSettingManager {
 	
 	private Wildfire wildfire;
 	private float lastTime;
+	private Random random;
 
 	public StateSettingManager(Wildfire wildfire){
 		this.wildfire = wildfire;
 		this.lastTime = -1000F;
+		this.random = new Random();
 	}
 	
 	private void resetCooldown(float lastTime){
@@ -148,20 +150,35 @@ public class StateSettingManager {
 		}
 	}
 
-	//TODO
-//	public void rollingShot(DataPacket input){
-//		if(getCooldown(input) > 10 || Utils.distanceToWall(input.ball.position) < 200 || input.ball.position.isOutOfBounds()){
-//			final double carDistanceGoal = 3000;
-//			
-//			Vector2 enemyGoal = Utils.enemyGoal(input.car);
-//			
-//			Vector2 carPosition = new Vector2(Utils.random(-1, 1), Utils.random(0, -Utils.teamSign(input.car))).scaledToMagnitude(carDistanceGoal);
-//			carPosition = enemyGoal.plus(carPosition);
-//			
-//			Vector2 carAngle = enemyGoal.minus(carPosition).normalized();
-//			
-//			Vector2 ballAngle = input.b
-//		}
-//	}
+	public void rollingShot(DataPacket input){
+		if(getCooldown(input) > 6 || Utils.distanceToWall(input.ball.position) < 200 || input.ball.velocity.magnitude() < 10){
+			final double carDistanceGoal = Utils.random(2500, 4000), ballSpeed = Utils.random(500, 2200), secondsToMiddle = Utils.random(1.5, 3);
+			
+			Vector2 enemyGoal = Utils.enemyGoal(input.car);
+			
+			//The position of the car
+			Vector2 carPosition = new Vector2(Utils.random(-1, 1), Utils.random(0, -Utils.teamSign(input.car))).scaledToMagnitude(carDistanceGoal);
+			carPosition = enemyGoal.plus(carPosition).confine(500);
+			
+			//The direction that the car will face
+			Vector2 carDirection = carPosition.minus(enemyGoal).normalized();
+			System.out.println(carDirection.toString());
+			
+			//The direction that the ball will roll
+			Vector2 ballDirection = carDirection.rotate(Math.signum(random.nextDouble() - 0.5) * Math.PI / 2).scaledToMagnitude(ballSpeed);
+//			Vector2 ballDirection = new Vector2();
+			
+			//The position of the ball
+			Vector2 ballPosition = carPosition.plus(enemyGoal).scaled(0.5);
+			if(!ballDirection.isZero()) ballPosition = ballPosition.plus(ballDirection.scaledToMagnitude(-ballSpeed * secondsToMiddle));
+			ballPosition = ballPosition.confine(500);
+			
+			GameState gameState = new GameState();
+			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.withZ(30).toDesired()).withRotation(CarOrientation.fromVector(carDirection).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired())));
+			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(ballPosition.withZ(Utils.BALLRADIUS).toDesired()).withVelocity(ballDirection.toDesired()).withAngularVelocity(new Vector3().toDesired())));
+			RLBotDll.setGameState(gameState.buildPacket());
+			resetCooldown(input.elapsedSeconds);
+		}
+	}
 
 }

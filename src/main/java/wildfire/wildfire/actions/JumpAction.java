@@ -14,7 +14,8 @@ public class JumpAction extends Action {
 	// h = (10500 * T * T) / 13 + (8400 * T) / 13 + 900 / 13
 	// T = 0.1 * sqrt(13 / 105) * sqrt(h + 60) - 0.4
 	
-	private final double tick = (1D / 60), maxSingleJumpHeight = 230.76923076923077D;
+	private final double tick = (1D / 60); 
+//	private final double maxSingleJumpHeight = 230.76923076923077D;
 	
 	private double height, jumpTime;
 

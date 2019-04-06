@@ -34,9 +34,12 @@ public class ShootState extends State {
 		if(wildfire.impactPoint.getPosition().z > 200) return false;
 		
 		//Not during a weird dribble
-		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 110 && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 6000){
+		if(input.ball.position.distanceFlat(input.car.position) < Utils.BALLRADIUS && input.ball.position.z > 110){ // && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 6000
 			return false;
 		}
+		
+		//Don't commit to a shot if it will take a long time
+		if(wildfire.impactPoint.getTime() > 3 && !input.car.isSupersonic) return false;
 		
 		double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(Math.abs(aimBall) > Math.PI * 0.7 && input.car.velocity.magnitude() > 1100) return false;

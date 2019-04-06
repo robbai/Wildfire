@@ -87,7 +87,7 @@ public class BoostState extends State {
 		}
 		
 		if(forwardVelocity >= 0){
-			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(1F).withBoost(Math.abs(steer) < 0.1).withSlide(Math.abs(steer) > 1.2 && distance < 900);
+			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(1F).withBoost(Math.abs(steer) < 0.1 && (distance > 1200 || forwardVelocity < 800)).withSlide(Math.abs(steer) > 1.2 && distance < 900);
 		}else{
 			return new ControlsOutput().withSteer((float)Utils.invertAim(steer) * 3).withThrottle(-1F).withBoost(false);
 		}

@@ -147,7 +147,7 @@ public class AerialAction2 extends Action {
 		//Compensate for turning by reducing the time we have left
 		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalized();
 		double angleDifference = car.orientation.noseVector.minus(generalDirection).withZ(0).magnitude();
-		double angleTime = Math.min(1.5, angleDifference * 1.75);
+		double angleTime = Math.min(1, angleDifference * 1.4);
 		System.out.println("Angular time: " + Utils.round(angleTime) + "s");
 		t -= angleTime;
 		

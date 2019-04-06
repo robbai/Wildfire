@@ -61,7 +61,9 @@ public class WaitState extends State {
 		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
 		double impactRadians = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 220 : 700) && Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(impactRadians) < (onTarget ? 0.42 : 0.32) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1500 : -2500)){
+//		if(!hasAction() && timeLeft > 1.5 && (input.car.position.z > 120 || Math.abs(impactRadians) < 0.35)){
 			currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 420);
+//			currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, false);
 			if(currentAction != null && !currentAction.failed){
 				return currentAction.getOutput(input);
 			}else{

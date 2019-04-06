@@ -34,7 +34,7 @@ public class Vector2 {
      * If magnitude is negative, we will return a vector facing the opposite direction.
      */
     public Vector2 scaledToMagnitude(double magnitude){
-//        if(isZero()) throw new IllegalStateException("Cannot scale up a vector with length zero!");
+        if(isZero()) throw new IllegalStateException("Cannot scale up a vector with length zero!");
         double scaleRequired = magnitude / magnitude();
         return scaled(scaleRequired);
     }

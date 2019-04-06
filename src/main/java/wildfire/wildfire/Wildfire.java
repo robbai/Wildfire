@@ -93,6 +93,7 @@ public class Wildfire implements Bot {
 //     	  new TestState2(this);
 //        fallbackState = new PathState(this);
 //        fallbackState = new DemoState(this);
+//        fallbackState = new IdleState(this);
         
         WildfireJava.bots.add(this);
     }
@@ -101,7 +102,10 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	stateSetting.rollingShot(input);
+//    	stateSetting.rollingShot(input);    	
+//    	double gameSpeed = Math.max(0.5, 3F - Math.abs(input.ball.position.y) / 1500F);
+//    	double gameSpeed = 2.5F;
+//		RLBotDll.setGameState(new GameState().withGameInfoState(new GameInfoState().withGameSpeed((float)gameSpeed)).buildPacket());
     	
     	//Get the ball prediction
     	try{
