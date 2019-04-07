@@ -8,6 +8,7 @@ sourceCompatibility = 1.8
 
 repositories {
     jcenter()
+	maven { url "https://jitpack.io" }
 }
 
 mainClassName = 'wildfire.WildfireJava'
@@ -31,6 +32,8 @@ dependencies {
 
     // This is makes it easy to find the dll when running in intellij, where JVM args don't get passed from gradle.
     runtime files(dllDirectory)
+	
+	compile 'com.github.WilliamAHartman:Jamepad:1.3.2'
 }
 
 task checkPipUpgradeSafety {

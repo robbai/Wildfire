@@ -16,6 +16,7 @@ import wildfire.WildfireJava;
 import wildfire.boost.BoostManager;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.wildfire.obj.KickoffSpawn;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.obj.StateSettingManager;
@@ -49,6 +50,7 @@ public class Wildfire implements Bot {
 	public BallPrediction ballPrediction;
 	public PredictionSlice impactPoint;
 	public StateSettingManager stateSetting;
+	private Human human;
 	
 	//State info
 	public ArrayList<State> states;
@@ -63,7 +65,7 @@ public class Wildfire implements Bot {
 	private final long quickChatCooldown = 40000L;
 	private long lastQuickChat = 0L;
 	
-	public boolean unlimitedBoost;
+	public boolean unlimitedBoost;	
 
     public Wildfire(int playerIndex, int team, boolean test){
         this.playerIndex = playerIndex;
@@ -71,6 +73,10 @@ public class Wildfire implements Bot {
         this.test = test;
         this.stateSetting = new StateSettingManager(this);
         this.unlimitedBoost = false;
+        
+        //Human thread
+        this.human = new Human(this).setEnabled(false);
+        this.human.start();
         
         //Initialise all the states
         states = new ArrayList<State>();
@@ -102,7 +108,7 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	stateSetting.rollingShot(input);    	
+//    	stateSetting.kickoffSpawn(input, KickoffSpawn.FULLBACK);   	
 //    	double gameSpeed = Math.max(0.5, 3F - Math.abs(input.ball.position.y) / 1500F);
 //    	double gameSpeed = 2.5F;
 //		RLBotDll.setGameState(new GameState().withGameInfoState(new GameInfoState().withGameSpeed((float)gameSpeed)).buildPacket());
@@ -194,7 +200,7 @@ public class Wildfire implements Bot {
     	}
     }
 
-    /*
+    /**
      * Fallback state saves us all!
      */
 	private ControlsOutput fallback(DataPacket input){
@@ -211,13 +217,23 @@ public class Wildfire implements Bot {
 	@Override
     public ControllerState processInput(GameTickPacket packet){
         if(packet.playersLength() <= playerIndex || packet.ball() == null) return new ControlsOutput();
+        
         try{
         	BoostManager.loadGameTickPacket(packet);
         }catch(Exception e){
         	System.err.println("Those dang contributors broke the boost pads :(");
         }
+        
         DataPacket dataPacket = new DataPacket(packet, playerIndex);
-        return processInput(dataPacket);
+        
+        ControlsOutput wildfireControls = processInput(dataPacket);
+        if(!this.human.isEnabled()){
+        	return wildfireControls;
+        }else{
+        	renderer.drawString2d("Human", Color.BLUE, new Point(0, 200), 8, 8);
+        	ControlsOutput humanControls = this.human.getControls();
+        	return humanControls;
+        }
     }
 
     public void retire(){

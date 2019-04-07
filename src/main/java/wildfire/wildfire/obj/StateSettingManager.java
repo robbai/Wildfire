@@ -90,7 +90,7 @@ public class StateSettingManager {
 	}
 
 	public void kickoffSpawn(DataPacket input, KickoffSpawn kickoffSpawn){
-		if(getCooldown(input) > 4.5){
+		if(input.ball.position.magnitude() > 2000){
 			boolean blue = (input.car.team == 0);
 			boolean left = (new Random()).nextBoolean();
 			double sideSign = (left ? (blue ? 1 : -1) : (blue ? -1 : 1));
