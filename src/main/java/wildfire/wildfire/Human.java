@@ -1,7 +1,10 @@
 package wildfire.wildfire;
 
+import com.studiohartman.jamepad.ControllerAxis;
+import com.studiohartman.jamepad.ControllerButton;
+import com.studiohartman.jamepad.ControllerIndex;
 import com.studiohartman.jamepad.ControllerManager;
-import com.studiohartman.jamepad.ControllerState;
+import com.studiohartman.jamepad.ControllerUnpluggedException;
 
 import wildfire.output.ControlsOutput;
 
@@ -22,31 +25,51 @@ public class Human extends Thread {
 		this.controls = new ControlsOutput().withNone();
 		
 		//Handle the controller
-		this.controllers = new ControllerManager();
-		controllers.initSDLGamepad();
+		this.controllers = new ControllerManager();		
 	}
 	
 	public void run(){
-		while(true){
-			ControllerState currState = controllers.getState(0);
-			if(!currState.isConnected) continue;
+		controllers.initSDLGamepad();
+		ControllerIndex currController = controllers.getControllerIndex(0);
+		
+		while(!this.isInterrupted()){
+			controllers.update();
 			
-			//Use the controls provided
-			controls.withJump(currState.a);
-			controls.withBoost(currState.b);
-			controls.withSlide(currState.x);
-			controls.withThrottle(currState.rightTrigger - currState.leftTrigger);
-			float pitch = (float)-Math.sin(Math.toRadians(currState.leftStickAngle)) * currState.leftStickMagnitude;
-			float yaw = (float)Math.cos(Math.toRadians(currState.leftStickAngle)) * currState.leftStickMagnitude;
-			controls.withPitch(pitch);
-			controls.withYaw(yaw);
-			controls.withSteer(yaw);
-			controls.withRoll(currState.x ? yaw : 0);
-			
-			if(currState.leftStickJustClicked && this.wildfire.isTestVersion()){
-				this.setEnabled(!this.isEnabled());
+			try{
+				/*
+				 * Use the controls provided
+				 */
+				
+				//Toggle the human
+				if(currController.isButtonJustPressed(ControllerButton.LEFTSTICK) && this.wildfire.isTestVersion()){
+					this.setEnabled(!this.isEnabled());
+				}
+				
+				if(!this.isEnabled()) continue;
+				
+				controls.withJump(currController.isButtonPressed(ControllerButton.A));
+				controls.withBoost(currController.isButtonPressed(ControllerButton.B));
+				controls.withSlide(currController.isButtonPressed(ControllerButton.X));
+				controls.withThrottle(currController.getAxisState(ControllerAxis.TRIGGERRIGHT) - currController.getAxisState(ControllerAxis.TRIGGERLEFT));
+				
+				float pitch = -currController.getAxisState(ControllerAxis.LEFTY);
+				float yaw = currController.getAxisState(ControllerAxis.LEFTX);
+				
+				controls.withPitch(pitch);
+				controls.withYaw(yaw);
+				controls.withSteer(yaw);
+				
+				//Air roll left is bound to R1
+				if(currController.isButtonPressed(ControllerButton.RIGHTBUMPER)){
+					controls.withRoll(-1F);
+				}else{
+					controls.withRoll(currController.isButtonPressed(ControllerButton.X) ? yaw : 0);
+				}
+			}catch(ControllerUnpluggedException e){  
+				continue;
 			}
 		}
+		controllers.quitSDLGamepad();
 	}
 	
 	public ControlsOutput getControls(){
