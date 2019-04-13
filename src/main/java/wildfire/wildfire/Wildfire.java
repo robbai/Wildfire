@@ -16,7 +16,6 @@ import wildfire.WildfireJava;
 import wildfire.boost.BoostManager;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
-import wildfire.wildfire.obj.KickoffSpawn;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.obj.StateSettingManager;
@@ -108,9 +107,7 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
-//    	stateSetting.kickoffSpawn(input, KickoffSpawn.FULLBACK);   	
-//    	double gameSpeed = Math.max(0.5, 3F - Math.abs(input.ball.position.y) / 1500F);
-//    	double gameSpeed = 2.5F;
+//    	stateSetting.clear(input);
 //		RLBotDll.setGameState(new GameState().withGameInfoState(new GameInfoState().withGameSpeed((float)gameSpeed)).buildPacket());
     	
     	//Get the ball prediction

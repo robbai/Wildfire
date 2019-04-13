@@ -58,7 +58,7 @@ public class ShootState extends State {
 					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 				}else if(Math.abs(aimBall) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-				}else if((distance < 550 && Math.abs(aimBall) < Math.PI * 0.4) || (distance > 2400 && Math.abs(steerImpact) < 0.2 && !input.car.isSupersonic)){
+				}else if((distance < 580 && Math.abs(aimBall) < Math.PI * 0.4) || (distance > 2400 && Math.abs(steerImpact) < 0.2 && !input.car.isSupersonic)){
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 					
 					double forwardVelocity = input.car.forwardMagnitude();

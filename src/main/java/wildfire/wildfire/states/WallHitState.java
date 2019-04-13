@@ -5,16 +5,16 @@ import java.awt.Point;
 
 import rlbot.flat.QuickChatSelection;
 import wildfire.input.CarData;
-import wildfire.input.CarOrientation;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.AerialAction2;
+import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
+import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.obj.State;
 
 public class WallHitState extends State {
@@ -47,10 +47,16 @@ public class WallHitState extends State {
 			//Drive down the wall when the opportunity is gone (we might've hit it!)
 			if(!isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition())){
 				wildfire.renderer.drawString2d("Abandon", Color.WHITE, new Point(0, 20), 2, 2);
+				
+				if(!hasAction() && input.car.velocity.z < -400){
+					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
+					return currentAction.getOutput(input);
+				}
+				
 				return Utils.driveDownWall(input);
 			}else{
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.CYAN, 125);
-				Vector3 localTarget = local(input.car, wildfire.impactPoint.getPosition());
+				Vector3 localTarget = Utils.toLocal(input.car, wildfire.impactPoint.getPosition());
 				
 				Vector2 forward = new Vector2(0, 1);
 				double aim = forward.correctionAngle(localTarget.flatten());
@@ -93,7 +99,7 @@ public class WallHitState extends State {
 				
 				//Aerial of our back wall
 				if(backWall && Math.abs(steer) < 0.1 && !input.car.isSupersonic && wallDistance > 1000){
-					AerialAction2 aerial = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wallDistance < 2000);
+					AerialAction aerial = AerialAction.fromBallPrediction(this, input.car, wildfire.ballPrediction, wallDistance < 2000);
 					if(aerial != null) currentAction = aerial;
 				}
 				
@@ -127,18 +133,6 @@ public class WallHitState extends State {
 		
 		//Away from our back wall
 		return (Math.abs(target.x) > 1200 || car.position.z > 900) && backWall; 
-	}
-	
-	private Vector3 local(CarData car, Vector3 ball){
-		Vector3 carPosition = car.position;
-		CarOrientation carOrientation = car.orientation;
-		Vector3 relative = ball.minus(carPosition);
-		
-		double localRight = carOrientation.rightVector.x * relative.x + carOrientation.rightVector.y * relative.y + carOrientation.rightVector.z * relative.z;
-		double localNose = carOrientation.noseVector.x * relative.x + carOrientation.noseVector.y * relative.y + carOrientation.noseVector.z * relative.z;
-		double localRoof = carOrientation.roofVector.x * relative.x + carOrientation.roofVector.y * relative.y + carOrientation.roofVector.z * relative.z;
-		
-		return new Vector3(localRight, localNose, localRoof);
 	}
 
 }

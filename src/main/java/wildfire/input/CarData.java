@@ -23,6 +23,8 @@ public class CarData {
     
     public final int team;
     public final int index;
+    
+	public final String name;
 
     public CarData(rlbot.flat.PlayerInfo playerInfo, float elapsedSeconds, int index){
         this.position = Vector3.fromFlatbuffer(playerInfo.physics().location());
@@ -43,6 +45,7 @@ public class CarData {
         this.team = playerInfo.team();
         this.index = index;
         
+        this.name = playerInfo.name();
     }
     
     public double forwardMagnitude(){
@@ -54,10 +57,5 @@ public class CarData {
     	double component = Math.cos(direction.correctionAngle(velocity.flatten()));
     	return velocity.magnitude() * component;
     }
-
-	@Override
-	public String toString() {
-		return "[" + (hasWheelContact ? "grounded" : "airborne") + ", boost=" + (int)boost + ", team=" + team + "]";
-	}
     
 }

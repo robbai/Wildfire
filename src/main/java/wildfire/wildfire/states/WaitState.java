@@ -10,7 +10,7 @@ import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.AerialAction2;
+import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.actions.SmartDodgeAction;
@@ -62,7 +62,7 @@ public class WaitState extends State {
 		double impactRadians = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(!hasAction() && wildfire.impactPoint.getPosition().z > (onTarget && Math.abs(input.car.position.y) > 4500 ? 220 : 700) && Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) && input.car.hasWheelContact && Math.abs(impactRadians) < (onTarget ? 0.42 : 0.32) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < (onTarget ? -1500 : -2500)){
 //		if(!hasAction() && timeLeft > 1.5 && (input.car.position.z > 120 || Math.abs(impactRadians) < 0.35)){
-			currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 420);
+			currentAction = AerialAction.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 420);
 //			currentAction = AerialAction2.fromBallPrediction(this, input.car, wildfire.ballPrediction, false);
 			if(currentAction != null && !currentAction.failed){
 				return currentAction.getOutput(input);

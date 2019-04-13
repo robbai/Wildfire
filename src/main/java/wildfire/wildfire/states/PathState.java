@@ -73,7 +73,7 @@ public class PathState extends State {
 		
 		//Make a target from the path
 		int targetPly = getTargetPly(input.car);
-//		wildfire.renderer.drawString2d("Target Ply: " + targetPly, Color.WHITE, new Point(0, 40), 2, 2);
+		wildfire.renderer.drawString2d("Target Ply: " + targetPly, Color.WHITE, new Point(0, 40), 2, 2);
 		Vector2 target = path.getPly(targetPly);
 		wildfire.renderer.drawCircle(input.car.team == 0 ? Color.CYAN : Color.RED, target, 15);
 		
@@ -84,13 +84,12 @@ public class PathState extends State {
 	
 	private int getTargetPly(CarData car){
 		double velocity = car.velocity.magnitude();
-//		return (velocity < 1500 ? 9 : (velocity < 1700 ? 10 : 11));
 		if(velocity < 1500){
 			return 8;
 		}else if(velocity < 2000){
-			return 8 + (int)(((velocity - 1500) / 300) * 4); //Max 12
+			return 8 + (int)(((velocity - 1500) / 300) * 3); //Max 11
 		}else{
-			return 12 + (int)(((velocity - 2000) / 400) * 3); //Max 15
+			return 11 + (int)(((velocity - 2000) / 400) * 2); //Max 13
 		}
 	}
 	

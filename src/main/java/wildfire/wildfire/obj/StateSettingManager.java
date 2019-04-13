@@ -42,13 +42,13 @@ public class StateSettingManager {
 	}
 	
 	public void aerial(DataPacket input){
-		if(((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact) || getCooldown(input) > 18 || Math.abs(input.ball.position.y) > 4900){
+		if(((!Utils.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact) || getCooldown(input) > 18 || (Math.abs(input.ball.position.y) > 4900 && input.car.hasWheelContact)){
     		GameState gameState = new GameState();
-    		Vector3 carPosition = new Vector3(Utils.random(-3500, 3500), -4000, 10);
+    		Vector3 carPosition = new Vector3(Utils.random(-3500, 3500), Utils.random(3000, 5000) * -Utils.teamSign(input.car), 10);
     		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(new DesiredRotation(0F, (float)carPosition.flatten().correctionAngle(new Vector2()), 0F))));
     		
-    		Vector3 ballVelocity = new Vector3(Utils.random(-2750, 2750), Utils.random(-1500, 1500), Utils.random(1200, 2000));
-    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(ballVelocity.scaled(-1.5).confine().toDesired()).withVelocity(ballVelocity.toDesired())));
+    		Vector3 ballVelocity = new Vector3(Utils.random(-2000, 2000), Utils.random(-1500, 1500), Utils.random(1200, 2000));
+    		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(ballVelocity.scaled(-2).confine().toDesired()).withVelocity(ballVelocity.toDesired())));
     		
     		RLBotDll.setGameState(gameState.buildPacket());
     		resetCooldown(input.elapsedSeconds);
@@ -176,6 +176,26 @@ public class StateSettingManager {
 			GameState gameState = new GameState();
 			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.withZ(30).toDesired()).withRotation(CarOrientation.fromVector(carDirection).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired())));
 			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(ballPosition.withZ(Utils.BALLRADIUS).toDesired()).withVelocity(ballDirection.toDesired()).withAngularVelocity(new Vector3().toDesired())));
+			RLBotDll.setGameState(gameState.buildPacket());
+			resetCooldown(input.elapsedSeconds);
+		}
+	}
+
+	public void clear(DataPacket input) {
+		if((input.ball.velocity.y * Utils.teamSign(input.car) > 200 && input.car.hasWheelContact && input.ball.velocity.z < 500) || Utils.isKickoff(input)){
+			Vector2 goal = Utils.homeGoal(input.car.team);
+			
+			Vector3 carPosition = goal.withZ(30);
+//			Vector2 carDirection = carPosition.flatten().scaled(-1).normalized();
+			Vector2 carDirection = new Vector2(Utils.random(-1, 1), Utils.random(-1, 1)).normalized();
+			
+			double ballDistance = Utils.random(3600, 6000), ballSpeed = 2500;
+			Vector2 ballPosition = goal.plus(new Vector2(Utils.random(-1, 1), Utils.random(0.5, 1) * Utils.teamSign(input.car)).scaledToMagnitude(ballDistance)).confine(Utils.BALLRADIUS);
+			Vector3 ballVelocity = goal.minus(ballPosition).withZ(Utils.random(0, 1200)).scaledToMagnitude(ballSpeed);
+			
+			GameState gameState = new GameState();
+			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withRotation(CarOrientation.fromVector(carDirection).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired())));
+			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(ballPosition.withZ(Utils.BALLRADIUS).toDesired()).withVelocity(ballVelocity.toDesired()).withAngularVelocity(new Vector3().toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
 			resetCooldown(input.elapsedSeconds);
 		}

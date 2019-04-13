@@ -5,6 +5,7 @@ import java.util.Random;
 import rlbot.flat.BallPrediction;
 import wildfire.input.BallData;
 import wildfire.input.CarData;
+import wildfire.input.CarOrientation;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
@@ -13,6 +14,10 @@ import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PredictionSlice;
 
 public class Utils {
+	
+	/**
+	 * This is just a class for when I don't know where to put stuff
+	 */
 	
 	public static final float BALLRADIUS = 92.75F;
 	public static final float GRAVITY = 650F;
@@ -424,6 +429,20 @@ public class Utils {
 			if(distance < velocity.scaled(1D / 60).magnitude()) return true;
 		}
 		return false;
+	}
+	
+	public static Vector3 toLocalFromRelative(CarData car, Vector3 relative){
+		CarOrientation carOrientation = car.orientation;
+		
+		double localRight = carOrientation.rightVector.x * relative.x + carOrientation.rightVector.y * relative.y + carOrientation.rightVector.z * relative.z;
+		double localNose = carOrientation.noseVector.x * relative.x + carOrientation.noseVector.y * relative.y + carOrientation.noseVector.z * relative.z;
+		double localRoof = carOrientation.roofVector.x * relative.x + carOrientation.roofVector.y * relative.y + carOrientation.roofVector.z * relative.z;
+		
+		return new Vector3(localRight, localNose, localRoof);
+	}
+	
+	public static Vector3 toLocal(CarData car, Vector3 vec){
+		return toLocalFromRelative(car, vec.minus(car.position));
 	}
 
 }
