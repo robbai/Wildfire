@@ -12,6 +12,8 @@ import rlbot.cppinterop.RLBotDll;
 import rlbot.flat.BallPrediction;
 import rlbot.flat.GameTickPacket;
 import rlbot.flat.QuickChatSelection;
+import rlbot.gamestate.GameInfoState;
+import rlbot.gamestate.GameState;
 import wildfire.WildfireJava;
 import wildfire.boost.BoostManager;
 import wildfire.input.DataPacket;
@@ -108,7 +110,7 @@ public class Wildfire implements Bot {
     	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
     	
 //    	stateSetting.clear(input);
-//		RLBotDll.setGameState(new GameState().withGameInfoState(new GameInfoState().withGameSpeed((float)gameSpeed)).buildPacket());
+//		RLBotDll.setGameState(new GameState().withGameInfoState(new GameInfoState().withGameSpeed(2.5F)).buildPacket());
     	
     	//Get the ball prediction
     	try{

@@ -31,7 +31,7 @@ public class ShadowState extends State {
 		if(avoidStoppingForever(input)) return false;
 		
 		//Ball must not be close to our net
-		if(input.ball.position.flatten().distance(homeGoal) < 2000) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
+		if(input.ball.position.flatten().distance(homeGoal) < 2800) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
 		
 		//The ball must not be centralised
 		if(Math.abs(input.ball.position.x) < (Utils.isOpponentBehindBall(input) ? 1500 : 1300)) return false;
@@ -45,11 +45,11 @@ public class ShadowState extends State {
 		if(!Utils.isOpponentBehindBall(input)) return false;
 		
 		//Outside of the "useful hitting arc"
-		if(Math.abs(input.ball.position.y) < 4000 && new Vector3(0, -Utils.teamSign(input.car), 0).angle(input.car.position.minus(wildfire.impactPoint.getPosition())) > Math.PI * 0.45){ //
-			if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) > 2300) return true;
+		if(Math.abs(input.ball.position.y) < 4000 && new Vector3(0, -Utils.teamSign(input.car), 0).angle(input.car.position.minus(wildfire.impactPoint.getPosition())) > Math.PI * 0.55){
+			if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) > 2800) return true;
 		}
 		
-		return Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) > Math.PI * 0.5 && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000;
+		return Math.abs(Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten())) > Math.PI * 0.6 && Utils.teamSign(input.car.team) * input.ball.velocity.y > -800;
 	}
 	
 	@Override
