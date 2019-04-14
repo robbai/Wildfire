@@ -14,6 +14,7 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.obj.BezierCurve;
 import wildfire.wildfire.obj.State;
 
 public class BoostState extends State {
@@ -78,8 +79,12 @@ public class BoostState extends State {
 		}
 		
 		//Render
-		wildfire.renderer.drawLine3d(Color.BLUE, input.car.position.flatten().toFramework(), boostLocation.toFramework());
-		wildfire.renderer.drawCircle(Color.BLUE, boostLocation, 110);
+		double circleRadius = 100;
+		BezierCurve bezier = new BezierCurve(input.car.position.flatten(), 
+				input.car.position.plus(input.car.velocity.scaled(0.5)).flatten(), 
+				boostLocation.plus(input.car.position.flatten().minus(boostLocation).scaledToMagnitude(circleRadius)));
+		bezier.render(wildfire.renderer, Color.BLUE);
+		wildfire.renderer.drawCircle(Color.blue, boostLocation, circleRadius);
 		
 		//Stuck in goal
 		if(Math.abs(input.car.position.y) > Utils.PITCHLENGTH){

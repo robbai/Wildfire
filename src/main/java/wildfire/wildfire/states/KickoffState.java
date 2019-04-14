@@ -14,6 +14,7 @@ import wildfire.vector.Vector3;
 import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
+import wildfire.wildfire.obj.BezierCurve;
 import wildfire.wildfire.obj.KickoffSpawn;
 import wildfire.wildfire.obj.State;
 
@@ -78,8 +79,9 @@ public class KickoffState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		wildfire.renderer.drawString2d(fake ? "Fake" : "Normal", Color.WHITE, new Point(0, 20), 2, 2);
+		if(fake) wildfire.renderer.drawString2d("Fake", Color.WHITE, new Point(0, 20), 2, 2);
 		
+		//Time-out the fake kickoff if the opponent has taken too long
 		if(fake && input.elapsedSeconds - timeStarted > 12){
 			fake = false;
 			timedOut = true;
@@ -109,8 +111,12 @@ public class KickoffState extends State {
 			}
 			
 			//Render
-			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), target.toFramework());
-			wildfire.renderer.drawCircle(Color.WHITE, target, 70);
+			BezierCurve bezier = new BezierCurve(input.car.position.flatten(), 
+					input.car.position.plus(input.car.orientation.noseVector.scaledToMagnitude(250)).flatten(), 
+					target, 
+					input.ball.position.flatten());
+			bezier.render(wildfire.renderer, Color.WHITE);
+			wildfire.renderer.drawCircle(Color.LIGHT_GRAY, target, 30);
 			
 			if(!hasAction() && dodge && Utils.isKickoff(input) && input.car.velocity.magnitude() > 500){
 				currentAction = new DodgeAction(this, Utils.aim(input.car, input.ball.position.flatten()) * 2.9F, input);
@@ -123,6 +129,7 @@ public class KickoffState extends State {
 		}else{
 			//Fake
 			if(!BoostManager.getBoosts().get(input.car.team == 0 ? 0 : 33).isActive() || input.car.boost > 99){
+				
 				boolean reverse = (Math.abs(input.car.position.y) < 5200);
 				double steerCorrectionRadians = Utils.aim(input.car, reverse ? Utils.homeGoal(input.car.team) : wildfire.impactPoint.getPosition().flatten());
 				if(reverse){
@@ -133,9 +140,10 @@ public class KickoffState extends State {
 					return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1F).withBoost(false).withSlide(false);
 				}
 			}else{
+				
 				//Get the boost in front of us
 				Vector2 boost = new Vector2(0, -Utils.teamSign(input.car) * 4290);
-				wildfire.renderer.drawCircle(Color.WHITE, boost, 90);
+				wildfire.renderer.drawCircle(Color.WHITE, boost, 50);
 				double steerCorrectionRadians = Utils.aim(input.car, boost);
 				if(Math.cos(steerCorrectionRadians) > 0){
 					return new ControlsOutput().withSteer((float)steerCorrectionRadians * -3F).withThrottle(1F).withBoost(false);
