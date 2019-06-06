@@ -16,4 +16,13 @@ public class WildfirePythonInterface extends DefaultPythonInterface {
         return new Wildfire(index, team, botType.toLowerCase().contains("test"));
     }
     
+    @Override
+    public void shutdown(){
+    	if(WildfireJava.getArguments().contains("never-shutdown")){
+    		System.out.println("Preventing shut down...");
+    		return;
+    	}
+    	super.shutdown();
+    }
+    
 }

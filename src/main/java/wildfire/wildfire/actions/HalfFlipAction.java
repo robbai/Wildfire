@@ -21,7 +21,7 @@ public class HalfFlipAction extends Action {
 		}else{
 			wildfire.resetDodgeTime(elapsedSeconds);
 			
-			this.pitchPID = new PID(5.4, 0, 1.5);
+			this.pitchPID = new PID(5, 0, 1.5);
 			this.rollPID = new PID(2, 0, 0.3);
 		}
 	}
@@ -38,7 +38,7 @@ public class HalfFlipAction extends Action {
 			if(timeDifference <= 140){
 				controller.withJump(timeDifference <= 70);
 				controller.withPitch(1);
-			}else if(timeDifference <= 360){
+			}else if(timeDifference <= 300){
 				controller.withJump(true);
 				controller.withPitch(1);
 			}else if(timeDifference <= 1250){

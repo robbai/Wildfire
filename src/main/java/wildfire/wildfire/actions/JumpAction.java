@@ -5,9 +5,9 @@ import java.awt.Point;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Utils;
 
 public class JumpAction extends Action {
 	

@@ -7,16 +7,21 @@ import rlbot.flat.QuickChatSelection;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Utils;
 
 public class ClearState extends State {
 	
 	private final double homeZoneSize = 3500D;
+	
+	private boolean onTarget = false;
 
 	public ClearState(Wildfire wildfire){
 		super("Clear", wildfire);
@@ -24,45 +29,53 @@ public class ClearState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		if(Utils.isKickoff(input) || Utils.isCarAirborne(input.car) || !Utils.correctSideOfTarget(input.car, input.ball.position) || Utils.teamSign(input.car) * input.ball.position.y > 2000){
+		if(Behaviour.isKickoff(input) || Behaviour.isCarAirborne(input.car) || !Behaviour.correctSideOfTarget(input.car, input.ball.position) || Utils.teamSign(input.car) * input.ball.position.y > 2000){
 			return false;
 		}
+		
+		double impactYFlip = wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car);
 
 		//Check if we have a shot opportunity
-		if(!Utils.isOpponentBehindBall(input) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 3000){
-			double aimBall = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-			if(Math.abs(aimBall) < Math.PI * 0.3){
-				if(Utils.isInCone(input.car, wildfire.impactPoint.getPosition())) return false;
+		if(!Behaviour.isOpponentBehindBall(input) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 3000){
+			double aimBall = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+			if(Math.abs(aimBall) < Math.PI * 0.3 && impactYFlip > -3000){
+				if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition())) return false;
 			}
 		}
 		
-		boolean onTarget = Utils.isOnTarget(wildfire.ballPrediction, input.car.team);
-		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000 && Utils.teamSign(input.car.team) * input.ball.position.y > -4500) return false;
+		onTarget  = Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team);
+		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000 && Utils.teamSign(input.car.team) * input.ball.position.y > -4000) return false;
 		
-		return Utils.defendNotReturn(input, wildfire.impactPoint.getPosition(), homeZoneSize, onTarget);
+		//We'd prefer an aerial
+		if(Behaviour.isBallAirborne(input.ball) && input.car.boost < 16) return false;
+		
+		return Behaviour.defendNotReturn(input, wildfire.impactPoint.getPosition(), homeZoneSize, onTarget);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		//Drive down the wall
-		boolean onWall = Utils.isOnWall(input.car);
+		boolean onWall = Behaviour.isOnWall(input.car);
 		if(onWall){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
-			return Utils.driveDownWall(input);
+			return Handling.driveDownWall(input);
 		}
 		
-		double angleImpact = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+		double angleImpact = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 				
 		//Dodge or half-flip
-		if(!hasAction()){
+		if(!hasAction() && !input.car.isDrifting()){
 			double impactDistance = input.car.position.distanceFlat(wildfire.impactPoint.getPosition());
 			double forwardVelocity = input.car.forwardMagnitude();
 			
 			boolean likelyBackflip = (Math.abs(angleImpact) > 0.75 * Math.PI);
+//			boolean chip = (Math.abs(angleImpact) < 0.1 && forwardVelocity > 1600 && !input.car.isDrifting() &&
+//					wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y * Utils.teamSign(input.car) > 0.9);
 			
-			if(impactDistance < (likelyBackflip ? 290 : 480)){
+			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 280 : 430))){
+//				if(!chip) currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
 				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
-			}else if(impactDistance > 2000 && forwardVelocity < -800){
+			}else if(impactDistance > (onTarget ? 3500 : 2200) && forwardVelocity < -900){
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
@@ -70,58 +83,60 @@ public class ClearState extends State {
 		
 		//Aerial
 		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle(input.car.position.minus(input.ball.position).flatten())); 
-		if(!hasAction() && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 700 ? 230 : 400) && input.car.hasWheelContact && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1200 && input.car.position.z < 200){
-			double maxRange = wildfire.impactPoint.getPosition().z * 5;
-			double minRange = wildfire.impactPoint.getPosition().z * 1.2;
-			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
+		if(!hasAction() && input.car.hasWheelContact && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 1700 ? 300 : 500) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 0 && input.car.position.z < 140){
+//			double maxRange = wildfire.impactPoint.getPosition().z * 4;
+//			double minRange = wildfire.impactPoint.getPosition().z * 1.3;
+//			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
 				currentAction = AerialAction.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 800);
-				if(currentAction != null && !currentAction.failed){
-					return currentAction.getOutput(input);
-				}else{
-					currentAction = null;
-				}
-			}
+				if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+				currentAction = null;
+//			}
 		}
 		
-		wildfire.renderer.drawCircle(Color.GREEN, Utils.homeGoal(input.car.team), homeZoneSize);
+		wildfire.renderer.drawCircle(Color.GREEN, Constants.homeGoal(input.car.team), homeZoneSize);
 		
 		//We are in position for the ball to hit us (and we can't quickly turn towards the ball)
 		if(input.car.position.y * Utils.teamSign(input.car) > -5050 && Math.abs(angleImpact) > 0.4 * Math.PI && Math.abs(angleImpact) < 0.8 * Math.PI){
 			//We don't want to wait too long for the ball to reach us
 			double ballTime = Math.abs((input.car.position.y - input.ball.position.y) / input.ball.velocity.y);
 			Vector2 intersect = Utils.traceToY(input.ball.position.flatten(), input.ball.velocity.flatten(), input.car.position.y);
-			if(ballTime < 1.2 && intersect != null){
+			if(ballTime < 1.5 && intersect != null){
 				//Check if our X-coordinate is close-by when we should intersect with the ball's path
-				boolean closeby = (Math.abs(input.car.position.x - intersect.x) < 150);
+				double xDifference = Math.abs(input.car.position.x - intersect.x);
+				boolean closeby = (xDifference < 140);
 				wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten().toFramework(), intersect.toFramework());
+				wildfire.renderer.drawString2d("Stop" + (closeby ? " (" + (int)xDifference + ")" : ""), Color.WHITE, new Point(0, 20), 2, 2);
 				if(closeby){
 					wildfire.sendQuickChat(QuickChatSelection.Information_InPosition);
-					wildfire.renderer.drawString2d("Stop (" + (int)Math.abs(input.car.position.x - intersect.x) + ")", Color.WHITE, new Point(0, 20), 2, 2);
 					return stayStill(input);
+				}else if(xDifference < 800 && input.car.velocity.magnitude() < 1200){
+					return drivePoint(input, intersect);
 				}
-			}
-		}		
-				
-		//Avoid rebounding it off the wall back towards our goal
-		Vector2 wall = Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
-		if(wall != null){
-			if(Utils.teamSign(input.car) * wall.y < -1000){
-				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
-				double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position); 
-				return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(new Vector2(0, Utils.teamSign(input.car) * -distance / 4.5)));
 			}
 		}
 		
-		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
-		return drivePoint(input, wildfire.impactPoint.getPosition().flatten());
+		Vector2 offset;
+		double offsetMagnitude = (70 + 60 * Math.pow(input.ball.position.minus(input.car.position).normalized().y, 2));
+		if(Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition().flatten())){
+			Vector2 goal = Behaviour.getTarget(input.car, input.ball);
+			offset = wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);
+		}else{
+			offset = new Vector2(offsetMagnitude * Math.signum(Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).x), 0);
+		}
+		
+		//Tad bit o' rendering
+		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 140);
+		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition().plus(offset.withZ(0)), Color.RED, 40);
+		
+		return drivePoint(input, wildfire.impactPoint.getPosition().flatten().plus(offset));
 	}
 	
 	private ControlsOutput drivePoint(DataPacket input, Vector2 point){
-		if(Math.abs(input.car.position.y) > Utils.PITCHLENGTH) point.withX(Utils.clamp(point.x, -700, 700));
+		if(Math.abs(input.car.position.y) > Constants.PITCHLENGTH) point.withX(Utils.clamp(point.x, -700, 700));
 		
 		boolean rush = input.car.forwardMagnitude() > 700;
 		
-		float steer = (float)Utils.aim(input.car, point);
+		float steer = (float)Handling.aim(input.car, point);
 		
 		float throttle = (rush ? 1 : (float)Math.signum(Math.cos(steer)));
 		boolean reverse = (throttle < 0);
@@ -132,7 +147,8 @@ public class ClearState extends State {
 			steer = -steer;
 		}
 		
-		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < (rush ? 0.325 : 0.25) && !input.car.isSupersonic).withSteer(steer * 3F).withSlide(Math.abs(steer) > Math.PI * 0.3);
+		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < (rush ? 0.3 : 0.2) && !input.car.isSupersonic)
+				.withSteer(steer * 3F).withSlide(Math.abs(steer) > Math.PI * 0.4 && !input.car.isDrifting());
 	}
 	
 	private ControlsOutput stayStill(DataPacket input){

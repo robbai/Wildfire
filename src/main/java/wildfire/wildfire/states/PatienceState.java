@@ -1,15 +1,19 @@
 package wildfire.wildfire.states;
 
 import java.awt.Color;
+import java.awt.Point;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Physics;
+import wildfire.wildfire.utils.Utils;
 
 public class PatienceState extends State {
 	
@@ -17,7 +21,7 @@ public class PatienceState extends State {
 	 * Wait for a rolling shot
 	 */
 	
-	private final double maxWaitingSeconds = 2.7, coneBorder = -250;
+	private final double maxWaitingSeconds = 2.7, delaySeconds = 0.25, coneBorder = -180;
 	
 	private PredictionSlice point;
 
@@ -35,17 +39,18 @@ public class PatienceState extends State {
 		if(impactDistance > 5000) return false;
 		
 		//Check if we can already shoot
-		if(Utils.isInCone(input.car, wildfire.impactPoint.getPosition(), coneBorder)) return false;
+		if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), coneBorder)) return false;
 		
 		//Check if there's a solid defender who can hit the ball quicker
-		double closestOpponentDistance = Utils.closestOpponentDistance(input, input.ball.position);
+		double closestOpponentDistance = Behaviour.closestOpponentDistance(input, input.ball.position);
 		if(closestOpponentDistance < Math.max(2300, impactDistance * 1.4) || Utils.teamSign(input.car.team) * input.ball.velocity.y < -850) return false;
 		
 		int startFrame = wildfire.impactPoint.getFrame();
-		for(int i = startFrame; i < Math.min(wildfire.ballPrediction.slicesLength(), startFrame + (maxWaitingSeconds * 60)); i++){
+		for(int i = (startFrame + (int)(delaySeconds * 60)); i < Math.min(wildfire.ballPrediction.slicesLength(), startFrame + (maxWaitingSeconds * 60)); i++){
 			Vector3 location = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(i).physics().location());
 			
-			if(Utils.isInCone(input.car, location, coneBorder) && location.z < 300){
+			if(Behaviour.isInCone(input.car, location, coneBorder) && location.z < 300){
+				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.YELLOW, 0, startFrame);
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.GREEN, startFrame, i);
 				wildfire.renderer.drawCrosshair(input.car, location, Color.YELLOW, 50);
 				point = new PredictionSlice(location, i);
@@ -58,33 +63,30 @@ public class PatienceState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(!hasAction() && Utils.isCarAirborne(input.car)){
+		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			return currentAction.getOutput(input);
 		}
 		
+		//Motion equations
 		double s = (point.getPosition().distanceFlat(input.car.position) - 110);
 		double t = point.getTime();
 		double u = input.car.velocity.flatten().magnitudeInDirection(point.getPosition().minus(input.car.position).flatten());
 		double v = ((2 * s) / t - u);
+		double a = (v - u) / t;
 		
-		double steerRadians = Utils.aim(input.car, point.getPosition().flatten());
-	    float steer = (float)-steerRadians * 3F;
+		//Render
+		wildfire.renderer.drawString2d("Final Velocity: " + (int)v + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
+		wildfire.renderer.drawString2d("Acceleration: " + (int)a + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
+		
+		double steerRadians = Handling.aim(input.car, point.getPosition().flatten());
+	    float steer = (float)steerRadians * -3F;
 	    
-		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 1.2);
-		
-		if(v > u){
-			if(v < 1300 && Math.abs(steerRadians) < 0.1){
-				controls.withThrottle((float)-input.car.forwardMagnitude() / 1000);
-			}else if(v > u + 1000 || v > 1410){
-				controls.withThrottle(1).withBoost(Math.abs(steer) < 0.55F);
-			}else{
-				controls.withThrottle(1);
-			}
-		}else if(v < u - 400){
-			controls.withThrottle(-1);
+		ControlsOutput controls = new ControlsOutput().withSteer(steer).withSlide(Math.abs(steerRadians) > 1.1);
+		if(Math.abs(steerRadians) > 0.3 || v > Physics.boostMaxSpeed(u, input.car.boost) - 250){
+			controls.withThrottle((float)(a / 1200)).withBoost(a > 1100 && Math.abs(steerRadians) < 0.2);
 		}else{
-			controls.withThrottle(0);
+			controls.withThrottle(0).withBoost(false);
 		}
 		
 		return controls;

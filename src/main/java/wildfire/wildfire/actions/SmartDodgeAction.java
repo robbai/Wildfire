@@ -1,7 +1,6 @@
 package wildfire.wildfire.actions;
 
 import java.awt.Color;
-import java.awt.Point;
 
 import rlbot.flat.BallPrediction;
 import wildfire.input.CarData;
@@ -9,117 +8,149 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Utils;
 
 public class SmartDodgeAction extends Action {
 	
-//	private final double maxJumpHeight = 230.76923076923077D, minJumpHeight = 69.23076923076923D;
-//	private final double ripperHeight = 31.30D;
-	private final double tick = (1D / 60);
-	
-	private PID pitchPID;
-	
-	/**
-	 * In 2D
+	/*
+	 * Constants
 	 */
-	private final double maxTargetDistance = 300D;
+	public final static double jumpVelocity = 547.7225575, tick = 1D / 60, carHeight = 17D, maxJumpHeight = 230.76923076923077D;
 	
 	public PredictionSlice target = null;
-	private double timePressed, timeToPeak;
+	private PID rollPID, pitchPID;
 
 	public SmartDodgeAction(State state, DataPacket input, boolean coneRequired){
 		super("Smart Dodge", state, input.elapsedSeconds);
 		
-		BallPrediction ballPrediction = this.getBallPrediction();
-		if(ballPrediction != null && wildfire.lastDodgeTime(input.elapsedSeconds) > 1.5 && input.car.hasWheelContact){
-			for(int i = 0; i < ballPrediction.slicesLength(); i++){
-				Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-				location = location.plus(input.car.position.minus(location).scaledToMagnitude(Utils.BALLRADIUS));
-				
-//				if(location.distanceFlat(input.car.position) > maxTargetDistance) continue;
-//				if(input.car.magnitudeInDirection(location.minus(input.car.position).flatten()) < -600) continue;
-				
-				double ballTime = ((double)i * tick);
-				double jumpHeight = (location.z);
-				
-				this.timePressed = timePressedForHeight(jumpHeight);
-				this.timeToPeak = timeToPeak(jumpHeight, timePressed);
-				
-				Vector3 carPosition = getJumpPosition(input.car, getJumpVelocity(timePressed), timeToPeak);
-				if(location.distance(carPosition) > maxTargetDistance) continue;
-				
-				//Cone
-				if(coneRequired){
-					if(Utils.teamSign(input.car) * carPosition.y > Utils.PITCHLENGTH) continue; //Inside enemy goal
-					Vector2 trace = Utils.traceToY(carPosition.flatten(), location.minus(carPosition).flatten(), Utils.teamSign(input.car) * Utils.PITCHLENGTH);
-					if(trace == null || Math.abs(trace.x) > Utils.GOALHALFWIDTH - Utils.BALLRADIUS) continue;
-				}
-				
-				if(timePressed <= 0.2 && Math.abs(timeToPeak - (ballTime - 0.31)) < tick){
-//					System.out.println("Frame = " + i + ", Height = " + (int)jumpHeight + "uu, Time Pressed = " + (int)(timePressed * 1000) + "ms");
-					this.timePressed += tick;
-					this.target = new PredictionSlice(location, i);
-					break;
-				}
+		BallPrediction ballPrediction = this.wildfire.ballPrediction;
+		
+		if(ballPrediction == null || wildfire.lastDodgeTime(input.elapsedSeconds) < 0.5 || !input.car.hasWheelContact){
+			this.failed = true;
+			return;
+		}
+		
+		int shortestDistance = Integer.MAX_VALUE;
+		
+		for(int i = 0; i < ballPrediction.slicesLength(); i++){
+			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+//			location = location.plus(input.car.position.minus(location).scaledToMagnitude(Constants.BALLRADIUS));
+			
+			double time = (ballPrediction.slices(i).gameSeconds() - input.elapsedSeconds);
+
+			Vector3 carPosition = getJumpPosition(input.car, jumpVelocity, time);
+			double distance = location.distance(carPosition);
+			
+			//Cone
+			if(coneRequired){
+				if(Utils.teamSign(input.car) * carPosition.y > Constants.PITCHLENGTH) continue; //Inside enemy goal
+				Vector2 trace = Utils.traceToY(carPosition.flatten(), location.minus(carPosition).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH);
+				if(trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS) continue;
+			}
+			
+//			if(i < 100) System.out.println(Utils.round(time) + "s (" + i + ") would be " + (int)distance + "uu away");
+
+			shortestDistance = (int)Math.min(distance, shortestDistance);
+			if(distance < Constants.BALLRADIUS + 35){
+				this.target = new PredictionSlice(location, i);
+				break;
 			}
 		}
 		
 		this.failed = (target == null);
+//		System.out.println(this.failed + ": " + shortestDistance);
 		if(!failed){
-			this.pitchPID = new PID(5, 0, 0.45);
+			this.pitchPID = new PID(wildfire.renderer, Color.BLUE, 6.5, 0, 0.5);
+			this.rollPID = new PID(wildfire.renderer, Color.YELLOW, 3, 0, 0.2);
 		}
+	}
+	
+	public static PredictionSlice getCandidateLocation(BallPrediction ballPrediction, Vector2 enemyGoal){
+		int peakTick = (int)((jumpVelocity / Constants.GRAVITY) / tick);
+		for(int i = peakTick; i < ballPrediction.slicesLength(); i++){
+			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			if(location.z < 100) break;
+			
+			Vector3 velocity = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().velocity());
+			if(Math.signum(enemyGoal.y) == Math.signum(velocity.y)) velocity = new Vector3(velocity.x, 0, velocity.z);
+			
+			if(location.z - carHeight < maxJumpHeight){
+				//Add an offset, which considers the ball's velocity, and the direction to their goal
+//				location = location.plus(location.flatten().minus(enemyGoal).plus(velocity.scaled(0.5).flatten()).scaledToMagnitude(120).withZ(0));
+								
+				location = location.plus(location.flatten().minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS / 2).withZ(0));			
+				
+				return new PredictionSlice(location, i);
+			}
+		}
+		return null;
 	}
 
 	private Vector3 getJumpPosition(CarData car, double jumpVelocity, double time){
-		Vector3 position = car.position;
-		
+		Vector3 lastPosition = car.position;
+		Vector3 position = car.position;		
 		Vector3 velocity = car.velocity;
-		velocity = velocity.plus(car.orientation.roofVector.scaled(jumpVelocity)); //Jump
-		Utils.capMagnitude(velocity, 2300);
+		
+		//Jump
+		velocity = velocity.plus(car.orientation.roofVector.scaled(jumpVelocity)).capMagnitude(2300); 
 		
 		double t = 0;
 		while(t < time){
+			lastPosition = position;
 			position = position.plus(velocity.scaled(tick));
 			
-			velocity = velocity.plus(new Vector3(0, 0, -Utils.GRAVITY * tick)); //Gravity
-			Utils.capMagnitude(velocity, 2300);
+			//Gravity
+			velocity = velocity.plus(new Vector3(0, 0, -Constants.GRAVITY * tick)).capMagnitude(2300); 
+			if(velocity.z < 0) break;
 			
 			t += tick;
 		}
 		
-		return position;
+		//Interpolate
+		double overflow = (t - time) / tick;
+		return lastPosition.plus(position.minus(lastPosition).scaled(overflow));
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		ControlsOutput controller = new ControlsOutput().withBoost(false).withSlide(false).withJump(false).withSteer(0).withPitch(0).withRoll(0).withYaw(0).withThrottle(0);
+		ControlsOutput controller = new ControlsOutput().withNone().withThrottle(timeDifference(input.elapsedSeconds) > this.target.getTime() ? 1 : 0);
 		double timeDifference = timeDifference(input.elapsedSeconds);
 		
 		wildfire.renderer.drawCrosshair(input.car, this.target.getPosition(), Color.ORANGE, 60);
-		wildfire.renderer.drawString2d("Press: " + Utils.round(timePressed) + "s", Color.WHITE, new Point(0, 40), 2, 2);
-		wildfire.renderer.drawString2d("Peak: " + Utils.round(timeToPeak) + "s", Color.WHITE, new Point(0, 60), 2, 2);
+		if(timeDifference < this.target.getTime()) wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.YELLOW, 0, this.target.getFrame() - (int)(timeDifference * 60));
 		
-		if(timeDifference < timePressed){
+		if(timeDifference < Math.min(0.2, this.target.getTime() - tick * 4)){
 			return controller.withJump(true);
-		}else if(!input.car.hasWheelContact && timeDifference > timeToPeak){
-			if(timeDifference > 0.04 + timeToPeak || input.car.doubleJumped || input.car.velocity.z < -1000) Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+		}else if(timeDifference >= this.target.getTime()){
+			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 0.1){
+				Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+			}
 			
 			//Dodge
-			double angle = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 			controller.withJump(true);
-	        controller.withRoll((float)-Math.sin(angle) * 2);
-	        controller.withPitch((float)-Math.cos(angle));
+			double angle = Handling.aim(input.car, this.target.getPosition().flatten()) * 1.5;
+			controller.withPitch((float)-Math.cos(angle));
+	        controller.withRoll((float)-Math.sin(angle));
 	        wildfire.resetDodgeTime(input.elapsedSeconds); //No spamming!
-	        return controller;
-		}else if(input.car.velocity.z > 200){
-			//Point up
-			Vector3 carTargetNormalised = target.getPosition().minus(input.car.position).normalized();
-			double pitch = pitchPID.getOutput(input.elapsedSeconds, input.car.orientation.noseVector.z, Utils.clamp(carTargetNormalised.z, 0.3, 0.8));
-			controller.withPitch((float)pitch); 
+		}else if(input.car.velocity.z > 50){
+			//Point the car
+			Vector3 direction = target.getPosition().minus(input.car.position).normalized();
+			direction = new Vector3(direction.x, direction.y, direction.z).normalized();
+			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(300)).toFramework());
+			direction = Utils.toLocalFromRelative(input.car, direction);
+			
+			System.out.println(direction.toString());
+			
+			double pitch = pitchPID.getOutput(input.elapsedSeconds, 0, Math.signum(direction.z) * Math.asin(direction.z / 16));
+			double roll = rollPID.getOutput(input.elapsedSeconds, 0, -Math.signum(direction.y) * Math.asin(direction.y / 32));
+			controller.withPitch((float)pitch);
+			controller.withRoll((float)roll);
 		}
 		
 		return controller;
@@ -127,30 +158,7 @@ public class SmartDodgeAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return this.failed || (timeDifference(input.elapsedSeconds) > timePressed + 0.25 && input.car.hasWheelContact);
-	}
-	
-	private BallPrediction getBallPrediction(){
-		return this.wildfire.ballPrediction;
-	}
-	
-	private double getJumpVelocity(double timePressed){
-		return Math.sqrt(Math.pow(1400D * timePressed + 300D, 2) - (Utils.GRAVITY * 1400D * Math.pow(timePressed, 2)));
-//		return 300 + 1400 * timePressed - Utils.GRAVITY * timePressed;
-	}
-	
-	private double timeToPeak(double height, double timePressed){
-		double jumpVelocity = getJumpVelocity(timePressed);
-		double timeTaken = -(jumpVelocity / -Utils.GRAVITY);		
-		return timeTaken;
-	}
-	
-	/** This uses hard-coded gravity (-650),
-	 *  since WolframAlpha convinced me it's not worth it rearranging to have gravity on the other side
-	 */
-	private double timePressedForHeight(double h){
-//		return 0.035186577527449844D * Math.sqrt(h + 60D) - 0.4D;
-		return 0.1D * Math.sqrt(13D / 105D) * Math.sqrt(h + 60D) - 0.4D;
+		return this.failed || (timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact ? 0.5 : 2.5));
 	}
 
 }

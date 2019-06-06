@@ -4,10 +4,11 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Utils;
 
 public class HopAction extends Action {	
 
@@ -46,7 +47,7 @@ public class HopAction extends Action {
 		}else{
 			double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
 			
-			double targetAngle = Utils.aim(input.car, target);
+			double targetAngle = Handling.aim(input.car, target);
 			double yaw = yawPID.getOutput(input.elapsedSeconds, targetAngle, 0);
 			controller.withYaw((float)(angularCoefficient * yaw));
 

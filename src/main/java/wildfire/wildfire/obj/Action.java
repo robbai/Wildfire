@@ -30,8 +30,8 @@ public abstract class Action {
 	
 	public abstract boolean expire(DataPacket input);
 	
-	public float timeDifference(float time){
-		return time - timeStarted;
+	public float timeDifference(float elapsedSeconds){
+		return elapsedSeconds - timeStarted;
 	}
 
 }

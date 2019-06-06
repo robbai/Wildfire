@@ -8,10 +8,11 @@ import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Utils;
 
 public class AerialAction extends Action {
 	
@@ -47,7 +48,7 @@ public class AerialAction extends Action {
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			if(location.isOutOfBounds()) continue;
 			
-			location = location.plus(car.position.minus(location).scaledToMagnitude(Utils.BALLRADIUS / 2));
+			location = location.plus(car.position.minus(location).scaledToMagnitude(Constants.BALLRADIUS / 2));
 //			location = location.plus(location.minus(Utils.enemyGoal(car).withZ(Utils.BALLRADIUS)).scaledToMagnitude(140));
 			
 			//Double jumping
@@ -122,6 +123,10 @@ public class AerialAction extends Action {
 			controls.withPitch((float)pitch);
 			controls.withYaw((float)yaw);
 			controls.withRoll((float)roll);
+		}else{
+			controls.withPitch(0);
+			controls.withYaw(0);
+			controls.withRoll(0);
 		}
 		
 		//Boost
@@ -133,7 +138,7 @@ public class AerialAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return this.failed || input.car.hasWheelContact && timeDifference(input.elapsedSeconds) > 1;
+		return this.failed || input.car.hasWheelContact && timeDifference(input.elapsedSeconds) > 0.75;
 	}
 	
 	private boolean isAerialPossible(CarData car, Vector3 target, double t){
@@ -144,7 +149,7 @@ public class AerialAction extends Action {
 		if(car.hasWheelContact){
 			//Jump
 			u = u.plus(car.orientation.roofVector.scaledToMagnitude(doubleJump ? maxDoubleJumpVelocity : maxJumpVelocity));
-			u = Utils.capMagnitude(u, 2300);
+			u = u.capMagnitude(2300);
 		}
 		
 		//Compensate for turning by reducing the time we have left
@@ -157,9 +162,9 @@ public class AerialAction extends Action {
 		
 		Vector3 a = new Vector3(acceleration(s.x, u.x, t), acceleration(s.y, u.y, t), accelerationGravity(s.z, u.z, t));
 		averageAcceleration = a.magnitude();
-		if(averageAcceleration > Utils.BOOSTACC) return false;
+		if(averageAcceleration > Constants.BOOSTACC) return false;
 		
-		double boostRequired = ((averageAcceleration * t) / Utils.BOOSTACC * (100D / 3));
+		double boostRequired = ((averageAcceleration * t) / Constants.BOOSTACC * (100D / 3));
 			
 //		System.out.println("Boost required for aerial: " + (int)boostRequired + ", current boost: " + (wildfire.unlimitedBoost ? "unlimited" : (int)car.boost));		
 		return wildfire.unlimitedBoost || car.boost >= boostRequired;
@@ -170,7 +175,7 @@ public class AerialAction extends Action {
 	}
 	
 	private double accelerationGravity(double s, double u, double t){
-		return Utils.GRAVITY + (2 * (s - t * u)) / Math.pow(t, 2);
+		return Constants.GRAVITY + (2 * (s - t * u)) / Math.pow(t, 2);
 	}
 	
 	private final double renderScale = (1D / 50);
@@ -178,8 +183,8 @@ public class AerialAction extends Action {
 		if(start.isOutOfBounds()) return null;
 		if(start.distance(target) < 40 && Math.abs(t - time) < renderScale) return start;
 		
-		velocity = velocity.plus(new Vector3(0, 0, -Utils.GRAVITY * renderScale)); //Gravity
-		velocity = Utils.capMagnitude(velocity, 2300);
+		velocity = velocity.plus(new Vector3(0, 0, -Constants.GRAVITY * renderScale)); //Gravity
+		velocity = velocity.capMagnitude(2300);
 		
 		Vector3 next = start.plus(velocity.scaled(renderScale));
 		wildfire.renderer.drawLine3d(colour, start.toFramework(), next.toFramework());

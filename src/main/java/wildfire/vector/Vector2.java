@@ -1,7 +1,7 @@
 package wildfire.vector;
 
 import rlbot.gamestate.DesiredVector3;
-import wildfire.wildfire.Utils;
+import wildfire.wildfire.utils.Constants;
 
 public class Vector2 {
 
@@ -94,7 +94,7 @@ public class Vector2 {
     
     public rlbot.vector.Vector3 toFramework(){
         // Invert the X value again so that RLBot sees the format it expects.
-        return new rlbot.vector.Vector3((float)-x, (float)y, 0);
+        return new rlbot.vector.Vector3((float)-x, (float)y, 20);
     }
     
     public Vector2 rotate(double angle){
@@ -106,7 +106,7 @@ public class Vector2 {
 	}
 	
 	public Vector2 confine(double borderX, double borderY){
-		return new Vector2(Math.min(Utils.PITCHWIDTH - borderX, Math.max(-Utils.PITCHWIDTH + borderX, x)), Math.min(Utils.PITCHLENGTH - borderY, Math.max(-Utils.PITCHLENGTH + borderY, y)));
+		return new Vector2(Math.min(Constants.PITCHWIDTH - borderX, Math.max(-Constants.PITCHWIDTH + borderX, x)), Math.min(Constants.PITCHLENGTH - borderY, Math.max(-Constants.PITCHLENGTH + borderY, y)));
 	}
 	
 	public Vector2 confine(){
@@ -139,7 +139,7 @@ public class Vector2 {
 	}
 	
 	public boolean isOutOfBounds(){
-		 return Math.abs(x) > Utils.PITCHWIDTH || Math.abs(y) > Utils.PITCHLENGTH;
+		 return Math.abs(x) > Constants.PITCHWIDTH || Math.abs(y) > Constants.PITCHLENGTH;
 	}
 	
 	public double magnitudeInDirection(Vector2 direction){

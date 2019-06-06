@@ -11,19 +11,23 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
+import wildfire.wildfire.actions.WavedashAction;
 import wildfire.wildfire.obj.BezierCurve;
 import wildfire.wildfire.obj.KickoffSpawn;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Utils;
 
 public class KickoffState extends State {
 	
 	/**
 	 * Used for enabling/disabling the chance of fake kickoffs
 	 */
-	private final boolean fakeKickoffs = true;
+	private final boolean fakeKickoffs = false;
 	
 	private KickoffSpawn spawn;
 	private Random random;
@@ -39,7 +43,7 @@ public class KickoffState extends State {
 
 	@Override
 	public boolean ready(DataPacket input){
-		if(!Utils.isKickoff(input)) return false;
+		if(!Behaviour.isKickoff(input)) return false;
 		
 		wildfire.unlimitedBoost = (input.car.boost > 99);
 		getSpawn(input.car.position);
@@ -47,11 +51,11 @@ public class KickoffState extends State {
 
 		//Choosing to fake
 		timedOut = false;
-		if(Utils.isTeammateCloser(input)){
+		if(Behaviour.isTeammateCloser(input)){
 			fake = true;
 			wildfire.sendQuickChat(true, QuickChatSelection.Custom_Useful_Faking, QuickChatSelection.Information_GoForIt);
 		}else if(fakeKickoffs){
-			fake = ((random.nextFloat() < 0.2F || isUnfairKickoff(input)) && !Utils.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Utils.hasOpponent(input));
+			fake = ((random.nextFloat() < 0.2F || isUnfairKickoff(input)) && !Behaviour.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Behaviour.hasOpponent(input));
 //			fake = spawn != KickoffSpawn.CORNER;
 		}else{
 			fake = false;
@@ -62,7 +66,7 @@ public class KickoffState extends State {
 	
 	private void getSpawn(Vector3 position){
 		int x = (int)Math.abs(position.x);
-		if(x > 1200){
+		if(x > 1100){
 			spawn = KickoffSpawn.CORNER;
 		}else if(x > 200){
 			spawn = KickoffSpawn.CORNERBACK;
@@ -73,13 +77,14 @@ public class KickoffState extends State {
 
 	@Override
 	public boolean expire(DataPacket input){
-		if(!fake) return !Utils.isKickoff(input);
+		if(!fake) return !Behaviour.isKickoff(input);
 		return input.ball.position.magnitude() > 650; //Distance from origin
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(fake) wildfire.renderer.drawString2d("Fake", Color.WHITE, new Point(0, 20), 2, 2);
+		wildfire.renderer.drawString2d(spawn.toString(), Color.WHITE, new Point(0, 20), 2, 2);
+		if(fake) wildfire.renderer.drawString2d("Fake", Color.WHITE, new Point(0, 40), 2, 2);
 		
 		//Time-out the fake kickoff if the opponent has taken too long
 		if(fake && input.elapsedSeconds - timeStarted > 12){
@@ -90,24 +95,26 @@ public class KickoffState extends State {
 		
 		if(!fake){
 			Vector2 target;
-			boolean dodge;
+			boolean dodge, wavedash;
 			
 			if(!timedOut){
-				if(spawn == KickoffSpawn.CORNER){
-					dodge = input.car.position.magnitude() < 2420;
-					target = new Vector2(0, dodge ? 0 : input.car.position.y * 0.28);
-				}else if(spawn == KickoffSpawn.CORNERBACK){
-					dodge = Math.abs(input.car.position.x) < 170;
-					target = new Vector2(0, dodge ? 0 : input.car.position.y * 0.7);
+				if(spawn == KickoffSpawn.CORNERBACK && input.car.velocity.magnitude() < 1000){
+					//Collect the boost
+					target = new Vector2(0, input.car.position.y * 0.62);
+				}else if(spawn == KickoffSpawn.CORNER && input.car.velocity.magnitude() < 1800){
+					//Line-up like a pro!
+					target = new Vector2(0, input.car.position.y * 0.15);
 				}else{
-					target = input.ball.position.flatten();
-					double distance = input.car.position.magnitude();
-					dodge = (distance < 3900 && distance > 3500) || distance < 2100;
+					target = new Vector2(0, Constants.BALLRADIUS * -Utils.teamSign(input.car));
 				}
+				
+				dodge = (input.car.position.magnitude() < (spawn == KickoffSpawn.CORNER ? 760 : 800));
+				wavedash = (!dodge && input.car.velocity.magnitude() > (spawn == KickoffSpawn.CORNER ? 1200 : 1150) && !input.car.isSupersonic);
 			}else{
 				//Generic kickoff
 				target = input.ball.position.flatten(); 
-				dodge = (input.car.position.magnitude() < 1200 && input.car.velocity.magnitude() > 1000);
+				dodge = (input.car.position.magnitude() < 1000 && input.car.velocity.magnitude() > 1000);
+				wavedash = false;
 			}
 			
 			//Render
@@ -118,20 +125,29 @@ public class KickoffState extends State {
 			bezier.render(wildfire.renderer, Color.WHITE);
 			wildfire.renderer.drawCircle(Color.LIGHT_GRAY, target, 30);
 			
-			if(!hasAction() && dodge && Utils.isKickoff(input) && input.car.velocity.magnitude() > 500){
-				currentAction = new DodgeAction(this, Utils.aim(input.car, input.ball.position.flatten()) * 2.9F, input);
-				currentAction.failed = false;
-				if(!currentAction.failed) return currentAction.getOutput(input); //Start overriding
+			if(!hasAction() && (dodge || wavedash) && Behaviour.isKickoff(input) && input.car.velocity.magnitude() > 500){
+				if(dodge){
+					double dodgeAngle = Handling.aim(input.car, (spawn == KickoffSpawn.CORNER ? new Vector2(-Math.signum(input.car.velocity.x) * Constants.BALLRADIUS, 0) : target));
+					dodgeAngle = Utils.clamp(dodgeAngle * 3.5, -Math.PI, Math.PI);
+					currentAction = new DodgeAction(this, dodgeAngle, input, true);
+				}else{
+					currentAction = new WavedashAction(this, input);
+				}
+				
+				if(currentAction != null){
+//					if(currentAction instanceof DodgeAction) currentAction.failed = false;
+					if(!currentAction.failed) return currentAction.getOutput(input); //Start overriding
+				}
 			}
 			
-			double steerCorrectionRadians = Utils.aim(input.car, target);
+			double steerCorrectionRadians = Handling.aim(input.car, target);
 	        return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1).withBoost(true);
 		}else{
 			//Fake
 			if(!BoostManager.getBoosts().get(input.car.team == 0 ? 0 : 33).isActive() || input.car.boost > 99){
 				
 				boolean reverse = (Math.abs(input.car.position.y) < 5200);
-				double steerCorrectionRadians = Utils.aim(input.car, reverse ? Utils.homeGoal(input.car.team) : wildfire.impactPoint.getPosition().flatten());
+				double steerCorrectionRadians = Handling.aim(input.car, reverse ? Constants.homeGoal(input.car.team) : wildfire.impactPoint.getPosition().flatten());
 				if(reverse){
 					steerCorrectionRadians = Utils.invertAim(steerCorrectionRadians);
 					double forwardMagnitude = input.car.forwardMagnitude();
@@ -144,7 +160,7 @@ public class KickoffState extends State {
 				//Get the boost in front of us
 				Vector2 boost = new Vector2(0, -Utils.teamSign(input.car) * 4290);
 				wildfire.renderer.drawCircle(Color.WHITE, boost, 50);
-				double steerCorrectionRadians = Utils.aim(input.car, boost);
+				double steerCorrectionRadians = Handling.aim(input.car, boost);
 				if(Math.cos(steerCorrectionRadians) > 0){
 					return new ControlsOutput().withSteer((float)steerCorrectionRadians * -3F).withThrottle(1F).withBoost(false);
 				}else{
@@ -165,7 +181,6 @@ public class KickoffState extends State {
 				distanceOrange = Math.min(distanceOrange, car.position.magnitude());
 			}
 		}
-//		System.out.println("Blue: " + (int)distanceBlue + ", Orange: " + (int)distanceOrange + " (" + input.cars.length + " Cars)");
 		return input.car.team == 0 ? (distanceBlue > distanceOrange + 100) : (distanceOrange > distanceBlue + 100);
 	}
 

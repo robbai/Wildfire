@@ -3,6 +3,8 @@ package wildfire;
 import java.awt.Dimension;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -23,15 +25,23 @@ import wildfire.wildfire.Wildfire;
 
 public class WildfireJava {
 	
-	private final static boolean enabled = true;
+	/**
+	 * This prevents the server from being launched
+	 */
+	private final static boolean testGui = false;
 	
 	public static ArrayList<Wildfire> bots = new ArrayList<Wildfire>();
 
+	private static List<String> arguments;
+
     public static void main(String[] args){
+    	System.out.println("Args: " + Arrays.toString(args));
+    	setArguments(args);
+    	
     	//Bot Manager
     	BotManager botManager = new BotManager();
     	Integer port = PortReader.readPortFromFile("port.cfg");
-    	if(enabled){
+    	if(!testGui){
 	        PythonInterface pythonInterface = new WildfirePythonInterface(botManager);
 	        PythonServer pythonServer = new PythonServer(pythonInterface, port);
 	        pythonServer.start();
@@ -78,7 +88,7 @@ public class WildfireJava {
                 for(int i = 0; i <= maxIndexInt; i++){
                 	Wildfire bot = getBotAtIndex(i);
                 	if(bot == null || !runningBotIndices.contains(i)) continue;
-                	data.add(new String[] {i + "", !bot.isTestVersion() ? "Wildfire" : "WildfireTest", bot.team == 0 ? "Blue" : "Orange"});
+                	data.add(new String[] {i + "", bot.isTestVersion() ? "WildfireTest" : "Wildfire", bot.team == 0 ? "Blue" : "Orange"});
                     botListSize ++;
                 }
                 
@@ -107,5 +117,13 @@ public class WildfireJava {
     	}
     	return null;
     }
+
+	public static List<String> getArguments(){
+		return arguments;
+	}
+
+	public static void setArguments(String[] args){
+		arguments = Arrays.asList(args);
+	}
     
 }

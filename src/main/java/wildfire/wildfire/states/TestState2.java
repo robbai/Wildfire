@@ -7,10 +7,11 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.HalfFlipAction;
+import wildfire.wildfire.actions.WavedashAction;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Utils;
 
 public class TestState2 extends State {
 	
@@ -32,24 +33,18 @@ public class TestState2 extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		double aim = Utils.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+		double aim = Handling.aim(input.car, new Vector2(Math.signum(input.car.velocity.x) * 1000, Math.signum(input.car.velocity.y) * 1000));
 		
 		if(!hasAction() && wildfire.impactPoint.getTime() < 1.25 && Math.cos(aim) < 0){
-			currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+			currentAction = new WavedashAction(this, input);
 			if(!currentAction.failed){
 				return currentAction.getOutput(input); 
+			}else{
+				currentAction = null;
 			}
 		}
 		
-		boolean forward = input.car.forwardMagnitude() > 1100;
-		
-		if(forward){
-			aim = -aim;
-		}else{
-			aim = Utils.invertAim(aim);
-		}
-		
-		return new ControlsOutput().withSteer((float)aim * 3F).withBoost(false).withThrottle(forward ? 1 : -1);
+		return new ControlsOutput().withSteer((float)aim * -3F).withBoost(input.car.velocity.magnitude() < 2000).withThrottle(1);
 	}
 	
 	@SuppressWarnings("unused")
@@ -61,7 +56,7 @@ public class TestState2 extends State {
 			double scale = 0.05;
 			Vector2 rotation = c.velocity.scaled(scale).flatten();
 			for(int i = 0; i < 100; i++){
-				double s = (float)-Utils.aimFromPoint(start.flatten(), rotation, input.ball.position.flatten()) * sharpness;
+				double s = (float)-Handling.aimFromPoint(start.flatten(), rotation, input.ball.position.flatten()) * sharpness;
 				rotation = rotation.rotate(-Utils.clampSign(s) / (0.4193 / scale));
 				Vector3 end = start.plus(rotation.withZ(0));
 				wildfire.renderer.drawLine3d(i % 2 == 0 ? (c.team == 0 ? Color.BLUE : Color.ORANGE) : Color.WHITE, start.toFramework(), end.toFramework());

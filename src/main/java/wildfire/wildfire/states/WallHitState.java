@@ -9,13 +9,16 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Utils;
 
 public class WallHitState extends State {
 	
@@ -31,7 +34,8 @@ public class WallHitState extends State {
 		if(!isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition())) return false;
 		
 		//We would like the hit to be constructive
-		return Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < -4000 || Utils.teamSign(input.car) * (wildfire.impactPoint.getPosition().y - input.car.position.y) > -600;
+		return Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < -4000 || 
+				Utils.teamSign(input.car) * (wildfire.impactPoint.getPosition().y - input.car.position.y) > (Behaviour.hasTeammate(input) ? -900 : -600);
 	}
 	
 	@Override
@@ -48,12 +52,12 @@ public class WallHitState extends State {
 			if(!isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition())){
 				wildfire.renderer.drawString2d("Abandon", Color.WHITE, new Point(0, 20), 2, 2);
 				
-				if(!hasAction() && input.car.velocity.z < -400){
+				if(!hasAction() && input.car.velocity.z < -500 && wildfire.impactPoint.getTime() > 4){
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 					return currentAction.getOutput(input);
 				}
 				
-				return Utils.driveDownWall(input);
+				return Handling.driveDownWall(input);
 			}else{
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.CYAN, 125);
 				Vector3 localTarget = Utils.toLocal(input.car, wildfire.impactPoint.getPosition());
@@ -62,7 +66,7 @@ public class WallHitState extends State {
 				double aim = forward.correctionAngle(localTarget.flatten());
 				
 				//Dodge
-				if((localTarget.z > 110 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 460 : 260)){
+				if((localTarget.z > 100 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 460 : 260)){
 					currentAction = new DodgeAction(this, aim, input);
 					if(!currentAction.failed){
 						if(input.car.position.z > 1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
@@ -80,14 +84,15 @@ public class WallHitState extends State {
 				wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Information_Incoming);
 			}
 			
-			boolean sideWall = (Utils.PITCHWIDTH - Math.abs(wildfire.impactPoint.getPosition().x) < maxWallDistance + 50);
-			boolean backWall = (Utils.PITCHLENGTH - Math.abs(wildfire.impactPoint.getPosition().y) < maxWallDistance + 50);
+			boolean sideWall = (Constants.PITCHWIDTH - Math.abs(wildfire.impactPoint.getPosition().x) < maxWallDistance + 50);
+			boolean backWall = (Constants.PITCHLENGTH - Math.abs(wildfire.impactPoint.getPosition().y) < maxWallDistance + 50);
+			wildfire.renderer.drawString2d((sideWall ? "Side" : (backWall ? "Back" : "Unknown")) + " Wall", Color.WHITE, new Point(0, 40), 2, 2);
 			
 			Vector2 destination = wildfire.impactPoint.getPosition().minus(input.car.position).scaled(100).plus(input.car.position).flatten();
 			if(sideWall) destination = destination.withY(input.car.position.y);
-			if(backWall) destination = destination.withX(Math.abs(wildfire.impactPoint.getPosition().x) > 1400 ? wildfire.impactPoint.getPosition().x : Math.signum(wildfire.impactPoint.getPosition().x) * 1400);
+			if(backWall) destination = destination.withX(Math.max(Math.abs(wildfire.impactPoint.getPosition().x), 1000) * Math.signum(wildfire.impactPoint.getPosition().x));
 			
-			float steer = (float)Utils.aim(input.car, destination);
+			float steer = (float)Handling.aim(input.car, destination);
 			boolean reverse = false;
 			
 			//Dodging and half-flipping

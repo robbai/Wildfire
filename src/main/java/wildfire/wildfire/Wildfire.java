@@ -12,12 +12,11 @@ import rlbot.cppinterop.RLBotDll;
 import rlbot.flat.BallPrediction;
 import rlbot.flat.GameTickPacket;
 import rlbot.flat.QuickChatSelection;
-import rlbot.gamestate.GameInfoState;
-import rlbot.gamestate.GameState;
 import wildfire.WildfireJava;
 import wildfire.boost.BoostManager;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.wildfire.obj.Human;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.obj.StateSettingManager;
@@ -35,6 +34,7 @@ import wildfire.wildfire.states.ShadowState;
 import wildfire.wildfire.states.ShootState;
 import wildfire.wildfire.states.WaitState;
 import wildfire.wildfire.states.WallHitState;
+import wildfire.wildfire.utils.Behaviour;
 
 public class Wildfire implements Bot {
 
@@ -85,12 +85,12 @@ public class Wildfire implements Bot {
         new KickoffState(this);
         new WallHitState(this);
         new PatienceState(this);
-        new WaitState(this);
-        new ShootState(this);
+        new BoostState(this);
+        new WaitState(this);        
+        new ShootState(this);        
         new ClearState(this);
         new ReturnState(this);
         new PathState(this);
-        new BoostState(this);
         new DemoState(this);
         new ShadowState(this);
         fallbackState = new FallbackState(this);
@@ -101,16 +101,16 @@ public class Wildfire implements Bot {
 //        fallbackState = new PathState(this);
 //        fallbackState = new DemoState(this);
 //        fallbackState = new IdleState(this);
+//        fallbackState = new ReturnState(this);
         
         WildfireJava.bots.add(this);
     }
 
     private ControlsOutput processInput(DataPacket input){
     	//Get a renderer
-    	renderer = new WRenderer(this, (Utils.hasTeammate(input) ? false : isTestVersion()), isTestVersion());
+    	renderer = new WRenderer(this, !Behaviour.hasTeammate(input) && isTestVersion(), isTestVersion());
     	
-//    	stateSetting.clear(input);
-//		RLBotDll.setGameState(new GameState().withGameInfoState(new GameInfoState().withGameSpeed(2.5F)).buildPacket());
+//    	stateSetting.resetToKickoff(input);
     	
     	//Get the ball prediction
     	try{
@@ -123,7 +123,7 @@ public class Wildfire implements Bot {
     	if(input.gameInfo.isMatchEnded()){
     		try{
 				if(lastQuickChat != -1){
-					if(Utils.isTeammateCloser(input)){
+					if(Behaviour.isTeammateCloser(input)){
 						RLBotDll.sendQuickChat(this.playerIndex, false, (new Random()).nextBoolean() ? QuickChatSelection.PostGame_ThatWasFun : QuickChatSelection.PostGame_WhatAGame);
 					}else{
 						RLBotDll.sendQuickChat(this.playerIndex, false, QuickChatSelection.PostGame_Gg);
@@ -139,7 +139,7 @@ public class Wildfire implements Bot {
     	
     	//Impact point
     	try{
-    		impactPoint = Utils.getEarliestImpactPoint(input, ballPrediction);
+    		impactPoint = Behaviour.getEarliestImpactPoint(input, ballPrediction);
     	}catch(Exception e){
     		e.printStackTrace();
     		impactPoint = new PredictionSlice(input.ball.position, 360);
@@ -161,7 +161,7 @@ public class Wildfire implements Bot {
     	//Get a new state if one isn't active
     	if(activeState == null && !fallbackState.hasAction()){
 		    for(State state : states){
-		    	 if(state.ready(input)){
+		    	 if(state.getClass() != fallbackState.getClass() && state.ready(input)){
 		    		activeState = state;
 		    		if(lastPrintedState == null || activeState.getName() != lastPrintedState.getName()){
 		    			System.out.println(playerIndex + " [" + (10 + System.currentTimeMillis() % 90) + "]: " + activeState.getName() + (activeState.hasAction() ? " (" + activeState.currentAction.getName() + ")" : ""));

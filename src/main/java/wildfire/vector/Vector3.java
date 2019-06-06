@@ -1,7 +1,7 @@
 package wildfire.vector;
 
 import rlbot.gamestate.DesiredVector3;
-import wildfire.wildfire.Utils;
+import wildfire.wildfire.utils.Constants;
 
 public class Vector3 {
 
@@ -115,7 +115,7 @@ public class Vector3 {
 	}
 	
 	public Vector3 confine(){
-		return new Vector3(Math.min(Utils.PITCHWIDTH, Math.max(-Utils.PITCHWIDTH, x)), Math.min(Utils.PITCHLENGTH, Math.max(-Utils.PITCHLENGTH, y)), Math.min(Utils.CEILING, Math.max(0, z)));
+		return new Vector3(Math.min(Constants.PITCHWIDTH, Math.max(-Constants.PITCHWIDTH, x)), Math.min(Constants.PITCHLENGTH, Math.max(-Constants.PITCHLENGTH, y)), Math.min(Constants.CEILING, Math.max(0, z)));
 	}
 	
 	public Vector3 withZ(double z){
@@ -131,7 +131,12 @@ public class Vector3 {
 	}
 
 	public boolean isOutOfBounds(){
-		 return Math.abs(x) > Utils.PITCHWIDTH || Math.abs(y) > Utils.PITCHLENGTH || z > Utils.CEILING || z < 0;
+		 return Math.abs(x) > Constants.PITCHWIDTH || Math.abs(y) > Constants.PITCHLENGTH || z > Constants.CEILING || z < 0;
+	}
+	
+	public Vector3 capMagnitude(double max){
+		double mag = this.magnitude();
+		return (mag > max ? this.scaledToMagnitude(max) : new Vector3(this));
 	}
     
 }

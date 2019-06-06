@@ -1,4 +1,4 @@
-package wildfire.wildfire;
+package wildfire.wildfire.obj;
 
 import com.studiohartman.jamepad.ControllerAxis;
 import com.studiohartman.jamepad.ControllerButton;
@@ -6,7 +6,9 @@ import com.studiohartman.jamepad.ControllerIndex;
 import com.studiohartman.jamepad.ControllerManager;
 import com.studiohartman.jamepad.ControllerUnpluggedException;
 
+import wildfire.WildfireJava;
 import wildfire.output.ControlsOutput;
+import wildfire.wildfire.Wildfire;
 
 public class Human extends Thread {
 	
@@ -41,7 +43,7 @@ public class Human extends Thread {
 				 */
 				
 				//Toggle the human
-				if(currController.isButtonJustPressed(ControllerButton.LEFTSTICK) && this.wildfire.isTestVersion()){
+				if(currController.isButtonJustPressed(ControllerButton.LEFTSTICK)){
 					this.setEnabled(!this.isEnabled());
 				}
 				
@@ -81,7 +83,7 @@ public class Human extends Thread {
 	}
 
 	public Human setEnabled(boolean enabled){
-		this.enabled = enabled;
+		this.enabled = (enabled && WildfireJava.getArguments().contains("allow-human") && this.wildfire.isTestVersion());
 		return this;
 	}
 

@@ -7,10 +7,12 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Physics;
+import wildfire.wildfire.utils.Utils;
 
 public class RecoveryAction extends Action {
 	
@@ -32,7 +34,7 @@ public class RecoveryAction extends Action {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		//whatisaphone's Secret Recipe
-		boolean boostDown = (Utils.timeToHitGround(input.car) > (input.car.doubleJumped ? 0.5 : 0.575) && input.car.boost > 5 && Utils.distanceToWall(input.car.position) > 100 && input.car.position.z > 300);
+		boolean boostDown = (Physics.timeToHitGround(input.car) > (input.car.doubleJumped ? 0.5 : 0.575) && input.car.boost > 5 && Utils.distanceToWall(input.car.position) > 100 && input.car.position.z > 300);
 		
 		double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
 //		wildfire.renderer.drawString2d("Coefficient: " + Utils.round(angularCoefficient), Color.WHITE, new Point(0, 60), 2, 2);
@@ -71,7 +73,7 @@ public class RecoveryAction extends Action {
 			wildfire.renderer.drawCircle(colour, start.flatten(), 30);
 			return;		
 		}
-		velocity = velocity.plus(new Vector3(0, 0, -Utils.GRAVITY * renderScale)); //Gravity
+		velocity = velocity.plus(new Vector3(0, 0, -Constants.GRAVITY * renderScale)); //Gravity
 		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
 		Vector3 next = start.plus(velocity.scaled(renderScale));
 		wildfire.renderer.drawLine3d(colour, start.toFramework(), next.toFramework());

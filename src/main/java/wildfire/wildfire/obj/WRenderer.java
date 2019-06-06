@@ -9,8 +9,8 @@ import rlbot.render.Renderer;
 import wildfire.input.CarData;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.Utils;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.utils.Physics;
 
 public class WRenderer extends Renderer {
 	
@@ -65,7 +65,7 @@ public class WRenderer extends Renderer {
 	
 	public void drawCircle(Color colour, Vector2 centre, double radius){
 		if(!threeD) return;
-		drawCircle(colour, centre.withZ(0), radius);
+		drawCircle(colour, centre.withZ(20), radius);
 	}
 	
 	public void drawCircle(Color colour, Vector3 centre, double radius){
@@ -89,7 +89,7 @@ public class WRenderer extends Renderer {
 	 */
 	public void drawTurningRadius(Color colour, CarData car){
 		if(!threeD) return;
-    	double turningRadius = Utils.getTurnRadius(car.velocity.flatten().magnitude());
+    	double turningRadius = Physics.getTurnRadius(car.velocity.flatten().magnitude());
     	drawCircle(colour, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(turningRadius)).flatten(), turningRadius);
     	drawCircle(colour, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(-turningRadius)).flatten(), turningRadius);
 	}
