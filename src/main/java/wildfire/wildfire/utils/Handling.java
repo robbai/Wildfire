@@ -43,5 +43,23 @@ public class Handling {
     	Vector2 left = car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(-turningRadius)).flatten();
     	return Math.min(point.distance(right), point.distance(left)) < turningRadius;
 	}
+	
+	public static ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
+		float steer = (float)Handling.aim(input.car, point);
+		
+		float throttle = (rush ? 1 : (float)Math.signum(Math.cos(steer)));
+		double distance = input.car.position.distanceFlat(point);
+		
+		boolean reverse = (throttle < 0);
+		if(reverse) steer = (float)-Utils.invertAim(steer);
+		
+		return new ControlsOutput().withThrottle(throttle)
+				.withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > (rush ? 1200 : 2000))
+				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
+	}
+	
+	public static ControlsOutput stayStill(DataPacket input){
+		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 2500).withBoost(false);
+	}
 
 }

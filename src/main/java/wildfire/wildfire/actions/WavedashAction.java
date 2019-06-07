@@ -62,7 +62,7 @@ public class WavedashAction extends Action {
 			this.jumped = true;
 			targetPitch = -0.42;
 		}else{
-			if(input.car.velocity.z < -1 && Physics.timeToHitGround(input.car) < 0.08){
+			if(input.car.velocity.z < -1 && Physics.timeToHitGround(input.car) < 0.075){
 				targetPitch = -3;
 				controls.withJump(!input.car.doubleJumped);
 			}else{

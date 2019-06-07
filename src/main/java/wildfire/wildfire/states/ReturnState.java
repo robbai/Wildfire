@@ -106,19 +106,18 @@ public class ReturnState extends State {
 				wildfire.sendQuickChat(QuickChatSelection.Information_Incoming);
 				wildfire.renderer.drawString2d("Rush", Color.WHITE, new Point(0, 40), 2, 2);
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
-				return drivePoint(input, wildfire.impactPoint.getPosition().flatten(), true);
+				return Handling.drivePoint(input, wildfire.impactPoint.getPosition().flatten(), true);
 			}else{
 				//Get in the way of their predicted shot
 				wildfire.renderer.drawString2d("Align", Color.WHITE, new Point(0, 40), 2, 2);
 				
 				if(target.distance(input.car.position.flatten()) < 300){
-					
 					//Already there!					
 					if(doHop(input, aimImpact)){
 						currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 						if(!currentAction.failed) return currentAction.getOutput(input);
 					}
-					return stayStill(input); 
+					return Handling.stayStill(input); 
 				}else{
 					wildfire.renderer.drawLine3d(Color.RED, input.car.position.flatten().toFramework(), target.toFramework());
 					
@@ -135,7 +134,7 @@ public class ReturnState extends State {
 					}
 					
 					//We better get there!
-					return drivePoint(input, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
+					return Handling.drivePoint(input, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
 				}
 			}
 		}
@@ -147,9 +146,9 @@ public class ReturnState extends State {
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 				if(!currentAction.failed) return currentAction.getOutput(input);
 			}
-			return stayStill(input);
+			return Handling.stayStill(input);
 		}
-		return drivePoint(input, homeGoal, false);
+		return Handling.drivePoint(input, homeGoal, false);
 	}
 	
 	private boolean doHop(DataPacket input, double aimImpact){
@@ -174,22 +173,6 @@ public class ReturnState extends State {
 			}
 		}
 		return attacker;
-	}
-	
-	private ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
-		float steer = (float)Handling.aim(input.car, point);
-		
-		float throttle = (rush ? 1 : (float)Math.signum(Math.cos(steer)));
-		double distance = input.car.position.distanceFlat(point);
-		
-		boolean reverse = (throttle < 0);
-		if(reverse) steer = (float)-Utils.invertAim(steer);
-		
-		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > (rush ? 1200 : 2000)).withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
-	}
-	
-	private ControlsOutput stayStill(DataPacket input){
-		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 2500).withBoost(false);
 	}
 
 }

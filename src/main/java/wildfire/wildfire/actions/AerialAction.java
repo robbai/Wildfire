@@ -119,7 +119,7 @@ public class AerialAction extends Action {
 		double yawCorrection = Math.asin(dirLocal.x);
 		double yaw = yawPID.getOutput(input.elapsedSeconds, 0, yawCorrection);
 		
-		if(timeDifference < jumpTime || !controls.holdJump()){
+		if(!controls.holdJump()){
 			controls.withPitch((float)pitch);
 			controls.withYaw((float)yaw);
 			controls.withRoll((float)roll);

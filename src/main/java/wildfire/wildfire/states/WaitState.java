@@ -153,7 +153,7 @@ public class WaitState extends State {
 				pathDistanceChosen = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, length, Color.GREEN, desiredDist); //Redraw in pretty green!
 				
 				wildfire.renderer.drawString2d("Offset: " + (int)(length * 100) + "%", Color.WHITE, new Point(0, 60), 2, 2);
-//				wildfire.renderer.drawString2d("Distance: " + (int)distance + "uu", Color.WHITE, new Point(0, 60), 2, 2);
+				wildfire.renderer.drawString2d("Distance: " + (int)pathDistanceChosen + "uu", Color.WHITE, new Point(0, 80), 2, 2);
 //				wildfire.renderer.drawString2d("Velocity Needed: " + (int)velocityNeeded + "uu/s", Color.WHITE, new Point(0, 80), 2, 2);
 				
 				break;
@@ -186,9 +186,9 @@ public class WaitState extends State {
 		double currentVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
 			
 		//Quick approach for a smart dodge
-		if(planSmartDodge && Math.abs(steerRadians) < 0.2 && velocityNeeded < 800 && pathDistanceChosen > 1800 && timeLeft > 0.5){
-			controls.withThrottle(0);
-		}else{
+//		if(planSmartDodge && Math.abs(steerRadians) < 0.2 && velocityNeeded < 800 && pathDistanceChosen > 1800 && timeLeft > 0.5){
+//			controls.withThrottle(0);
+//		}else{
 			if(velocityNeeded > currentVelocity){
 				if(velocityNeeded > currentVelocity + 500 || velocityNeeded > 1410){
 					controls.withThrottle(1).withBoost(Math.abs(steer) < 0.5F);
@@ -200,7 +200,7 @@ public class WaitState extends State {
 			}else{
 				controls.withThrottle(0);
 			}
-		}
+//		}
 		
 	    return controls;
 	}

@@ -95,7 +95,7 @@ public class Behaviour {
 	 * it should be a good place to shoot relative to this car
 	 */
 	public static Vector2 getTarget(CarData car, BallData ball){
-		final double goalSafeZone = 770D;
+		final double goalSafeZone = 750D;
 		Vector2 target = null;
 		Vector2 ballDifference = ball.position.minus(car.position).flatten();
 		ballDifference = ballDifference.scaled(1D / Math.abs(ballDifference.y)); //Make the Y-value 1
@@ -230,6 +230,19 @@ public class Behaviour {
 			if(distance < velocity.scaled(1D / 60).magnitude()) return true;
 		}
 		return false;
+	}
+	
+	public static CarData getGoalkeeper(CarData[] cars, int team){
+		final double maxGoalDistance = 2900;
+		
+		Vector2 goal = Constants.homeGoal(team);
+		
+		for(CarData car : cars){
+			if(car.team != team) continue;
+			if(car.position.flatten().distance(goal) < maxGoalDistance) return car;
+		}
+		
+		return null;
 	}
 
 }

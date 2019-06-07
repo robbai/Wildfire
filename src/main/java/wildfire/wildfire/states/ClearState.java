@@ -72,7 +72,7 @@ public class ClearState extends State {
 //			boolean chip = (Math.abs(angleImpact) < 0.1 && forwardVelocity > 1600 && !input.car.isDrifting() &&
 //					wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y * Utils.teamSign(input.car) > 0.9);
 			
-			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 280 : 430))){
+			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 280 : 330))){
 //				if(!chip) currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
 				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
 			}else if(impactDistance > (onTarget ? 3500 : 2200) && forwardVelocity < -900){
@@ -84,13 +84,13 @@ public class ClearState extends State {
 		//Aerial
 		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle(input.car.position.minus(input.ball.position).flatten())); 
 		if(!hasAction() && input.car.hasWheelContact && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 1700 ? 300 : 500) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 0 && input.car.position.z < 140){
-//			double maxRange = wildfire.impactPoint.getPosition().z * 4;
-//			double minRange = wildfire.impactPoint.getPosition().z * 1.3;
-//			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
+			double maxRange = wildfire.impactPoint.getPosition().z * 4;
+			double minRange = wildfire.impactPoint.getPosition().z * 1.3;
+			if(Utils.isPointWithinRange(input.car.position.flatten(), wildfire.impactPoint.getPosition().flatten(), minRange, maxRange)){
 				currentAction = AerialAction.fromBallPrediction(this, input.car, wildfire.ballPrediction, wildfire.impactPoint.getPosition().z > 800);
 				if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 				currentAction = null;
-//			}
+			}
 		}
 		
 		wildfire.renderer.drawCircle(Color.GREEN, Constants.homeGoal(input.car.team), homeZoneSize);
@@ -116,7 +116,7 @@ public class ClearState extends State {
 		}
 		
 		Vector2 offset;
-		double offsetMagnitude = (70 + 60 * Math.pow(input.ball.position.minus(input.car.position).normalized().y, 2));
+		double offsetMagnitude = (80 + 30 * Math.pow(input.ball.position.minus(input.car.position).normalized().y, 2));
 		if(Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition().flatten())){
 			Vector2 goal = Behaviour.getTarget(input.car, input.ball);
 			offset = wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);

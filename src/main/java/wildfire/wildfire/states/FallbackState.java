@@ -11,7 +11,6 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
-import wildfire.wildfire.actions.WavedashAction;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
@@ -23,12 +22,12 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.14, scope = 0.41;
+	private static final double dropoff = 0.15, scope = 0.37;
 	
 	/*
 	 * Yeah this one too, I guess
 	 */
-	private final int targetPly = 7;
+	private final int targetPly = 6;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);
@@ -63,7 +62,7 @@ public class FallbackState extends State {
 		Vector2 trace = Utils.traceToY(input.car.position.flatten(), impactPoint.minus(input.car.position).flatten(), Utils.teamSign(input.car) * -Constants.PITCHLENGTH);
 		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 800);
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Math.max(50, Math.min(1100, distance / 3.6)), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Math.max(70, Math.min(1000, distance / 3.6)), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(input.car, impactPoint, Color.PINK, 125);
 		}
 
@@ -73,7 +72,7 @@ public class FallbackState extends State {
 
 		//Handling
 		double steer = Handling.aim(input.car, target);
-		double throttle = (Handling.insideTurningRadius(input.car, target) && Math.abs(steer) > 0.14 && input.car.velocity.magnitude() > 1700 ? -1 : 1);
+		double throttle = (Handling.insideTurningRadius(input.car, target) && Math.abs(steer) > 0.13 && input.car.velocity.magnitude() > 1600 ? -1 : 1);
 		if(throttle < 1) wildfire.renderer.drawTurningRadius(Color.WHITE, input.car);
 		
 		//Action
@@ -100,19 +99,17 @@ public class FallbackState extends State {
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			}else if(wall && Math.abs(input.car.position.x) < Constants.GOALHALFWIDTH - 50){
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-			}else if(wildfire.impactPoint.getTime() > (avoidOwnGoal ? 1.1 : 1.5) && !input.car.isSupersonic && velocity > (input.car.boost == 0 ? 1200 : 1500) && 0.3 > Math.abs(Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten()))){
+			}else if(wildfire.impactPoint.getTime() > (avoidOwnGoal ? 1.2 : 1.8) && !input.car.isSupersonic && velocity > (input.car.boost == 0 ? 1200 : 1500) && 0.3 > Math.abs(Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten()))){
 				//Front flip for speed
-				if(input.car.boost < 10){
+//				if(input.car.boost < 10){
 					currentAction = new DodgeAction(this, 0, input);
-				}else{
-					currentAction = new WavedashAction(this, input);
-				}
+//				}else{
+//					currentAction = new WavedashAction(this, input);
+//				}
 			}
 			
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
-		
-		
 		
 		//Controller
         return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle((float)throttle).withBoost(Math.abs(steer) < 0.2F && !input.car.isSupersonic && throttle >= 1)
@@ -127,15 +124,9 @@ public class FallbackState extends State {
 		Vector2 end = impactPoint.flatten().plus(impactPoint.flatten().minus(goal).scaledToMagnitude(distance * scope));
 		end = start.plus(end.minus(start).scaled(dropoff)).confine(35, 50);
 		
-		//Clamp the X when stuck in goal
-		boolean stuck = Math.abs(start.y) > Constants.PITCHLENGTH; 
-		if(stuck){
-			end = new Vector2(Math.max(-750, Math.min(750, end.x)), Math.signum(end.y) * Constants.PITCHLENGTH);
-		}
-		
 		wildfire.renderer.drawLine3d(Color.RED, start.toFramework(), end.toFramework());
 		Vector2 next = getPosition(end, goal, ply + 1, impactPoint);
-		return ply < targetPly && !stuck ? (ply == targetPly ? start : next) : end;
+		return ply < targetPly ? (ply == targetPly ? start : next) : end;
 	}
 
 }

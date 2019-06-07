@@ -96,10 +96,16 @@ public class BoostState extends State {
 			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -600, 600), Utils.clamp(boostLocation.y, -Constants.PITCHLENGTH + 200, Constants.PITCHLENGTH - 200));
 		}
 		
-		if(forwardVelocity > -200 || stuckInGoal){
-			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(1F).withBoost(Math.abs(steer) < 0.1 && (distance > 1200 || forwardVelocity < 800)).withSlide(Math.abs(steer) > 1.2 && distance < 1200 && !input.car.isDrifting());
+		boolean reverse = (forwardVelocity < -200 && !stuckInGoal);
+		
+		float throttle = (Handling.insideTurningRadius(input.car, boostLocation) ? 0 : (reverse ? -1 : 1));
+		
+		if(reverse){
+			return new ControlsOutput().withSteer((float)Utils.invertAim(steer) * 3).withThrottle(throttle).withBoost(false);
 		}else{
-			return new ControlsOutput().withSteer((float)Utils.invertAim(steer) * 3).withThrottle(-1F).withBoost(false);
+			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(throttle)
+					.withBoost(Math.abs(steer) < 0.1 && (distance > 1200 || forwardVelocity < 800))
+					.withSlide(Math.abs(steer) > 1.2 && distance < 1200 && !input.car.isDrifting());
 		}
 	}
 

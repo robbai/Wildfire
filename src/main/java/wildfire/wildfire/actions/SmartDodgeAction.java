@@ -57,7 +57,7 @@ public class SmartDodgeAction extends Action {
 //			if(i < 100) System.out.println(Utils.round(time) + "s (" + i + ") would be " + (int)distance + "uu away");
 
 			shortestDistance = (int)Math.min(distance, shortestDistance);
-			if(distance < Constants.BALLRADIUS + 35){
+			if(distance < Constants.BALLRADIUS + 60){
 				this.target = new PredictionSlice(location, i);
 				break;
 			}
@@ -72,8 +72,8 @@ public class SmartDodgeAction extends Action {
 	}
 	
 	public static PredictionSlice getCandidateLocation(BallPrediction ballPrediction, Vector2 enemyGoal){
-		int peakTick = (int)((jumpVelocity / Constants.GRAVITY) / tick);
-		for(int i = peakTick; i < ballPrediction.slicesLength(); i++){
+//		int peakTick = (int)((jumpVelocity / Constants.GRAVITY) / tick);
+		for(int i = (int)(0.2 / tick); i < ballPrediction.slicesLength(); i++){
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			if(location.z < 100) break;
 			
@@ -134,15 +134,15 @@ public class SmartDodgeAction extends Action {
 			
 			//Dodge
 			controller.withJump(true);
-			double angle = Handling.aim(input.car, this.target.getPosition().flatten()) * 1.5;
+			double angle = Handling.aim(input.car, this.target.getPosition().flatten());
 			controller.withPitch((float)-Math.cos(angle));
-	        controller.withRoll((float)-Math.sin(angle));
+	        controller.withRoll((float)-Math.sin(angle) * 1.5F);
 	        wildfire.resetDodgeTime(input.elapsedSeconds); //No spamming!
 		}else if(input.car.velocity.z > 50){
 			//Point the car
 			Vector3 direction = target.getPosition().minus(input.car.position).normalized();
 			direction = new Vector3(direction.x, direction.y, direction.z).normalized();
-			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(300)).toFramework());
+			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(400)).toFramework());
 			direction = Utils.toLocalFromRelative(input.car, direction);
 			
 			System.out.println(direction.toString());

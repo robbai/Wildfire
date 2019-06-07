@@ -21,7 +21,7 @@ public class PatienceState extends State {
 	 * Wait for a rolling shot
 	 */
 	
-	private final double maxWaitingSeconds = 2.7, delaySeconds = 0.25, coneBorder = -180;
+	private final double maxWaitingSeconds = 2.7, delaySeconds = 0.13, coneBorder = -200;
 	
 	private PredictionSlice point;
 

@@ -124,7 +124,7 @@ public class DemoState extends State {
 				maxAcceleration = 0;
 			}
 			maxAcceleration = Math.min(2300, maxAcceleration + 991.67); //Boost
-		if(acceleration.magnitude() > maxAcceleration) acceleration = acceleration.scaledToMagnitude(maxAcceleration);
+			if(acceleration.magnitude() > maxAcceleration) acceleration = acceleration.scaledToMagnitude(maxAcceleration);
 			
 			//Velocity handling
 			velocity = velocity.plus(acceleration.scaled(step));
@@ -157,7 +157,8 @@ public class DemoState extends State {
 		
 		//Controls
 		double steer = Handling.aim(input.car, target);
-        return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle(1).withBoost((Math.abs(steer) < 0.3F || input.car.forwardMagnitude() > 1300) && !input.car.isSupersonic && input.car.hasWheelContact).withSlide(Math.abs(steer) > 1.5F && input.car.forwardMagnitude() > 0 && impactDistance > 500);
+        return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle(1)
+        		.withBoost((Math.abs(steer) < 0.3F || input.car.forwardMagnitude() > 1300) && !input.car.isSupersonic && input.car.hasWheelContact).withSlide(Math.abs(steer) > 1.5F && input.car.forwardMagnitude() > 0 && impactDistance > 500);
 	}
 	
 	private CarData getTarget(DataPacket input){
