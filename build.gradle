@@ -1,4 +1,4 @@
-// This file controls gradle, which we are using to install and update the RLBot framework used by this example bot,
+// This file controls gradle, which we are using to install and update the RLBot framework used by this bot,
 // and also compile and run the java code used by this bot.
 
 apply plugin: 'java'
@@ -8,7 +8,9 @@ sourceCompatibility = 1.8
 
 repositories {
     jcenter()
-	maven { url "https://jitpack.io" }
+    
+    // Jitpack (used to pull Jamepad)
+    maven { url "https://jitpack.io" }
 }
 
 mainClassName = 'wildfire.WildfireJava'
@@ -32,8 +34,12 @@ dependencies {
 
     // This is makes it easy to find the dll when running in intellij, where JVM args don't get passed from gradle.
     runtime files(dllDirectory)
+    
+    // Jamepad
+    compile 'com.github.WilliamAHartman:Jamepad:1.3.2'
 	
-	compile 'com.github.WilliamAHartman:Jamepad:1.3.2'
+    // javagl's Obj
+    compile group: 'de.javagl', name: 'obj', version: '0.3.0'
 }
 
 task checkPipUpgradeSafety {
@@ -87,6 +93,7 @@ distZip {
     into ('python') {
         from fileTree('src/main/python') {
             exclude '__pycache__'
+            exclude 'wildfireTest.cfg'
         }
     }
     into (applicationName + '/bin') {

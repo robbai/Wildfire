@@ -145,7 +145,7 @@ public class SmartDodgeAction extends Action {
 			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(400)).toFramework());
 			direction = Utils.toLocalFromRelative(input.car, direction);
 			
-			System.out.println(direction.toString());
+//			System.out.println(direction.toString());
 			
 			double pitch = pitchPID.getOutput(input.elapsedSeconds, 0, Math.signum(direction.z) * Math.asin(direction.z / 16));
 			double roll = rollPID.getOutput(input.elapsedSeconds, 0, -Math.signum(direction.y) * Math.asin(direction.y / 32));

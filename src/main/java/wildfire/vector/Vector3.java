@@ -79,7 +79,8 @@ public class Vector3 {
     }
 
     public Vector3 normalized(){
-        if(isZero()) throw new IllegalStateException("Cannot normalize a vector with length zero!");
+//        if(isZero()) throw new IllegalStateException("Cannot normalize a vector with length zero!");
+    	if(isZero()) return new Vector3();
         return this.scaled(1 / magnitude());
     }
 

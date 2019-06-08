@@ -22,6 +22,7 @@ import rlbot.pyinterop.PythonInterface;
 import rlbot.pyinterop.PythonServer;
 import wildfire.util.PortReader;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.pitch.Pitch;
 
 public class WildfireJava {
 	
@@ -45,6 +46,8 @@ public class WildfireJava {
 	        PythonInterface pythonInterface = new WildfirePythonInterface(botManager);
 	        PythonServer pythonServer = new PythonServer(pythonInterface, port);
 	        pythonServer.start();
+	        
+	        Pitch.initTriangles();
     	}
         
         //Frame

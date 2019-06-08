@@ -20,6 +20,7 @@ public class WildfirePythonInterface extends DefaultPythonInterface {
     public void shutdown(){
     	if(WildfireJava.getArguments().contains("never-shutdown")){
     		System.out.println("Preventing shut down...");
+//    		for(int i = 0; i < WildfireJava.bots.size(); i++) this.retireBot(i);
     		return;
     	}
     	super.shutdown();

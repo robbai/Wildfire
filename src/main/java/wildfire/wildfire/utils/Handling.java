@@ -61,5 +61,13 @@ public class Handling {
 	public static ControlsOutput stayStill(DataPacket input){
 		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 2500).withBoost(false);
 	}
+	
+	public static double aimLocally(CarData car, Vector3 point){
+		return new Vector2(0, 1).correctionAngle(Utils.toLocal(car, point).flatten());
+	}
+	
+	public static double aimLocally(CarData car, Vector2 point){
+		return aimLocally(car, point.withZ(0));
+	}
 
 }

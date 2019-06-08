@@ -83,9 +83,14 @@ public class StateSettingManager {
 
 	public void recovery(DataPacket input) {
 //		if(input.car.hasWheelContact && input.car.velocity.z > 0){
-		if(input.car.hasWheelContact && input.car.velocity.flatten().magnitude() > 1500){
+		if(input.car.hasWheelContact && input.car.velocity.flatten().magnitude() > 900 && input.car.position.z < 1000){
 			GameState gameState = new GameState();
-			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(0, 0, Utils.random(800, 1800)).toDesired()).withVelocity(new Vector3(Utils.random(-1000, 1000), Utils.random(-1000, 1000), Utils.random(600, 900)).toDesired()).withAngularVelocity(new Vector3(Utils.random(-Math.PI, Math.PI) * 2, Utils.random(-Math.PI, Math.PI) * 2, Utils.random(-Math.PI, Math.PI) * 2).toDesired()).withRotation(CarOrientation.convert(Math.PI * 2, Math.PI * 2, Math.PI * 2).toDesired())));
+			double horizontalVelocity = 3000;
+			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withDoubleJumped(true).withPhysics(new PhysicsState()
+					.withLocation(new Vector3(0, 0, 800).toDesired())
+					.withVelocity(new Vector3(Utils.random(-horizontalVelocity, horizontalVelocity), Utils.random(-horizontalVelocity, horizontalVelocity), Utils.random(300, 1900)).toDesired())
+					.withAngularVelocity(new Vector3(Utils.random(-Math.PI, Math.PI) * 2, Utils.random(-Math.PI, Math.PI) * 2, Utils.random(-Math.PI, Math.PI) * 2).toDesired())
+					.withRotation(CarOrientation.convert(Math.PI * 2, Math.PI * 2, Math.PI * 2).toDesired())));
 			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(1000, 0, Constants.BALLRADIUS).toDesired()).withVelocity(new Vector3().toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
 		}
