@@ -1,7 +1,7 @@
 package wildfire.input;
 
 
-import rlbot.flat.PlayerInfo;
+import rlbot.flat.Rotator;
 import rlbot.gamestate.DesiredRotation;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -26,12 +26,8 @@ public class CarOrientation {
         this.rightVector = noseVector.crossProduct(roofVector);
     }
 
-    public static CarOrientation fromFlatbuffer(PlayerInfo playerInfo){
-        return convert(playerInfo.physics().rotation().pitch(), playerInfo.physics().rotation().yaw(), playerInfo.physics().rotation().roll());
-    }
-    
-    public static CarOrientation fromFlatbufferAngularVelocity(PlayerInfo playerInfo){
-        return convert(playerInfo.physics().angularVelocity().y(), playerInfo.physics().angularVelocity().z(), playerInfo.physics().angularVelocity().x());
+    public static CarOrientation fromFlatbuffer(Rotator rotator){
+        return convert(rotator.pitch(), rotator.yaw(), rotator.roll());
     }
 
     /**
@@ -57,11 +53,6 @@ public class CarOrientation {
     	nose = nose.normalized();
     	double pitch = Math.asin(nose.z);
 		double yaw = -Math.atan2(nose.y, nose.x);
-    	
-//    	// y = cos(pitch) * sin(yaw)
-//    	// y / cos(pitch) = sin(yaw)
-//    	// yaw = sin^-1(y / cos(pitch))
-//    	double yaw = Math.sinh(nose.y / Math.cos(pitch));
     	
 		return convert(pitch, yaw, 0);
     }

@@ -70,8 +70,8 @@ public class SmartDodgeAction extends Action {
 		
 		this.failed = (target == null);
 		if(!failed){
-			this.pitchPID = new PID(wildfire.renderer, Color.BLUE, 6.5, 0, 0.5);
-			this.rollPID = new PID(wildfire.renderer, Color.YELLOW, 3, 0, 0.2);
+			this.pitchPID = new PID(6.5, 0, 0.5);
+			this.rollPID = new PID(3, 0, 0.2);
 		}
 	}
 	

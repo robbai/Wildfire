@@ -8,12 +8,12 @@ import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PID;
+import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.pitch.Pitch;
 import wildfire.wildfire.pitch.Triangle;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Handling;
-import wildfire.wildfire.utils.Pair;
 import wildfire.wildfire.utils.Utils;
 
 public class RecoveryAction extends Action {

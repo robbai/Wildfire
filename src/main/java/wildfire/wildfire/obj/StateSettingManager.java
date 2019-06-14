@@ -13,6 +13,7 @@ import wildfire.input.DataPacket;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.actions.OrientAction;
 import wildfire.wildfire.pitch.Pitch;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
@@ -132,16 +133,32 @@ public class StateSettingManager {
 		}
 	}
 
-	public void orientationController(DataPacket input){
+	public void orient(DataPacket input, boolean smoothMove){
+		final double ballDistance = 1000, z = 1100;
+		
 		GameState gameState = new GameState();
-		gameState.withCarState(input.playerIndex, new CarState().withPhysics(new PhysicsState().withVelocity(new Vector3().toDesired()).withLocation(new Vector3(0, 0, 1500).toDesired())));    	
+		gameState.withCarState(input.playerIndex, new CarState().withPhysics(new PhysicsState()
+				.withVelocity(new Vector3().toDesired())
+				.withLocation(new Vector3(0, 0, z).toDesired())));    	
 		PhysicsState ballPhysics = new PhysicsState().withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired());
+		
+		// Every 2.5 seconds.
 		if(getCooldown(input) > 2.5){
-			double ballDistance = 1000;
-			Vector3 newBallLocation = new Vector3(Utils.random(-1, 1), Utils.random(-1, 1), Utils.random(-1, 1)).scaledToMagnitude(ballDistance);
-			ballPhysics.withLocation(newBallLocation.plus(new Vector3(0, 0, 1500)).toDesired());
+			if(!smoothMove){
+				Vector3 newBallLocation = new Vector3(Utils.random(-1, 1), Utils.random(-1, 1), Utils.random(-1, 1)).scaledToMagnitude(ballDistance);
+				ballPhysics.withLocation(newBallLocation.plus(new Vector3(0, 0, z)).toDesired());
+			}
 			resetCooldown(input.elapsedSeconds);
+			OrientAction.resetPID();
 		}
+		
+		if(smoothMove){
+			double angle = input.elapsedSeconds / 1.25;
+			Vector3 ballLocation = new Vector3(Math.sin(angle) * ballDistance, 
+					Math.cos(angle * 1.5) * ballDistance, z + Math.sin(angle * 2.5) * z / 2);
+			ballPhysics.withLocation(ballLocation.toDesired());
+		}
+		
 		gameState.withBallState(new BallState().withPhysics(ballPhysics));		
 		RLBotDll.setGameState(gameState.buildPacket());    	
 	}

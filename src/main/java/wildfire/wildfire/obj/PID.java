@@ -4,12 +4,13 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 
-import rlbot.render.Renderer;
-
 public class PID {
 	
+	/*
+	 * Rendering
+	 */
 	private boolean render;
-	private Renderer renderer;
+	private WRenderer renderer;
 	private ArrayList<Double> data;
 	private Color colour;
 	
@@ -17,10 +18,9 @@ public class PID {
 	public double errorSum, lastError;
 	private double kp, ki, kd;
 	
-	public PID(Renderer renderer, Color colour, double kp, double ki, double kd){
-		super();
+	public PID(Color colour, double kp, double ki, double kd){
 		this.render = true;
-		this.renderer = renderer;
+		this.renderer = null;
 		this.colour = colour;
 		this.data = new ArrayList<Double>();
 		
@@ -32,7 +32,6 @@ public class PID {
 	}
 	
 	public PID(double kp, double ki, double kd){
-		super();
 		this.render = false;
 		
 		this.errorSum = 0;
@@ -43,8 +42,20 @@ public class PID {
 	}
 	
 	public PID(PID other){
-		super();
 		this.render = false;
+		
+		this.errorSum = 0;
+		this.lastTime = -1;
+		this.kp = other.kp;
+		this.ki = other.ki;
+		this.kd = other.kd;
+	}
+	
+	public PID(Color colour, PID other){
+		this.render = true;
+		this.renderer = null;
+		this.colour = colour;
+		this.data = new ArrayList<Double>();
 		
 		this.errorSum = 0;
 		this.lastTime = -1;
@@ -62,7 +73,7 @@ public class PID {
 		double error = (target - start);
 		if(render){
 			data.add(error);
-			while(data.size() > 60) data.remove(0);
+			while(data.size() > 10) data.remove(0);
 		}
 		errorSum += (error * timeDifference);
 		double errorDifference = (error - lastError) / timeDifference;
@@ -72,22 +83,20 @@ public class PID {
 //		if(render && errorSum != error * timeDifference) data.add(output);
 
 		//Rendering
-		if(render){
-			if(data.size() > 1){
-				double width = 300;
-				double height = 30;
-				double startY = 150;
-				renderer.drawLine2d(Color.GREEN, new Point(0, (int)startY), new Point((int)width, (int)startY));
-				double highestValue = 0;
-				for(double value : data) highestValue = Math.max(highestValue, Math.abs(value));
-				for(int i = 1; i < data.size(); i++){
-					double e = data.get(i);
-					double lastValue = data.get(i - 1);
+		if(render && data.size() > 1 && this.renderer != null){
+			double width = 400;
+			double height = 50;
+			double startY = 150;
+			renderer.drawLine2d(Color.GREEN, new Point(0, (int)startY), new Point((int)width, (int)startY));
+			double highestValue = 0;
+			for(double value : data) highestValue = Math.max(highestValue, Math.abs(value));
+			for(int i = 1; i < data.size(); i++){
+				double e = data.get(i);
+				double lastValue = data.get(i - 1);
 
-					double y = startY - e / highestValue * height;
-					double lastY = startY - lastValue / highestValue * height;
-					renderer.drawLine2d(colour, new Point((int)((double)(i - 1) / (double)data.size() * width), (int)lastY), new Point((int)((double)i / (double)data.size() * width), (int)y));
-				}
+				double y = startY - e / highestValue * height;
+				double lastY = startY - lastValue / highestValue * height;
+				renderer.drawLine2d(colour, new Point((int)((double)(i - 1) / (double)data.size() * width), (int)lastY), new Point((int)((double)i / (double)data.size() * width), (int)y));
 			}
 		}
 
@@ -100,6 +109,22 @@ public class PID {
 	
 	public PID withRender(boolean render){
 		this.render = (render && this.renderer != null);
+		return this;
+	}
+
+	public void set(double p, double i, double d){
+		this.kp = p;
+		this.ki = i;
+		this.kd = d;
+	}
+	
+	public PID set(PID pid){
+		this.set(pid.kp, pid.ki, pid.kd);
+		return this;
+	}
+
+	public PID updateRenderer(WRenderer renderer){
+		if(!this.render) this.renderer = renderer;
 		return this;
 	}
 

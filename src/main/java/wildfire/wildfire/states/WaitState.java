@@ -120,7 +120,7 @@ public class WaitState extends State {
 		
 		// Catch (don't move out the way anymore).
 		if(input.car.position.distanceFlat(bounce) < Constants.BALLRADIUS && Behaviour.correctSideOfTarget(input.car, bounce)){
-			wildfire.renderer.drawString2d("Catch", Color.WHITE, new Point(0, 40), 2, 2);
+			wildfire.renderer.drawString2d("Catch", Color.WHITE, new Point(0, 60), 2, 2);
 			return new ControlsOutput().withBoost(false).withSteer((float)-Handling.aim(input.car, bounce) * 2F).withThrottle((float)-input.car.forwardMagnitude());
 		}
 		

@@ -8,9 +8,9 @@ public class CarData {
 	
     public final Vector3 position;
     public final Vector3 velocity;
+    public final Vector3 angularVelocity;
     
     public final CarOrientation orientation;
-    public final CarOrientation angularVelocity;
     
     public final double boost;
 
@@ -29,9 +29,9 @@ public class CarData {
     public CarData(rlbot.flat.PlayerInfo playerInfo, float elapsedSeconds, int index){
         this.position = Vector3.fromFlatbuffer(playerInfo.physics().location());
         this.velocity = Vector3.fromFlatbuffer(playerInfo.physics().velocity());
+        this.angularVelocity = Vector3.fromFlatbuffer(playerInfo.physics().angularVelocity());
         
-        this.orientation = CarOrientation.fromFlatbuffer(playerInfo);
-        this.angularVelocity = CarOrientation.fromFlatbufferAngularVelocity(playerInfo);
+        this.orientation = CarOrientation.fromFlatbuffer(playerInfo.physics().rotation());
         
         this.boost = playerInfo.boost();
         

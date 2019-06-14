@@ -8,6 +8,8 @@ import wildfire.vector.Vector3;
 
 public class Handling {
 
+	private static Vector2 forwardVector = new Vector2(0, 1);
+
 	public static double aim(CarData car, Vector2 point){
 		Vector2 carPosition = car.position.flatten();
 	    Vector2 carDirection = car.orientation.noseVector.flatten();
@@ -65,11 +67,30 @@ public class Handling {
 	}
 	
 	public static double aimLocally(CarData car, Vector3 point){
-		return new Vector2(0, 1).correctionAngle(Utils.toLocal(car, point).flatten());
+		return forwardVector .correctionAngle(Utils.toLocal(car, point).flatten());
 	}
 	
 	public static double aimLocally(CarData car, Vector2 point){
 		return aimLocally(car, point.withZ(0));
+	}
+
+	/**
+	 * Yaw, pitch
+	 */
+	public static Vector3 getAngles(Vector3 target){
+		target = target.normalized();
+		
+		double yaw = Utils.wrapAngle(Math.asin(target.x));
+		double pitch = Utils.wrapAngle(Math.asin(target.z));
+		double roll = Utils.wrapAngle(Math.acos(target.y));
+		
+		// Do some extra wrapping.
+		if(Math.cos(yaw) < 0){
+			yaw = Utils.invertAim(yaw);
+			pitch -= (Math.PI * Math.signum(pitch));
+		}
+		
+		return new Vector3(yaw, pitch, roll);
 	}
 
 }

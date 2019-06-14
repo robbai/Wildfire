@@ -1,4 +1,4 @@
-package wildfire.wildfire.utils;
+package wildfire.wildfire.obj;
 
 public class Pair<T1, T2> {
 
@@ -9,7 +9,7 @@ public class Pair<T1, T2> {
 		this.one = one;
 		this.two = two;
 	}
-	
+
 	public T1 getOne(){
 		return one;
 	}

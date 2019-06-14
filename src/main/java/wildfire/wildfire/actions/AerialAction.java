@@ -37,9 +37,9 @@ public class AerialAction extends Action {
 			this.target = target;
 			this.time = time;
 			
-			this.pitchPID = new PID(wildfire.renderer, Color.BLUE, 6.5, 0, 1.05).withRender(true);
-			this.yawPID = new PID(wildfire.renderer, Color.RED, 5.8, 0, 1).withRender(true);
-			this.rollPID = new PID(wildfire.renderer, Color.YELLOW, 3, 0, 0.4).withRender(true);
+			this.pitchPID = new PID(Color.BLUE, 6.5, 0, 1.05).withRender(true);
+			this.yawPID = new PID(Color.RED, 5.8, 0, 1).withRender(true);
+			this.rollPID = new PID(Color.YELLOW, 3, 0, 0.4).withRender(true);
 		}
 	}
 	

@@ -11,8 +11,8 @@ import de.javagl.obj.FloatTuple;
 import de.javagl.obj.ObjReader;
 import de.javagl.obj.ReadableObj;
 import wildfire.vector.Vector3;
+import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Pair;
 
 public class Pitch {
 	
