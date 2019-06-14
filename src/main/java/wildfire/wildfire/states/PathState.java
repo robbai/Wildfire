@@ -22,7 +22,7 @@ public class PathState extends State {
 	 * Fresh and new path planning state
 	 */
 		
-	private final boolean force = false;
+	private final boolean force = true;
 	private Path path;
 
 	public PathState(Wildfire wildfire){
@@ -34,14 +34,15 @@ public class PathState extends State {
 	public boolean ready(DataPacket input){
 		//This is to avoid starting a path when there is a shooter
 		if(!force){
-			if(Behaviour.closestOpponentDistance(input, input.ball.position) < 1700 && Behaviour.isOpponentBehindBall(input)){ //&& Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < 1200 
+			if(Behaviour.closestOpponentDistance(input, input.ball.position) < 1700 && Behaviour.isOpponentBehindBall(input)){
+				//&& Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < 1200
 				return false;
 			}
 			if(!requirements(input)) return false;
 		}
 		
 		//Generate the path
-		path = Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), Math.max(input.car.velocity.flatten().magnitude(), 1410));
+		path = Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), Math.max(input.car.velocity.flatten().magnitude(), 1410), this.force);
 				
 		//Good/bad path
 		return path != null && (!path.isBadPath() || force);
@@ -52,7 +53,7 @@ public class PathState extends State {
 		if(!requirements(input)){
 			if(!force) return true;
 		}
-		path = Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), Math.max(input.car.velocity.flatten().magnitude(), 1410));
+		path = Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), Math.max(input.car.velocity.flatten().magnitude(), 1410), this.force);
 		return path == null || (path.isBadPath() && !force);
 	}
 
@@ -61,42 +62,35 @@ public class PathState extends State {
 		path.renderPath(wildfire.renderer);
 		wildfire.renderer.drawTurningRadius(Color.WHITE, input.car);
 		
-		if(!hasAction()){
-			if(Behaviour.isCarAirborne(input.car)){
-				currentAction = new RecoveryAction(this, input.elapsedSeconds);
-			}
-//			else if(input.car.position.z > 400){
-//				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-//			}
+		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+			currentAction = null;
 		}
 		
+		// Render.
 		boolean cone = Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition());
 		wildfire.renderer.drawString2d("Path Distance: " + (int)path.getDistance() + "uu", Color.WHITE, new Point(0, 20), 2, 2);
 		wildfire.renderer.drawString2d("Time: " + Utils.round(path.getTime()) + "s", Color.WHITE, new Point(0, 40), 2, 2);
 		wildfire.renderer.drawLine3d((cone ? Color.GREEN : Color.YELLOW), input.car.position.flatten().toFramework(), Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).toFramework());
-		
-		//Impact point
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.WHITE, 90);
 		
-		//Make a target from the path
+		// Make a target from the path.
 		double targetPly = getTargetPly(input.car);
 		Vector2 target = path.getPly(targetPly);
-//		wildfire.renderer.drawString2d("Target Ply: " + Utils.round(targetPly), Color.WHITE, new Point(0, 40), 2, 2);
 		wildfire.renderer.drawCircle(input.car.team == 0 ? Color.CYAN : Color.RED, target, 10);
 		
-//		double steer = Handling.aim(input.car, target);
-		double steer = new Vector2(0, 1).correctionAngle(Utils.toLocal(input.car, target.withZ(0)).flatten());
-		
-		Path maxPath = (input.car.boost == 0 || input.car.isSupersonic || Math.abs(steer) > 0.3 ? null : Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), path.getVelocity() + Constants.BOOSTACC * (4D / 60)));
+		// Controller.
+		double steer = Handling.aimLocally(input.car, target);
+		Path maxPath = (input.car.boost == 0 || input.car.isSupersonic || Math.abs(steer) > 0.3 ? null : Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), path.getVelocity() + Constants.BOOSTACC * (10D / 120), false));
 		if(maxPath != null) wildfire.renderer.drawString2d("Boost Time: " + Utils.round(maxPath.getTime()) + "s", Color.WHITE, new Point(0, 60), 2, 2);
 		return new ControlsOutput().withSteer((float)(steer * -3)).withThrottle(1)
 				.withBoost(maxPath != null && path.getTime() >= maxPath.getTime());
 	}
 	
 	private double getTargetPly(CarData car){
-		if(path.isBadPath()) return 0; //Only when forcing is enabled
-		double targetUnits = 450;
+		if(path.isBadPath()) return 0; // Only when forcing is enabled.
+		double targetUnits = 480;
 		double velocity = car.velocity.magnitude();
 		return (targetUnits / (velocity * Path.scale));
 	}
@@ -122,7 +116,6 @@ public class PathState extends State {
 		
 		//Correct ourself to not save our own shot
 		if(Behaviour.isOnTarget(wildfire.ballPrediction, 1 - input.car.team)){
-//			return !Utils.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition());
 			return trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS - 20;
 		}
 		

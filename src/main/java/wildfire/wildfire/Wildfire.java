@@ -21,20 +21,8 @@ import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.obj.StateSettingManager;
 import wildfire.wildfire.obj.WRenderer;
-import wildfire.wildfire.states.BoostState;
-import wildfire.wildfire.states.ClearState;
-import wildfire.wildfire.states.DemoState;
-import wildfire.wildfire.states.FallbackState;
 import wildfire.wildfire.states.IdleState;
-import wildfire.wildfire.states.KickoffState;
-import wildfire.wildfire.states.MixerState;
 import wildfire.wildfire.states.PathState;
-import wildfire.wildfire.states.PatienceState;
-import wildfire.wildfire.states.ReturnState;
-import wildfire.wildfire.states.ShadowState;
-import wildfire.wildfire.states.ShootState;
-import wildfire.wildfire.states.WaitState;
-import wildfire.wildfire.states.WallHitState;
 import wildfire.wildfire.utils.Behaviour;
 
 public class Wildfire implements Bot {
@@ -83,26 +71,26 @@ public class Wildfire implements Bot {
         //Initialise all the states
         states = new ArrayList<State>();
         if(!isTestVersion()) new IdleState(this);
-        new KickoffState(this);
-        new WallHitState(this);
-        new PatienceState(this);
-        new BoostState(this);
-        new WaitState(this);
-        new MixerState(this);
-        new ShootState(this);        
-        new ClearState(this);
-        new ReturnState(this);
+//        new KickoffState(this);
+//        new WallHitState(this);
+//        new PatienceState(this);
+//        new BoostState(this);
+//        new WaitState(this);
+//        new MixerState(this);
+//        new ShootState(this);        
+//        new ClearState(this);
+//        new ReturnState(this);
         new PathState(this);
-        new DemoState(this);
-        new ShadowState(this);
-        fallbackState = new FallbackState(this);
+//        new DemoState(this);
+//        new ShadowState(this);
+//        fallbackState = new FallbackState(this);
         
         //Test states
 //        new TestState(this);
 //     	  new TestState2(this);
 //        fallbackState = new PathState(this);
 //        fallbackState = new DemoState(this);
-//        fallbackState = new IdleState(this);
+        fallbackState = new IdleState(this);
 //        fallbackState = new ReturnState(this);
         
         WildfireJava.bots.add(this);
@@ -112,7 +100,7 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, !Behaviour.hasTeammate(input) && isTestVersion(), isTestVersion());
     	
-//    	stateSetting.recovery(input);
+    	stateSetting.path(input, true);
     	
     	//Get the ball prediction
     	try{

@@ -29,11 +29,18 @@ public class ClearState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		if(Behaviour.isKickoff(input) || Behaviour.isCarAirborne(input.car) || !Behaviour.correctSideOfTarget(input.car, input.ball.position) || Utils.teamSign(input.car) * input.ball.position.y > 2000){
+		// General conditions.
+		if(Behaviour.isKickoff(input) || Behaviour.isCarAirborne(input.car) || Utils.teamSign(input.car) * input.ball.position.y > 2000){
 			return false;
 		}
 		
 		double impactYFlip = wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car);
+		
+		// Near our backboard.
+		if(!Behaviour.correctSideOfTarget(input.car, input.ball.position)
+				&& !Behaviour.isBallAirborne(input.ball)){
+			return impactYFlip < -(Constants.PITCHLENGTH - 340);
+		}
 
 		//Check if we have a shot opportunity
 		if(!Behaviour.isOpponentBehindBall(input) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 3000){
@@ -72,9 +79,9 @@ public class ClearState extends State {
 //			boolean chip = (Math.abs(angleImpact) < 0.1 && forwardVelocity > 1600 && !input.car.isDrifting() &&
 //					wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y * Utils.teamSign(input.car) > 0.9);
 			
-			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 280 : 330))){
+			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 280 : 320))){
 //				if(!chip) currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
-				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
+				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 1.75 : 1), input);
 			}else if(impactDistance > (onTarget ? 3500 : 2200) && forwardVelocity < -900){
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
@@ -116,7 +123,7 @@ public class ClearState extends State {
 		}
 		
 		Vector2 offset;
-		double offsetMagnitude = (80 + 30 * Math.pow(input.ball.position.minus(input.car.position).normalized().y, 2));
+		double offsetMagnitude = (80 + 45 * Math.pow(input.ball.position.minus(input.car.position).normalized().y, 2));
 		if(Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition().flatten())){
 			Vector2 goal = Behaviour.getTarget(input.car, input.ball);
 			offset = wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);
@@ -138,7 +145,12 @@ public class ClearState extends State {
 		
 		float steer = (float)Handling.aim(input.car, point);
 		
-		float throttle = (rush ? 1 : (float)Math.signum(Math.cos(steer)));
+		float throttle;
+		if(Handling.insideTurningRadius(input.car, point)){
+			throttle = (float)(-input.car.forwardMagnitude() / 1000);
+		}else{
+			throttle = (rush ? 1 : (float)Math.signum(Math.cos(steer)));
+		}
 		boolean reverse = (throttle < 0);
 		
 		if(reverse){

@@ -62,7 +62,7 @@ public class WavedashAction extends Action {
 			this.jumped = true;
 			targetPitch = -0.42;
 		}else{
-			if(input.car.velocity.z < -1 && Physics.timeToHitGround(input.car) < 0.075){
+			if(input.car.velocity.z < -1 && Physics.timeToHitGround(input.car) < 0.08){
 				targetPitch = -3;
 				controls.withJump(!input.car.doubleJumped);
 			}else{
@@ -80,7 +80,7 @@ public class WavedashAction extends Action {
 
 	@Override
 	public boolean expire(DataPacket input){
-		return this.timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact || input.car.doubleJumped ? 0.6 : 1.3);
+		return this.failed || this.timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact || input.car.doubleJumped ? 0.6 : 1.3);
 	}
 
 }

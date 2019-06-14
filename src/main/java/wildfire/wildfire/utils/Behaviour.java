@@ -232,9 +232,7 @@ public class Behaviour {
 		return false;
 	}
 	
-	public static CarData getGoalkeeper(CarData[] cars, int team){
-		final double maxGoalDistance = 2900;
-		
+	public static CarData getGoalkeeper(CarData[] cars, int team, double maxGoalDistance){
 		Vector2 goal = Constants.homeGoal(team);
 		
 		for(CarData car : cars){

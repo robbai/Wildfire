@@ -22,8 +22,10 @@ public class Handling {
 	 * Inspired by the wonderful Darxeal
 	 */
 	public static ControlsOutput driveDownWall(DataPacket input){
-		return new ControlsOutput().withThrottle(1).withBoost(false).withSteer((float)(Math.signum(input.car.orientation.eularRoll) * Math.abs(Math.cos(input.car.orientation.noseVector.z))))
-				.withSlide(!input.car.isDrifting() && input.car.orientation.noseVector.z > -0.2);
+		return new ControlsOutput().withThrottle(1).withBoost(false)
+				.withSteer((float)(-3F * aimLocally(input.car, 
+						input.car.position.plus(input.car.orientation.roofVector.scaledToMagnitude(50)).flatten())))
+				.withSlide(!input.car.isDrifting() && input.car.orientation.noseVector.z > -0.2 && input.car.velocity.magnitude() > 900);
 	}
 
 	/**

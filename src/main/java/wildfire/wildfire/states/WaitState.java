@@ -23,12 +23,13 @@ import wildfire.wildfire.utils.Utils;
 
 public class WaitState extends State {
 	
-	private final boolean alwaysSmartDodge = false;
+	private final boolean alwaysSmartDodge = false, renderJump = true;
 	
 	/*
 	 * How far we want to be from the ball's bounce
 	*/
 	private final double desiredDistanceGround = 42D;
+	private final double offsetDecrement = 0.05;
 
 	private Vector2 bounce = null;
 	private double timeLeft = 0, pathDistanceChosen;
@@ -48,7 +49,8 @@ public class WaitState extends State {
 		
 		//Wall hit
 		double wallDistance = Utils.distanceToWall(wildfire.impactPoint.getPosition());
-		if(timeLeft > 1 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 1500 && wallDistance < 260 && Math.abs(wildfire.impactPoint.getPosition().x) > 1500){
+		if(wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 1500 
+				&& wallDistance < 260 && Math.abs(wildfire.impactPoint.getPosition().x) > 1500){
 			return false;
 		}
 		
@@ -116,7 +118,7 @@ public class WaitState extends State {
 		
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s", Color.WHITE, new Point(0, 20), 2, 2);
 		
-		//Catch (don't move out the way anymore)
+		// Catch (don't move out the way anymore).
 		if(input.car.position.distanceFlat(bounce) < Constants.BALLRADIUS && Behaviour.correctSideOfTarget(input.car, bounce)){
 			wildfire.renderer.drawString2d("Catch", Color.WHITE, new Point(0, 40), 2, 2);
 			return new ControlsOutput().withBoost(false).withSteer((float)-Handling.aim(input.car, bounce) * 2F).withThrottle((float)-input.car.forwardMagnitude());
@@ -125,8 +127,9 @@ public class WaitState extends State {
 		Vector2 enemyGoal = Constants.enemyGoal(input.car.team);
 		
 		double timeEffective = timeLeft;
-		
 		Vector2 destination = bounce;
+		
+		// Get the candidate position from the smart dodge.
 		if(planSmartDodge){
 			PredictionSlice candidate = SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, enemyGoal);
 			if(candidate != null){
@@ -139,10 +142,10 @@ public class WaitState extends State {
 		Vector2 target = null;
 		double velocityNeeded = -1;
 		
-		for(double length = (towardsOwnGoal ? 0.9 : (planSmartDodge ? 0.1 : 0.8)); length > (towardsOwnGoal ? 0.15 : 0); length -= 0.05){
-			target = getNextPoint(input.car.position.flatten(), destination, enemyGoal, length, planSmartDodge);
+		for(double offset = (towardsOwnGoal ? 0.9 : (planSmartDodge ? 0.15 : 0.8)); offset > (towardsOwnGoal ? 0.15 : 0); offset -= offsetDecrement){
+			target = getNextPoint(input.car.position.flatten(), destination, enemyGoal, offset, planSmartDodge);
 			
-			double distance = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, length, Color.YELLOW, desiredDist);
+			double distance = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, offset, Color.YELLOW, desiredDist);
 			double initialVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
 			double finalVelocity = (2 * distance) / timeEffective - initialVelocity;
 			
@@ -150,9 +153,9 @@ public class WaitState extends State {
 				velocityNeeded = distance / timeEffective;
 				
 				wildfire.renderer.drawCircle(Color.GREEN, target, Math.min(4, Math.max(0.1, timeLeft)) * 30D);
-				pathDistanceChosen = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, length, Color.GREEN, desiredDist); //Redraw in pretty green!
+				pathDistanceChosen = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, offset, Color.GREEN, desiredDist); //Redraw in pretty green!
 				
-				wildfire.renderer.drawString2d("Offset: " + (int)(length * 100) + "%", Color.WHITE, new Point(0, 60), 2, 2);
+				wildfire.renderer.drawString2d("Offset: " + (int)(offset * 100) + "%", Color.WHITE, new Point(0, 60), 2, 2);
 				wildfire.renderer.drawString2d("Distance: " + (int)pathDistanceChosen + "uu", Color.WHITE, new Point(0, 80), 2, 2);
 //				wildfire.renderer.drawString2d("Velocity Needed: " + (int)velocityNeeded + "uu/s", Color.WHITE, new Point(0, 80), 2, 2);
 				
@@ -190,7 +193,7 @@ public class WaitState extends State {
 //			controls.withThrottle(0);
 //		}else{
 			if(velocityNeeded > currentVelocity){
-				if(velocityNeeded > currentVelocity + 500 || velocityNeeded > 1410){
+				if(velocityNeeded > currentVelocity + 700 || velocityNeeded > 1410){
 					controls.withThrottle(1).withBoost(Math.abs(steer) < 0.5F);
 				}else{
 					controls.withThrottle(1);
@@ -247,13 +250,13 @@ public class WaitState extends State {
 		return target;
 	}
 	
-	private double renderJump(CarData car){
+	private double jumpDistance(CarData car){
 		Vector3 velocity = car.velocity.withZ(SmartDodgeAction.jumpVelocity); //Max jump velocity
 		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
-		return car.position.distanceFlat(continueRender(car, car.position, velocity));
+		return car.position.distanceFlat(simJump(car, car.position, velocity));
 	}
 	
-	private Vector3 continueRender(CarData car, Vector3 start, Vector3 velocity){
+	private Vector3 simJump(CarData car, Vector3 start, Vector3 velocity){
 		if(start.isOutOfBounds()) return start;
 		
 		final double scale = (1D / 60);
@@ -262,9 +265,9 @@ public class WaitState extends State {
 		boolean up = (velocity.z > 0);
 		
 		Vector3 next = start.plus(velocity.scaled(scale));
-		wildfire.renderer.drawLine3d((velocity.z > 0 ? Color.CYAN : Color.GRAY), start.toFramework(), next.toFramework());
+		if(renderJump ) wildfire.renderer.drawLine3d((velocity.z > 0 ? Color.CYAN : Color.GRAY), start.toFramework(), next.toFramework());
 		
-		Vector3 continued = continueRender(car, next, velocity);
+		Vector3 continued = simJump(car, next, velocity);
 		return (up ? continued : start);
 	}
 
@@ -272,8 +275,8 @@ public class WaitState extends State {
 	public double getDesiredDistance(CarData car, boolean smartDodge){
 		if(!smartDodge) return desiredDistanceGround;
 		
-		double smartDodgeDistance = renderJump(car);
-		return smartDodgeDistance - desiredDistanceGround / 2;
+		double smartDodgeDistance = jumpDistance(car);
+		return smartDodgeDistance * 0.9 + SmartDodgeAction.dodgeDistance;
 	}
 	
 }

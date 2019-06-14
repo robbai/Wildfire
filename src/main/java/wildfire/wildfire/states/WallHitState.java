@@ -74,7 +74,7 @@ public class WallHitState extends State {
 					}
 				}
 				
-				return new ControlsOutput().withThrottle(1).withBoost(Math.abs(aim) < 0.2).withSteer((float)-aim * 3F).withSlide(false);
+				return new ControlsOutput().withThrottle(1).withBoost(Math.abs(aim) < 0.18).withSteer((float)-aim * 3F).withSlide(false);
 			}
 		}else{
 			//Drive towards the wall

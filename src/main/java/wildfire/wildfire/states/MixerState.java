@@ -17,11 +17,13 @@ import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class MixerState extends State {
-	
+
 	/*
 	 * This state puts hits it towards the opponent's corner
 	 * This can be better than going for a shot
 	 */
+	
+	private double maxGoalArea = 3000;
 
 	public MixerState(Wildfire wildfire){
 		super("Mixer", wildfire);
@@ -33,19 +35,23 @@ public class MixerState extends State {
 		double teamSign = Utils.teamSign(input.car);
 		Vector2 teamSignVec = new Vector2(0, teamSign);
 		
-		//The ball must be on the wing
-		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 900) return false;
-		if(teamSign * impactLocation.y < -2000) return false;
-		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 800) return false;
+		// The ball must be on the wing.
+		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 800) return false;
+		if(teamSign * impactLocation.y < -2500) return false;
+		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 1200) return false;
 		
-		//We must be solidly behind the ball
+		// We must be solidly behind the ball.
 		if(wildfire.impactPoint.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
-		if(Behaviour.isCarAirborne(input.car)) return false;
+		if(Behaviour.isCarAirborne(input.car) || Behaviour.isBallAirborne(input.ball)) return false;
 		double yAngle = teamSignVec.angle(impactLocation.minus(input.car.position).flatten());
-		if(yAngle > Math.toRadians(60)) return false;
+		if(yAngle > Math.toRadians(50)) return false;
 		
-		//There must be a goalkeeper
-		CarData goalkeeper = Behaviour.getGoalkeeper(input.cars, 1 - input.car.team);
+		// We must not have a (good) shot.
+		if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition()) 
+				&& Math.abs(wildfire.impactPoint.getPosition().y) < 2800) return false;
+		
+		// There must be a goalkeeper.
+		CarData goalkeeper = Behaviour.getGoalkeeper(input.cars, 1 - input.car.team, maxGoalArea);
 		return goalkeeper != null;
 	}
 
@@ -54,7 +60,7 @@ public class MixerState extends State {
 		Vector3 impactLocation = wildfire.impactPoint.getPosition();
 		double impactDistance = impactLocation.distance(input.car.position);
 		double teamSign = Utils.teamSign(input.car);
-		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCHWIDTH - 120),
+		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCHWIDTH - 100),
 				teamSign * (Constants.PITCHLENGTH - 700));
 		double aimImpact = Handling.aim(input.car, impactLocation.flatten());
 		
@@ -73,7 +79,8 @@ public class MixerState extends State {
 		
 		//Render
 		wildfire.renderer.drawCrosshair(input.car, destination, Color.CYAN, 60);
-		wildfire.renderer.drawCircle(Color.BLUE, corner, 800);
+		wildfire.renderer.drawCircle(Color.CYAN, corner, 700);
+		wildfire.renderer.drawCircle(Color.BLUE, Constants.homeGoal(1 - input.car.team), maxGoalArea);
 		
 		return Handling.drivePoint(input, destination.flatten(), true);
 	}

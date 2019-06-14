@@ -41,7 +41,7 @@ public class ShadowState extends State {
 		if(Math.abs(velocityImpactCorrection) < 0.1 && correctSide && input.car.forwardMagnitude() > 1200 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -3200) return false;
 		
 		//Ball must not be close to our net
-		if(input.ball.position.flatten().distance(homeGoal) < 3000) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
+		if(input.ball.position.flatten().distance(homeGoal) < 3200) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < -2900) return false;
 		
 		//The ball must not be centralised
@@ -77,7 +77,7 @@ public class ShadowState extends State {
 		if(Math.abs(input.ball.position.x) < (Behaviour.hasTeammate(input) ? 1400 : 1200) && distance < 7000) return true;
 		
 		//Ball is close to our net
-		if(input.ball.position.flatten().distance(homeGoal) < 4500 || Utils.teamSign(input.car) * input.ball.position.y < -4800) return true;
+		if(input.ball.position.flatten().distance(homeGoal) < 4500 || Utils.teamSign(input.car) * input.ball.position.y < -4500) return true;
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < -2400) return true;		
 		
 		//Beating the opponent

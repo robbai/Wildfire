@@ -18,9 +18,9 @@ public class Path {
 	/*
 	 * Constants
 	 */
-	public final static double scale = 0.04, distanceThreshold = 75;
+	public final static double scale = 0.02, distanceThreshold = 70;
 	public final static Vector2 confineBorder = new Vector2(120, 240);
-	public final static int maxPathLength = 100;
+	public final static int maxPathLength = 200, polyRender = 1;
 		
 	private Vector2 ball;
 	private CarData car;
@@ -45,7 +45,7 @@ public class Path {
 		this.generatePath();
 	}
 	
-	public static Path fromBallPrediction(Wildfire wildfire, CarData car, Vector2 destination, double desiredVelocity){
+	public static Path fromBallPrediction(Wildfire wildfire, CarData car, Vector2 destination, double desiredVelocity, boolean force){
 		BallPrediction ballPrediction = wildfire.ballPrediction;
 		
 		double initialVelocity = car.velocity.flatten().magnitude();
@@ -55,14 +55,15 @@ public class Path {
 			
 			Path p = new Path(car, location.flatten(), destination, desiredVelocity);
 			
-			if(p.isBadPath()) return null;
+//			if(p.isBadPath()) return null;
 //			if(p.isBadPath()) continue;
 			
 			double displacement = (p.getDistance() - Constants.BALLRADIUS);
 			double time = (double)i / 60D;
 			double acceleration = 2 * (displacement - initialVelocity * time) / Math.pow(time, 2);
 			
-			if(initialVelocity + acceleration * time < Math.max(initialVelocity, Physics.boostMaxSpeed(initialVelocity, car.boost))){
+			if(initialVelocity + acceleration * time < Math.max(initialVelocity, Physics.boostMaxSpeed(initialVelocity, car.boost))
+					|| (force && i == ballPrediction.slicesLength() - 1)){
 				return p.setTime(time);
 			}
 		}
@@ -78,22 +79,27 @@ public class Path {
 		Vector2 finish = car.position.flatten();
 		points.add(start);
 		
-		//Offset, this is so we line up the goal before we reach the ball
-		start = start.plus(start.minus(destination).scaledToMagnitude(Constants.BALLRADIUS + 200)).confine(confineBorder);
-		points.add(start);
-		
 		double turningRadius = Physics.getTurnRadius(velocity);
 		
-		Vector2 rotation = ball.minus(destination).scaledToMagnitude(velocity * scale);
+		double stepDistance = (velocity * scale);
+		Vector2 step = ball.minus(destination).scaledToMagnitude(stepDistance);
+		
+		// Offset, this is so we line up the goal before we reach the ball.
+		double lineupUnits = (Constants.BALLRADIUS + 100);
+		for(int i = 0; i < (lineupUnits / stepDistance); i++){
+			start = start.plus(start.minus(destination).scaledToMagnitude(stepDistance));
+			points.add(start);
+		}
 		
 		for(int i = 0; i < maxPathLength; i++){
-			double s = Utils.clampSign(3 * Handling.aimFromPoint(start, rotation, finish));
-			double rotationalValue = Math.PI / ((2 * turningRadius * Math.PI) / (velocity * scale));
-			rotation = rotation.rotate(rotationalValue * s);
+			double direction = Utils.clampSign(Handling.aimFromPoint(start, step, finish) * 3); // Direction sign.d
+			double angle = (2 * stepDistance) / (2 * turningRadius);
+			step = step.rotate(angle * direction);
 			
-			Vector2 end = start.plus(rotation).confine(confineBorder);
+			Vector2 end = start.plus(step);
 			points.add(end);
 			
+			// Path has finished, successfully!
 			if(end.distance(finish) < distanceThreshold){
 				this.bad = false;
 				break;			
@@ -104,9 +110,9 @@ public class Path {
 	}
 	
 	public void renderPath(WRenderer renderer){
-		for(int i = 0; i < (this.points.size() - 1); i++){
+		for(int i = 0; i < (this.points.size() - 1); i += polyRender){
 			Vector2 a = this.points.get(i);
-			Vector2 b = this.points.get(i + 1);
+			Vector2 b = this.points.get(Math.min(this.points.size() - 1, i + polyRender));
 			renderer.drawLine3d((i % 2 == 0 ? (car.team == 0 ? Color.BLUE : Color.ORANGE) : Color.WHITE), a.toFramework(), b.toFramework());
 		}
 	}

@@ -1,8 +1,5 @@
 package wildfire.wildfire.states;
 
-import java.awt.Color;
-import java.awt.Point;
-
 import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
@@ -34,16 +31,13 @@ public class IdleState extends State {
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
 		
-		//ATBA
-		CarData opponent = Behaviour.closestOpponent(input, input.car.position);
-		if(opponent != null){
-			wildfire.renderer.drawString2d("ATBA", Color.WHITE, new Point(0, 20), 2, 2);
-			return Handling.atba(input, opponent.position);
+		// ATBA
+		if(!input.gameInfo.isRoundActive()){
+			CarData opponent = Behaviour.closestOpponent(input, input.car.position);
+			if(opponent != null) return Handling.atba(input, opponent.position);
 		}
 		
-		return new ControlsOutput().withBoost(false).withSlide(false).withJump(false).withSteer(0).withPitch(0).withRoll(0).withYaw(0).withThrottle((float)(-input.car.forwardMagnitude() / 1000));
+		return new ControlsOutput().withNone().withThrottle(input.car.forwardMagnitude() / -1000);
 	}
-
-	
 
 }

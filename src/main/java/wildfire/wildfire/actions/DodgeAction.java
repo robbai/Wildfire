@@ -13,7 +13,7 @@ public class DodgeAction extends Action {
 	public DodgeAction(State state, double angle, DataPacket input, boolean ignoreCooldown){
 		super("Dodge", state, input.elapsedSeconds);
 		
-		if(!ignoreCooldown && (wildfire.lastDodgeTime(input.elapsedSeconds) < 1.5 || input.car.velocity.z < -1)){
+		if(!ignoreCooldown && (wildfire.lastDodgeTime(input.elapsedSeconds) < 1.4 || input.car.velocity.z < -1)){
 			failed = true; 
 		}else{
 			this.angle = angle;

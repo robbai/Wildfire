@@ -23,105 +23,109 @@ public class ControlsOutput implements ControllerState {
     private boolean boostDepressed;
     private boolean slideDepressed;
 
-    public ControlsOutput() {
+    public ControlsOutput(){
     }
 
-    public ControlsOutput withSteer(float steer) {
+    public ControlsOutput withSteer(double steer){
         this.steer = clamp(steer);
         return this;
     }
 
-    public ControlsOutput withPitch(float pitch) {
+    public ControlsOutput withPitch(double pitch){
         this.pitch = clamp(pitch);
         return this;
     }
 
-    public ControlsOutput withYaw(float yaw) {
+    public ControlsOutput withYaw(double yaw){
         this.yaw = clamp(yaw);
         return this;
     }
 
-    public ControlsOutput withRoll(float roll) {
+    public ControlsOutput withRoll(double roll){
         this.roll = clamp(roll);
         return this;
     }
 
-    public ControlsOutput withThrottle(float throttle) {
+    public ControlsOutput withThrottle(double throttle){
         this.throttle = clamp(throttle);
         return this;
     }
 
-    public ControlsOutput withJump(boolean jumpDepressed) {
+    public ControlsOutput withJump(boolean jumpDepressed){
         this.jumpDepressed = jumpDepressed;
         return this;
     }
 
-    public ControlsOutput withBoost(boolean boostDepressed) {
+    public ControlsOutput withBoost(boolean boostDepressed){
         this.boostDepressed = boostDepressed;
         return this;
     }
 
-    public ControlsOutput withSlide(boolean slideDepressed) {
+    public ControlsOutput withSlide(boolean slideDepressed){
         this.slideDepressed = slideDepressed;
         return this;
     }
 
-    public ControlsOutput withJump() {
+    public ControlsOutput withJump(){
         this.jumpDepressed = true;
         return this;
     }
 
-    public ControlsOutput withBoost() {
+    public ControlsOutput withBoost(){
         this.boostDepressed = true;
         return this;
     }
 
-    public ControlsOutput withSlide() {
+    public ControlsOutput withSlide(){
         this.slideDepressed = true;
         return this;
     }
 
-    private float clamp(float value) {
+    private float clamp(float value){
         return Math.max(-1, Math.min(1, value));
+    }
+    
+    private float clamp(double value){
+        return clamp((float)value);
     }
 
     @Override
-    public float getSteer() {
+    public float getSteer(){
         return steer;
     }
 
     @Override
-    public float getThrottle() {
+    public float getThrottle(){
         return throttle;
     }
 
     @Override
-    public float getPitch() {
+    public float getPitch(){
         return pitch;
     }
 
     @Override
-    public float getYaw() {
+    public float getYaw(){
         return yaw;
     }
 
     @Override
-    public float getRoll() {
+    public float getRoll(){
         return roll;
     }
 
     @Override
-    public boolean holdJump() {
+    public boolean holdJump(){
         return jumpDepressed;
     }
 
     @Override
-    public boolean holdBoost() {
+    public boolean holdBoost(){
         return boostDepressed;
     }
 
     @Override
-    public boolean holdHandbrake() {
+    public boolean holdHandbrake(){
         return slideDepressed;
     }
     

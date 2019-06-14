@@ -32,9 +32,9 @@ public class RecoveryAction extends Action {
 	public RecoveryAction(State state, float elapsedSeconds){
 		super("Recovery", state, elapsedSeconds);
 		
-		this.pitchPID = new PID(4.5, 0, 1.3);
-		this.yawPID = new PID(3, 0, 1.3);
-		this.rollPID = new PID(1.2, 0, 0.25);
+		this.pitchPID = new PID(3.4, 0, 0.9);
+		this.yawPID = new PID(2.8, 0, 1.4);
+		this.rollPID = new PID(2.8, 0, 0.7);
 		
 		this.boostDown = false;
 	}
@@ -44,7 +44,7 @@ public class RecoveryAction extends Action {
 		double yaw, roll, pitch;
 		
 		boolean planWavedash = (!input.car.doubleJumped && !boostDown && input.car.velocity.z < -420 && input.car.orientation.roofVector.normalized().z > 0.8);
-		wildfire.renderer.drawString2d("Plan Wavedash: " + planWavedash, Color.WHITE, new Point(0, 40), 2, 2);
+//		wildfire.renderer.drawString2d("Plan Wavedash: " + planWavedash, Color.WHITE, new Point(0, 40), 2, 2);
 		
 		Vector3[] fall = simulateFall(boostDown ? (input.car.orientation.noseVector.z < zToBoost ? Color.RED : Color.YELLOW) : Color.WHITE, input.car.position, input.car.velocity);
 		
@@ -54,46 +54,65 @@ public class RecoveryAction extends Action {
 		Vector3 intersectLocation = (intersect == null ? null : intersect.getTwo());
 		
 		// whatisaphone's Secret Recipe.
-		boostDown = (input.car.boost > 5 && (triangle == null || intersectLocation.distance(input.car.position) / Math.max(300, input.car.velocity.magnitude()) > 1.05)
+		boostDown = (input.car.boost > 5 && (triangle == null || intersectLocation.distance(input.car.position) / Math.max(200, input.car.velocity.magnitude() / 2) > 1.2)
 				&& (triangle == null || triangleCentre.z < Constants.CEILING - 500));
+		
+		// Roll and pitch.
+		boolean correctEnough = true;
+		if(triangle != null && !boostDown && (!planWavedash || triangleCentre.z > 20)){
+//		if(triangle != null){
+			Vector3 fallNormal = triangle.getNormal().scaled(-1);
+			
+			wildfire.renderer.drawLine3d(Color.GREEN, input.car.position, input.car.position.plus(fallNormal.scaledToMagnitude(120)));
+			
+			Vector3 normalLocal = Utils.toLocalFromRelative(input.car, fallNormal).normalized();
+			double targetRoll = Utils.wrapAngle(Math.atan(normalLocal.x));
+			double targetPitch = Utils.wrapAngle(Math.atan(1- normalLocal.z)); // Listen man, I don't know how maths works
+			
+			wildfire.renderer.drawString2d("Pitch: " + (int)Math.toDegrees(targetPitch) + '°', Color.WHITE, new Point(0, 40), 2, 2);
+			wildfire.renderer.drawString2d("Roll: " + (int)Math.toDegrees(targetRoll) + '°', Color.WHITE, new Point(0, 60), 2, 2);
+			
+			roll = rollPID.getOutput(input.elapsedSeconds, 0, targetRoll);
+			
+			// Other rotations get annoying unless at least one of them is right, it seems.
+			correctEnough = (Math.abs(roll) < 0.9);
+						
+			pitch = (correctEnough ? pitchPID.getOutput(input.elapsedSeconds, 0, targetPitch) : 0);
+		}else{
+			roll = rollPID.getOutput(input.elapsedSeconds, -Math.asin(input.car.orientation.rightVector.z), 0);
+			
+			double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
+			pitch = angularCoefficient * pitchPID.getOutput(input.elapsedSeconds, Math.asin(input.car.orientation.noseVector.z), 
+					boostDown ? -0.9 : (planWavedash ? 0.3 : 0));
+		}
 		
 		if(input.car.position.z > 50){
 			// Yaw.
 			Vector3 yawIdealDestination;
-			if(triangle != null && triangleCentre.z > 300){
-				yawIdealDestination = triangleCentre.scaled(0.95).withZ(17);
-			}else if(input.car.velocity.flatten().magnitude() > 600){
+			if(triangle != null && triangleCentre.z > 200){
+				// Aim down the wall.
+				yawIdealDestination = input.car.position
+						.plus(input.car.orientation.roofVector.scaledToMagnitude(50))
+						.withZ(17);
+			}else if(input.car.velocity.flatten().magnitude() > 800){
 				yawIdealDestination = input.car.position.plus(input.car.velocity).withZ(17);
 			}else{
 				yawIdealDestination = wildfire.impactPoint.getPosition();
 			}
 			
-			double yawCorrection = -Handling.aimLocally(input.car, yawIdealDestination);
-			yaw = yawPID.getOutput(input.elapsedSeconds, 0, yawCorrection);
+			if(correctEnough){
+				double yawCorrection = -Handling.aimLocally(input.car, yawIdealDestination);
+				yaw = yawPID.getOutput(input.elapsedSeconds, 0, yawCorrection);
+			}else{
+				yaw = 0;
+			}
 		}else{
 			// Perform the wave-dash.
-			if(planWavedash && input.car.position.z < 75){
-				return new ControlsOutput().withPitch(-1).withYaw(0).withRoll(0).withJump(true);
+			if(planWavedash && input.car.position.z < 80){
+				return new ControlsOutput().withPitch(-1).withJump(true)
+						.withYaw(0).withRoll(0);
 			}
 			yaw = 0;
-		}
-		
-		// Roll and pitch.
-		if(triangle != null && !boostDown && (!planWavedash || triangleCentre.z > 20)){
-			Vector3 fallNormal = triangle.getNormal().scaled(-1);
-			
-			Vector3 normalLocal = Utils.toLocalFromRelative(input.car, fallNormal);
-			double targetPitch = Math.atan(1 - normalLocal.z);
-			double targetRoll = Math.atan(normalLocal.x);
-
-			pitch = pitchPID.getOutput(input.elapsedSeconds, 0, targetPitch);
-			roll = rollPID.getOutput(input.elapsedSeconds, 0, targetRoll);
-		}else{
-			roll = rollPID.getOutput(input.elapsedSeconds, -Math.atan(input.car.orientation.rightVector.z), 0);
-			
-			double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
-			pitch = angularCoefficient * pitchPID.getOutput(input.elapsedSeconds, Math.atan(input.car.orientation.noseVector.z), 
-					boostDown ? -0.9 : (planWavedash ? Utils.clamp(input.car.position.z / 1000, 0.3, 0.8) : 0));
 		}
 		
 		return new ControlsOutput().withRoll((float)roll).withPitch((float)pitch).withYaw((float)yaw)
@@ -118,7 +137,7 @@ public class RecoveryAction extends Action {
 		
 		// Apply physics.
 		velocity = velocity.plus(new Vector3(0, 0, -Constants.GRAVITY * fallStep)); // Gravity.
-		velocity = velocity.minus(velocity.scaled(Math.pow(0.03, 1D / fallStep)).withZ(0)); // Drag.
+		velocity = velocity.minus(velocity.scaled(Math.pow(0.03, 1D / fallStep)).withZ(0)); // Drag (no idea if the car does this lol).
 		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
 		Vector3 newPosition = position.plus(velocity.scaled(fallStep));
 		

@@ -61,7 +61,7 @@ public class CarData {
     public boolean isDrifting(){
     	Vector2 horizontal = this.orientation.rightVector.flatten();
     	double v = Math.cos(this.velocity.flatten().correctionAngle(horizontal)) * this.velocity.magnitude();
-    	return v > 300;
+    	return Math.abs(v) > 200;
     }
     
 }

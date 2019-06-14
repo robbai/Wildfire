@@ -17,6 +17,8 @@ import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class ShootState extends State {
+	
+	private final double minThrottle = 0.2;
 
 	public ShootState(Wildfire wildfire){
 		super("Shoot", wildfire);
@@ -43,7 +45,7 @@ public class ShootState extends State {
 		
 		double aimBall = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(Math.abs(aimBall) > Math.PI * 0.7 && input.car.velocity.magnitude() > 1100) return false;
-		return Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), -120);
+		return Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), -150);
 	}
 
 	@Override
@@ -57,7 +59,7 @@ public class ShootState extends State {
 					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 				}else if(Math.abs(aimImpact) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-				}else if((distance < 400 && Math.abs(aimImpact) < 0.3) || (distance > 3500 && Math.abs(aimImpact) < 0.25 && !input.car.isSupersonic)){
+				}else if((distance < 500 && Math.abs(aimImpact) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(aimImpact) < 0.25 && !input.car.isSupersonic)){
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 					
 					double forwardVelocity = input.car.forwardMagnitude();
@@ -69,13 +71,15 @@ public class ShootState extends State {
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
 		
-		float throttle = (float)Math.abs(Math.cos(aimImpact));
+		float throttle = (float)(Math.abs(Math.cos(aimImpact)) * (1D - minThrottle) + minThrottle);
 		
 		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.BLACK, 0, wildfire.impactPoint.getFrame());
 		wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH).toFramework());
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.LIGHT_GRAY, 125);
 		
-        return new ControlsOutput().withSteer((float)-aimImpact * 3F).withThrottle(throttle).withBoost(Math.abs(aimImpact) < 0.14F && (!input.car.isSupersonic || !Behaviour.isOpponentBehindBall(input))).withSlide(Math.abs(aimImpact) > 1.4F);
+        return new ControlsOutput().withSteer((float)-aimImpact * 3F).withThrottle(throttle)
+        		.withBoost(Math.abs(aimImpact) < 0.14F && (!input.car.isSupersonic || !Behaviour.isOpponentBehindBall(input)))
+        		.withSlide(Math.abs(aimImpact) > 1.4F);
 	}
 
 }
