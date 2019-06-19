@@ -13,7 +13,7 @@ public class HalfFlipAction extends Action {
 	private final int throttleTime = 300;
 
 	public HalfFlipAction(State state, float elapsedSeconds){
-		super("Half Flip", state, elapsedSeconds);
+		super("Half-Flip", state, elapsedSeconds);
 		
 		//No spamming!
 		if(wildfire.lastDodgeTime(elapsedSeconds) < 1){

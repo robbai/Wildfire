@@ -265,7 +265,7 @@ public class WaitState extends State {
 		boolean up = (velocity.z > 0);
 		
 		Vector3 next = start.plus(velocity.scaled(scale));
-		if(renderJump ) wildfire.renderer.drawLine3d((velocity.z > 0 ? Color.CYAN : Color.GRAY), start.toFramework(), next.toFramework());
+		if(renderJump) wildfire.renderer.drawLine3d((velocity.z > 0 ? Color.CYAN : Color.GRAY), start.toFramework(), next.toFramework());
 		
 		Vector3 continued = simJump(car, next, velocity);
 		return (up ? continued : start);
@@ -276,7 +276,7 @@ public class WaitState extends State {
 		if(!smartDodge) return desiredDistanceGround;
 		
 		double smartDodgeDistance = jumpDistance(car);
-		return smartDodgeDistance * 0.9 + SmartDodgeAction.dodgeDistance;
+		return smartDodgeDistance * 0.825 + SmartDodgeAction.dodgeDistance * 0.6;
 	}
 	
 }

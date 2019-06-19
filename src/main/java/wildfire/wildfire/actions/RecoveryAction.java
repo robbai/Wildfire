@@ -1,14 +1,15 @@
 package wildfire.wildfire.actions;
 
 import java.awt.Color;
-import java.awt.Point;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.Pair;
+import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.pitch.Pitch;
 import wildfire.wildfire.pitch.Triangle;
@@ -25,7 +26,7 @@ public class RecoveryAction extends Action {
 	
 	private final double fallStep = (1D / 30), zToBoost = -0.6;
 	private final int fallDepth = (int)(2.6 / fallStep), // It only takes around 2.5 seconds to fall from the ceiling, so this is a safe bet
-			fallStepIndex = 15; 
+			fallStepIndex = 10; 
 
 	private boolean boostDown;
 
@@ -48,42 +49,36 @@ public class RecoveryAction extends Action {
 		
 		Vector3[] fall = simulateFall(boostDown ? (input.car.orientation.noseVector.z < zToBoost ? Color.RED : Color.YELLOW) : Color.WHITE, input.car.position, input.car.velocity);
 		
-		Pair<Triangle, Vector3> intersect = getIntersect(fall);
+		Pair<Triangle, PredictionSlice> intersect = getIntersect(fall);
 		Triangle triangle = (intersect == null ? null : intersect.getOne());
 		Vector3 triangleCentre = (triangle == null ? null : triangle.getCentre());
-		Vector3 intersectLocation = (intersect == null ? null : intersect.getTwo());
+//		Vector3 intersectLocation = (intersect == null ? null : intersect.getTwo().getPosition());
+		double intersectTime = (intersect == null ? 0 : intersect.getTwo().getTime());
 		
 		// whatisaphone's Secret Recipe.
-		boostDown = (input.car.boost > 5 && (triangle == null || intersectLocation.distance(input.car.position) / Math.max(200, input.car.velocity.magnitude() / 2) > 1.2)
+		boostDown = (input.car.boost > 5 && (triangle == null || intersectTime > 1.1)
 				&& (triangle == null || triangleCentre.z < Constants.CEILING - 500));
 		
 		// Roll and pitch.
 		boolean correctEnough = true;
 		if(triangle != null && !boostDown && (!planWavedash || triangleCentre.z > 20)){
-//		if(triangle != null){
 			Vector3 fallNormal = triangle.getNormal().scaled(-1);
 			
 			wildfire.renderer.drawLine3d(Color.GREEN, input.car.position, input.car.position.plus(fallNormal.scaledToMagnitude(120)));
 			
-			Vector3 normalLocal = Utils.toLocalFromRelative(input.car, fallNormal).normalized();
-			double targetRoll = Utils.wrapAngle(Math.atan(normalLocal.x));
-			double targetPitch = Utils.wrapAngle(Math.atan(1- normalLocal.z)); // Listen man, I don't know how maths works
+			Vector3 normalLocal = Utils.toLocalFromRelative(input.car, fallNormal);
+			Vector2 angles = Handling.getAnglesRoof(normalLocal);
 			
-			wildfire.renderer.drawString2d("Pitch: " + (int)Math.toDegrees(targetPitch) + '°', Color.WHITE, new Point(0, 40), 2, 2);
-			wildfire.renderer.drawString2d("Roll: " + (int)Math.toDegrees(targetRoll) + '°', Color.WHITE, new Point(0, 60), 2, 2);
+			roll = this.rollPID.getOutput(input.elapsedSeconds, 0, angles.x);			
+			pitch = this.pitchPID.getOutput(input.elapsedSeconds, 0, angles.y);
 			
-			roll = rollPID.getOutput(input.elapsedSeconds, 0, targetRoll);
-			
-			// Other rotations get annoying unless at least one of them is right, it seems.
-			correctEnough = (Math.abs(roll) < 0.9);
-						
-			pitch = (correctEnough ? pitchPID.getOutput(input.elapsedSeconds, 0, targetPitch) : 0);
+			// Yaw can get annoying unless at the others are right, it seems.
+			correctEnough = (Math.abs(roll) + Math.abs(pitch) < 1.2);
 		}else{
-			roll = rollPID.getOutput(input.elapsedSeconds, -Math.asin(input.car.orientation.rightVector.z), 0);
+			roll = this.rollPID.getOutput(input.elapsedSeconds, Math.sin(input.car.orientation.eularRoll), 0);
 			
-			double angularCoefficient = Math.signum(Math.cos(input.car.orientation.eularRoll));
-			pitch = angularCoefficient * pitchPID.getOutput(input.elapsedSeconds, Math.asin(input.car.orientation.noseVector.z), 
-					boostDown ? -0.9 : (planWavedash ? 0.3 : 0));
+			double targetPitch = boostDown ? -0.95 : (planWavedash ? Utils.clamp(input.car.position.z / 2000, 0.35, 0.6) : 0);
+			pitch = this.pitchPID.getOutput(input.elapsedSeconds, Math.asin(input.car.orientation.noseVector.z), targetPitch);
 		}
 		
 		if(input.car.position.z > 50){
@@ -94,28 +89,28 @@ public class RecoveryAction extends Action {
 				yawIdealDestination = input.car.position
 						.plus(input.car.orientation.roofVector.scaledToMagnitude(50))
 						.withZ(17);
-			}else if(input.car.velocity.flatten().magnitude() > 800){
+			}else if(input.car.velocity.withZ(Math.max(0, input.car.velocity.z)).magnitude() > 800){
 				yawIdealDestination = input.car.position.plus(input.car.velocity).withZ(17);
 			}else{
 				yawIdealDestination = wildfire.impactPoint.getPosition();
 			}
 			
 			if(correctEnough){
-				double yawCorrection = -Handling.aimLocally(input.car, yawIdealDestination);
-				yaw = yawPID.getOutput(input.elapsedSeconds, 0, yawCorrection);
+				double yawCorrection = Handling.aimLocally(input.car, yawIdealDestination);
+				yaw = yawPID.getOutput(input.elapsedSeconds, yawCorrection, 0);
 			}else{
 				yaw = 0;
 			}
 		}else{
 			// Perform the wave-dash.
-			if(planWavedash && input.car.position.z < 80){
+			if(planWavedash && input.car.position.z < 90){
 				return new ControlsOutput().withPitch(-1).withJump(true)
 						.withYaw(0).withRoll(0);
 			}
 			yaw = 0;
 		}
 		
-		return new ControlsOutput().withRoll((float)roll).withPitch((float)pitch).withYaw((float)yaw)
+		return new ControlsOutput().withRoll(roll).withPitch(pitch).withYaw(yaw)
 				.withBoost(input.car.orientation.noseVector.z < zToBoost && boostDown).withJump(false)
 				.withThrottle(timeDifference(input.elapsedSeconds) > 0.5 ? 1 : 0); //Throttle to avoid turtling
 	}
@@ -146,11 +141,16 @@ public class RecoveryAction extends Action {
 		return simulateFall(colour, positions, velocity, depth + 1);
 	}
 	
-	private Pair<Triangle, Vector3> getIntersect(Vector3[] fall){
+	private Pair<Triangle, PredictionSlice> getIntersect(Vector3[] fall){
 		for(int index = 0; index < fall.length; index += fallStepIndex){
 			Pair<Triangle, Vector3> intersect = intersect(fall[index], 
 					fall[Math.min(fall.length - 1, index + fallStepIndex)]);
-			if(intersect != null) return intersect;
+			
+			// Intersected.
+			if(intersect != null){
+				return new Pair<Triangle, PredictionSlice>(intersect.getOne(),
+						new PredictionSlice(intersect.getTwo(), index)); // Time is a lower bound.
+			}
 		}
 		return null;
 	}

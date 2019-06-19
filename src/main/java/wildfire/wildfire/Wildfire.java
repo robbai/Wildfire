@@ -2,13 +2,13 @@ package wildfire.wildfire;
 
 import java.awt.Color;
 import java.awt.Point;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
 import rlbot.Bot;
 import rlbot.ControllerState;
 import rlbot.cppinterop.RLBotDll;
+import rlbot.cppinterop.RLBotInterfaceException;
 import rlbot.flat.BallPrediction;
 import rlbot.flat.GameTickPacket;
 import rlbot.flat.QuickChatSelection;
@@ -89,7 +89,7 @@ public class Wildfire implements Bot {
         new BoostState(this);
         new WaitState(this);
         new MixerState(this);
-        new ShootState(this);        
+        new ShootState(this);
         new ClearState(this);
         new ReturnState(this);
         new PathState(this);
@@ -112,12 +112,13 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, !Behaviour.hasTeammate(input) && isTestVersion(), isTestVersion());
     	
-//    	stateSetting.orient(input, true);
+//    	stateSetting.kickoffSpawn(input, KickoffSpawn.CORNERBACK);
     	
     	//Get the ball prediction
     	try{
     	    ballPrediction = RLBotDll.getBallPrediction();
-    	}catch(IOException e){
+    	}catch(RLBotInterfaceException e){
+    		e.printStackTrace();
     		ballPrediction = null;
     	}
     	
@@ -161,19 +162,20 @@ public class Wildfire implements Bot {
     	}
     	
     	//Get a new state if one isn't active
+    	String printPrefix = "[" + (int)(input.elapsedSeconds) + "] " + playerIndex + ": ";
     	if(activeState == null && !fallbackState.hasAction()){
 		    for(State state : states){
 		    	 if(state.getClass() != fallbackState.getClass() && state.ready(input)){
 		    		activeState = state;
 		    		if(lastPrintedState == null || activeState.getName() != lastPrintedState.getName()){
-		    			System.out.println(playerIndex + " [" + (10 + System.currentTimeMillis() % 90) + "]: " + activeState.getName() + (activeState.hasAction() ? " (" + activeState.currentAction.getName() + ")" : ""));
+		    			System.out.println(printPrefix + activeState.getName() + (activeState.hasAction() ? " (" + activeState.currentAction.getName() + ")" : ""));
 		    			lastPrintedState = activeState;
 		    		}
 		    		break;
 		    	}
 		    }
 		    if(activeState == null && (lastPrintedState == null || fallbackState.getName() != lastPrintedState.getName())){
-		    	System.out.println(playerIndex + " [" + (10 + System.currentTimeMillis() % 90) + "]: " + fallbackState.getName() + (fallbackState.hasAction() ? " (" + fallbackState.currentAction.getName() + ")" : ""));
+		    	System.out.println(printPrefix + fallbackState.getName() + (fallbackState.hasAction() ? " (" + fallbackState.currentAction.getName() + ")" : ""));
 		    	lastPrintedState = fallbackState;
 		    }
     	}

@@ -16,6 +16,7 @@ import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.WavedashAction;
 import wildfire.wildfire.obj.BezierCurve;
 import wildfire.wildfire.obj.KickoffSpawn;
+import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
@@ -27,10 +28,14 @@ public class KickoffState extends State {
 	/**
 	 * Used for enabling/disabling the chance of fake kickoffs
 	 */
-	private final boolean fakeKickoffs = false;
+	private final boolean fakeKickoffs = true;
+	private final double fakeChance = 0.2;
+	
+	private final double pidSlide = Double.MAX_VALUE;
 	
 	private KickoffSpawn spawn;
 	private Random random;
+	private PID fakeAlignPID;
 		
 	private float timeStarted;
 	private boolean timedOut;
@@ -55,12 +60,12 @@ public class KickoffState extends State {
 			fake = true;
 			wildfire.sendQuickChat(true, QuickChatSelection.Custom_Useful_Faking, QuickChatSelection.Information_GoForIt);
 		}else if(fakeKickoffs){
-			fake = ((random.nextFloat() < 0.2F || isUnfairKickoff(input)) && !Behaviour.hasTeammate(input) && spawn != KickoffSpawn.CORNER && Behaviour.hasOpponent(input));
-//			fake = spawn != KickoffSpawn.CORNER;
+			fake = ((random.nextDouble() < fakeChance || isUnfairKickoff(input)) && !Behaviour.hasTeammate(input) && spawn != KickoffSpawn.CORNER); // && Behaviour.hasOpponent(input)
 		}else{
 			fake = false;
 		}
 		
+		this.fakeAlignPID = new PID(0.0035, 0, 0.0029);
 		return true;
 	}
 	
@@ -84,7 +89,6 @@ public class KickoffState extends State {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		wildfire.renderer.drawString2d(spawn.toString(), Color.WHITE, new Point(0, 20), 2, 2);
-		if(fake) wildfire.renderer.drawString2d("Fake", Color.WHITE, new Point(0, 40), 2, 2);
 		
 		//Time-out the fake kickoff if the opponent has taken too long
 		if(fake && input.elapsedSeconds - timeStarted > 12){
@@ -143,39 +147,37 @@ public class KickoffState extends State {
 			double steerCorrectionRadians = Handling.aim(input.car, target);
 	        return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1).withBoost(true);
 		}else{
-			//Fake
-			if(!BoostManager.getBoosts().get(input.car.team == 0 ? 0 : 33).isActive() || input.car.boost > 99){
-				
-				boolean reverse = (Math.abs(input.car.position.y) < 5200);
-				double steerCorrectionRadians = Handling.aim(input.car, reverse ? Constants.homeGoal(input.car.team) : wildfire.impactPoint.getPosition().flatten());
-				if(reverse){
-					steerCorrectionRadians = Utils.invertAim(steerCorrectionRadians);
-					double forwardMagnitude = input.car.forwardMagnitude();
-			        return new ControlsOutput().withSteer((float)steerCorrectionRadians * 3F).withThrottle(-1F).withBoost(false).withSlide(forwardMagnitude < -200 && forwardMagnitude > -600);
-				}else{
-					return new ControlsOutput().withSteer((float)-steerCorrectionRadians * 2F).withThrottle(1F).withBoost(false).withSlide(false);
-				}
+			// Fake kickoff!
+			wildfire.renderer.drawString2d("Fake", Color.WHITE, new Point(0, 40), 2, 2);
+//			wildfire.renderer.drawTurningRadius(Color.BLUE, input.car);
+			
+			// Get the boost in front of us.
+			boolean grabBoost = (BoostManager.getBoosts().get(input.car.team == 0 ? 0 : 33).isActive() && input.car.boost < 100);
+			
+			Vector2 destination;
+			if(grabBoost){
+				destination = new Vector2(0, -Utils.teamSign(input.car) * 4290);
+				wildfire.renderer.drawCircle(Color.WHITE, destination, 50);
 			}else{
-				
-				//Get the boost in front of us
-				Vector2 boost = new Vector2(0, -Utils.teamSign(input.car) * 4290);
-				wildfire.renderer.drawCircle(Color.WHITE, boost, 50);
-				double steerCorrectionRadians = Handling.aim(input.car, boost);
-				if(Math.cos(steerCorrectionRadians) > 0){
-					return new ControlsOutput().withSteer((float)steerCorrectionRadians * -3F).withThrottle(1F).withBoost(false);
-				}else{
-					return new ControlsOutput().withSteer((float)Utils.invertAim(steerCorrectionRadians) * 1.5F).withThrottle(-1F).withBoost(false);
-				}
+				destination = Constants.homeGoal(input.car.team);
 			}
+			
+			boolean reverse = (Math.abs(input.car.position.y) < Math.abs(destination.y));
+//			double steerRadians = Handling.aim(input.car, destination);
+//			if(reverse) steerRadians = -Utils.invertAim(steerRadians);
+			double steer = fakeAlignPID.getOutput(input.elapsedSeconds, input.car.position.x, 0) * (reverse ? -1 : 1);
+			double throttle = (grabBoost ? 1 : destination.distance(input.car.position.flatten()) / 1000);
+			
+			return new ControlsOutput().withSteer(steer).withThrottle((reverse ? -1 : 1) * throttle).withBoost(false).withSlide(Math.abs(steer) > pidSlide);
 		}
 	}
 	
 	private boolean isUnfairKickoff(DataPacket input){
 		double distanceBlue = Double.MAX_VALUE, distanceOrange = Double.MAX_VALUE;
 		for(byte i = 0; i < input.cars.length; i++){
-			if(input.cars[i] == null) continue;
 			CarData car = input.cars[i];
-			if(input.car.team == 0){
+			if(car == null) continue;
+			if(car.team == 0){
 				distanceBlue = Math.min(distanceBlue, car.position.magnitude());
 			}else{
 				distanceOrange = Math.min(distanceOrange, car.position.magnitude());

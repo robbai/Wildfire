@@ -63,7 +63,7 @@ public class FallbackState extends State {
 		Vector2 trace = Utils.traceToY(input.car.position.flatten(), impactPoint.minus(input.car.position).flatten(), Utils.teamSign(input.car) * -Constants.PITCHLENGTH);
 		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 900);
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.6, 70, 1000), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.75, 80, 900), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(input.car, impactPoint, Color.PINK, 125);
 		}
 

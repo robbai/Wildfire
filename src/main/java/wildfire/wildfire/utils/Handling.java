@@ -9,6 +9,7 @@ import wildfire.vector.Vector3;
 public class Handling {
 
 	private static Vector2 forwardVector = new Vector2(0, 1);
+	private static Vector3 forwardVector3 = new Vector3(0, 1, 0);
 
 	public static double aim(CarData car, Vector2 point){
 		Vector2 carPosition = car.position.flatten();
@@ -27,7 +28,7 @@ public class Handling {
 		return new ControlsOutput().withThrottle(1).withBoost(false)
 				.withSteer((float)(-3F * aimLocally(input.car, 
 						input.car.position.plus(input.car.orientation.roofVector.scaledToMagnitude(50)).flatten())))
-				.withSlide(!input.car.isDrifting() && input.car.orientation.noseVector.z > -0.2 && input.car.velocity.magnitude() > 900);
+				.withSlide(!input.car.isDrifting() && input.car.orientation.noseVector.z > -0.25 && input.car.velocity.magnitude() > 700);
 	}
 
 	/**
@@ -49,17 +50,19 @@ public class Handling {
 	}
 	
 	public static ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
-		float steer = (float)Handling.aim(input.car, point);
+		double steer = Handling.aim(input.car, point);
 		
-		float throttle = (rush ? 1 : (float)Math.signum(Math.cos(steer)));
-		double distance = input.car.position.distanceFlat(point);
+		double throttle = (rush ? 1 : Math.signum(Math.cos(steer)));
 		
 		boolean reverse = (throttle < 0);
 		if(reverse) steer = (float)-Utils.invertAim(steer);
 		
+		double distance = input.car.position.distanceFlat(point);
+		double velocity = input.car.velocity.magnitude();
+		
 		return new ControlsOutput().withThrottle(throttle)
 				.withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > (rush ? 1200 : 2000))
-				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.5);
+				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.3 && !input.car.isDrifting() && velocity > 600);
 	}
 	
 	public static ControlsOutput stayStill(DataPacket input){
@@ -73,24 +76,25 @@ public class Handling {
 	public static double aimLocally(CarData car, Vector2 point){
 		return aimLocally(car, point.withZ(0));
 	}
-
+	
 	/**
 	 * Yaw, pitch
 	 */
-	public static Vector3 getAngles(Vector3 target){
-		target = target.normalized();
+	public static Vector2 getAngles(Vector3 target){
+		double yaw = Utils.wrapAngle(Math.atan2(target.x, target.y));
+		double pitch = Utils.wrapAngle(Math.atan2(target.z, target.y));
 		
-		double yaw = Utils.wrapAngle(Math.asin(target.x));
-		double pitch = Utils.wrapAngle(Math.asin(target.z));
-		double roll = Utils.wrapAngle(Math.acos(target.y));
-		
-		// Do some extra wrapping.
-		if(Math.cos(yaw) < 0){
-			yaw = Utils.invertAim(yaw);
-			pitch -= (Math.PI * Math.signum(pitch));
-		}
-		
-		return new Vector3(yaw, pitch, roll);
+		return new Vector2(yaw, pitch);
+	}
+
+	/**
+	 * Roll, pitch
+	 */
+	public static Vector2 getAnglesRoof(Vector3 target){
+		double roll = Utils.wrapAngle(Math.atan2(target.x, target.z));
+		double pitch = Utils.wrapAngle(Math.atan2(-target.y, target.z));
+
+		return new Vector2(roll, pitch);
 	}
 
 }

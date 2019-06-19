@@ -133,11 +133,11 @@ public class WallHitState extends State {
 		
 		boolean backWall = (target.y * Utils.teamSign(car) < -4400);
 		
-		if(target.z < Math.max(backWall ? 380 : 400, car.position.distanceFlat(target) / 5)) return false;
+		if(target.z < Math.max(backWall ? 330 : 400, car.position.distanceFlat(target) / 5)) return false;
 		if(Math.abs(target.y) < 4350) return true;
 		
-		//Away from our back wall
-		return (Math.abs(target.x) > 1200 || car.position.z > 900) && backWall; 
+		// Away from our back wall.
+		return (Math.abs(target.x) > 1000 || car.position.z > 900) && backWall; 
 	}
 
 }

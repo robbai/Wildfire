@@ -85,7 +85,7 @@ public class BoostState extends State {
 		//Render
 		double circleRadius = 100;
 		BezierCurve bezier = new BezierCurve(input.car.position.flatten(), 
-				input.car.position.plus(input.car.velocity).flatten(), 
+				input.car.position.flatten().plus(boostLocation).scaled(0.5).plus(input.car.velocity.flatten()), 
 				boostLocation.plus(input.car.position.flatten().minus(boostLocation).scaledToMagnitude(circleRadius)));
 		bezier.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.blue, boostLocation, circleRadius);

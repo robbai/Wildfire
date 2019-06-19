@@ -36,7 +36,7 @@ public class MixerState extends State {
 		Vector2 teamSignVec = new Vector2(0, teamSign);
 		
 		// The ball must be on the wing.
-		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 800) return false;
+		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 750) return false;
 		if(teamSign * impactLocation.y < -2500) return false;
 		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 1200) return false;
 		
@@ -60,7 +60,7 @@ public class MixerState extends State {
 		Vector3 impactLocation = wildfire.impactPoint.getPosition();
 		double impactDistance = impactLocation.distance(input.car.position);
 		double teamSign = Utils.teamSign(input.car);
-		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCHWIDTH - 100),
+		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCHWIDTH - Constants.BALLRADIUS),
 				teamSign * (Constants.PITCHLENGTH - 700));
 		double aimImpact = Handling.aim(input.car, impactLocation.flatten());
 		

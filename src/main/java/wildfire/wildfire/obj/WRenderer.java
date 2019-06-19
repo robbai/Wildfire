@@ -17,6 +17,8 @@ public class WRenderer extends Renderer {
 	
 	private Renderer r;
 	private boolean twoD, threeD;
+	
+	public static final double minZ = 9;
 
 	public WRenderer(Wildfire wildfire, boolean twoD, boolean threeD){
 		super(wildfire.getIndex());
@@ -27,6 +29,10 @@ public class WRenderer extends Renderer {
 	
 	public void drawLine2d(Color color, Point start, Point end){
 		if(twoD) r.drawLine2d(color, start, end);
+    }
+	
+	public void drawLine3d(Color color, Vector2 start, Vector2 end){
+		if(threeD) r.drawLine3d(color, start.withZ(minZ).toFramework(), end.withZ(minZ).toFramework());
     }
 
     public void drawLine3d(Color color, rlbot.vector.Vector3 start, rlbot.vector.Vector3 end){
@@ -63,10 +69,14 @@ public class WRenderer extends Renderer {
     	Vector3 orthogonal = car.position.minus(point).scaledToMagnitude(size / 2).rotateHorizontal(Math.PI / 2).withZ(0);
     	drawLine3d(colour, point.plus(orthogonal).toFramework(), point.minus(orthogonal).toFramework());
     }
+    
+    public void drawCircle(Color colour, Circle circle){
+    	drawCircle(colour, circle.getCentre(), circle.getRadius());
+    }
 	
 	public void drawCircle(Color colour, Vector2 centre, double radius){
 		if(!threeD) return;
-		drawCircle(colour, centre.withZ(20), radius);
+		drawCircle(colour, centre.withZ(minZ), radius);
 	}
 	
 	public void drawCircle(Color colour, Vector3 centre, double radius){

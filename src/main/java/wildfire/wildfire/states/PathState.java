@@ -22,7 +22,8 @@ public class PathState extends State {
 	 * Fresh and new path planning state
 	 */
 		
-	private final boolean force = true;
+	private final boolean force = false;
+	
 	private Path path;
 
 	public PathState(Wildfire wildfire){
@@ -73,7 +74,7 @@ public class PathState extends State {
 		wildfire.renderer.drawString2d("Path Distance: " + (int)path.getDistance() + "uu", Color.WHITE, new Point(0, 20), 2, 2);
 		wildfire.renderer.drawString2d("Time: " + Utils.round(path.getTime()) + "s", Color.WHITE, new Point(0, 40), 2, 2);
 		wildfire.renderer.drawLine3d((cone ? Color.GREEN : Color.YELLOW), input.car.position.flatten().toFramework(), Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).toFramework());
-		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.WHITE, 90);
+		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition().withZ(Constants.BALLRADIUS), Color.WHITE, 90);
 		
 		// Make a target from the path.
 		double targetPly = getTargetPly(input.car);
@@ -84,13 +85,13 @@ public class PathState extends State {
 		double steer = Handling.aimLocally(input.car, target);
 		Path maxPath = (input.car.boost == 0 || input.car.isSupersonic || Math.abs(steer) > 0.3 ? null : Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), path.getVelocity() + Constants.BOOSTACC * (10D / 120), false));
 		if(maxPath != null) wildfire.renderer.drawString2d("Boost Time: " + Utils.round(maxPath.getTime()) + "s", Color.WHITE, new Point(0, 60), 2, 2);
-		return new ControlsOutput().withSteer((float)(steer * -3)).withThrottle(1)
+		return new ControlsOutput().withSteer(steer * -3).withThrottle(1)
 				.withBoost(maxPath != null && path.getTime() >= maxPath.getTime());
 	}
 	
 	private double getTargetPly(CarData car){
 		if(path.isBadPath()) return 0; // Only when forcing is enabled.
-		double targetUnits = 480;
+		double targetUnits = 470;
 		double velocity = car.velocity.magnitude();
 		return (targetUnits / (velocity * Path.scale));
 	}

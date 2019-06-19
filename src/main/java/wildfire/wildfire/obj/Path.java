@@ -55,8 +55,10 @@ public class Path {
 			
 			Path p = new Path(car, location.flatten(), destination, desiredVelocity);
 			
-//			if(p.isBadPath()) return null;
-//			if(p.isBadPath()) continue;
+			if(!force){
+				if(p.isBadPath()) return null;
+//				if(p.isBadPath()) continue;
+			}
 			
 			double displacement = (p.getDistance() - Constants.BALLRADIUS);
 			double time = (double)i / 60D;

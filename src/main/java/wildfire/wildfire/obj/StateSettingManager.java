@@ -13,7 +13,6 @@ import wildfire.input.DataPacket;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.OrientAction;
 import wildfire.wildfire.pitch.Pitch;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
@@ -46,7 +45,7 @@ public class StateSettingManager {
 	}
 	
 	public void aerial(DataPacket input){
-		if(((!Behaviour.isBallAirborne(input.ball) || input.car.position.y > 0) && input.car.hasWheelContact) || getCooldown(input) > 18 || (Math.abs(input.ball.position.y) > 4900 && input.car.hasWheelContact)){
+		if(((!Behaviour.isBallAirborne(input.ball) || Utils.teamSign(input.car) * input.car.position.y > 0) && input.car.hasWheelContact) || getCooldown(input) > 18 || Math.abs(input.ball.position.y) > 4900){
     		GameState gameState = new GameState();
     		Vector3 carPosition = new Vector3(Utils.random(-3500, 3500), Utils.random(3000, 5000) * -Utils.teamSign(input.car), 10);
     		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(new DesiredRotation(0F, (float)carPosition.flatten().correctionAngle(new Vector2()), 0F))));
@@ -83,9 +82,8 @@ public class StateSettingManager {
 		}
 	}
 
-	public void recovery(DataPacket input) {
-//		if(input.car.hasWheelContact && input.car.velocity.z > 0){
-		if(input.car.hasWheelContact && input.car.velocity.flatten().magnitude() > 900 && input.car.position.z < 1000){
+	public void recovery(DataPacket input){
+		if(input.car.hasWheelContact && (input.car.velocity.flatten().magnitude() > 900 || getCooldown(input) > 5) && input.car.position.z < 1000){
 			GameState gameState = new GameState();
 			double horizontalVelocity = 3000;
 			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withDoubleJumped(true).withPhysics(new PhysicsState()
@@ -98,11 +96,12 @@ public class StateSettingManager {
 					.withVelocity(new Vector3().toDesired())
 					.withAngularVelocity(new Vector3().toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
+			resetCooldown(input.elapsedSeconds);
 		}
 	}
 
 	public void kickoffSpawn(DataPacket input, KickoffSpawn kickoffSpawn){
-		if(input.ball.position.magnitude() > 2000){
+		if(input.ball.position.magnitude() > (input.car.hasWheelContact ? 1000 : 3500)){
 			boolean blue = (input.car.team == 0);
 			boolean left = (new Random()).nextBoolean();
 			double sideSign = (left ? (blue ? 1 : -1) : (blue ? -1 : 1));
@@ -149,7 +148,6 @@ public class StateSettingManager {
 				ballPhysics.withLocation(newBallLocation.plus(new Vector3(0, 0, z)).toDesired());
 			}
 			resetCooldown(input.elapsedSeconds);
-			OrientAction.resetPID();
 		}
 		
 		if(smoothMove){

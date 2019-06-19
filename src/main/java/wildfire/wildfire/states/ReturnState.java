@@ -96,7 +96,7 @@ public class ReturnState extends State {
 
 			Vector2 target = Behaviour.getTarget(attacker, input.ball);
 			target = target.withY(Utils.teamSign(input.car) * -Constants.PITCHLENGTH * goalScale);
-			target = target.withX(Utils.clamp(target.x, Constants.GOALHALFWIDTH - 200, -Constants.GOALHALFWIDTH + 200));
+			target = target.withX(Utils.clamp(target.x, Constants.GOALHALFWIDTH - 250, -Constants.GOALHALFWIDTH + 250));
 
 			wildfire.renderer.drawLine3d(Color.RED, attacker.position.flatten().toFramework(), target.toFramework());
 			wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);

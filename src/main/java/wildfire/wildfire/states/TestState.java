@@ -6,7 +6,6 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
-import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
@@ -30,7 +29,7 @@ public class TestState extends State {
 		if(!hasAction() && input.car.hasWheelContact && (input.car.velocity.magnitude() > 800 || input.car.position.z > 400) && (input.ball.position.z > 800 || input.car.position.z > 2000)){		
 			currentAction = AerialAction.fromBallPrediction(this, input.car, wildfire.ballPrediction, false);
 			
-			if(currentAction != null && !currentAction.failed && ((AerialAction)currentAction).averageAcceleration > Constants.BOOSTACC - 10){
+			if(currentAction != null && !currentAction.failed){
 				return currentAction.getOutput(input); //Start overriding
 			}else{
 				currentAction = null;

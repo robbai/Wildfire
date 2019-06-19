@@ -94,16 +94,16 @@ public class Pitch {
 	}
 	
 	public static Pair<Triangle, Vector3> segmentIntersect(Vector3 start, Vector3 end){
-		long startTime = System.nanoTime();
+//		long startTime = System.nanoTime();
 		for(int index = 0; index < triangles.length; index++){
 			Triangle triangle = triangles[index];
 			Vector3 intersect = triangle.segmentIntersects(start, end);
 			if(intersect != null){
-				System.out.println((double)(System.nanoTime() - startTime) / 1000000D + "ms");
+//				System.out.println((double)(System.nanoTime() - startTime) / 1000000D + "ms");
 				return new Pair<Triangle, Vector3>(triangle, intersect);
 			}
 		}
-		System.out.println((double)(System.nanoTime() - startTime) / 1000000D + "ms (None)");
+//		System.out.println((double)(System.nanoTime() - startTime) / 1000000D + "ms (None)");
 		return null;
 	}
 	

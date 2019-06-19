@@ -30,15 +30,14 @@ public class ClearState extends State {
 	@Override
 	public boolean ready(DataPacket input){
 		// General conditions.
-		if(Behaviour.isKickoff(input) || Behaviour.isCarAirborne(input.car) || Utils.teamSign(input.car) * input.ball.position.y > 2000){
+		if(Behaviour.isKickoff(input) || Behaviour.isCarAirborne(input.car) || Utils.teamSign(input.car) * input.ball.position.y > 2000 || wildfire.impactPoint.getPosition().z > 400){
 			return false;
 		}
 		
 		double impactYFlip = wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car);
 		
 		// Near our backboard.
-		if(!Behaviour.correctSideOfTarget(input.car, input.ball.position)
-				&& !Behaviour.isBallAirborne(input.ball)){
+		if(!Behaviour.correctSideOfTarget(input.car, input.ball.position)){
 			return impactYFlip < -(Constants.PITCHLENGTH - 340);
 		}
 
@@ -123,12 +122,14 @@ public class ClearState extends State {
 		}
 		
 		Vector2 offset;
-		double offsetMagnitude = (80 + 45 * Math.pow(input.ball.position.minus(input.car.position).normalized().y, 2));
+		double offsetMagnitude = (75 + 50 * Math.pow(wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y, 2));
 		if(Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition().flatten())){
 			Vector2 goal = Behaviour.getTarget(input.car, input.ball);
 			offset = wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);
 		}else{
-			offset = new Vector2(offsetMagnitude * Math.signum(Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).x), 0);
+			offset = new Vector2(offsetMagnitude * 
+					-Math.signum(Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).x), 
+					0);
 		}
 		
 		//Tad bit o' rendering

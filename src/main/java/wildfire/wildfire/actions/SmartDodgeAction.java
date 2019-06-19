@@ -26,7 +26,7 @@ public class SmartDodgeAction extends Action {
 	/*
 	 * Tweaky things
 	 */
-	public final static double dodgeDistance = 55, peakThreshold = 0.2; 
+	public final static double dodgeDistance = 52, peakThreshold = 0.25; 
 	
 	public PredictionSlice target = null;
 	private PID rollPID, pitchPID;
@@ -43,27 +43,22 @@ public class SmartDodgeAction extends Action {
 		
 		double peakTime = (jumpVelocity / Constants.GRAVITY);
 		for(int i = 0; i < Math.min(ballPrediction.slicesLength(), (peakTime + peakThreshold) / tick); i++){
-			Vector3 trueLocation = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-			
-			Vector3 location = new Vector3(trueLocation);
-//			location = location.plus(input.car.position.minus(location).withZ(0).scaledToMagnitude(Constants.BALLRADIUS));
+			Vector3 ballLocation = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			
 			double time = (ballPrediction.slices(i).gameSeconds() - input.elapsedSeconds);
 
-			Vector3 carPosition = getJumpPosition(input.car, jumpVelocity, time);
-			double distance = location.distance(carPosition);
+			Vector3 carLocation = getJumpPosition(input.car, jumpVelocity, time);
+			double distance = ballLocation.distance(carLocation);
 			
 			//Cone
 			if(coneRequired){
-				if(Utils.teamSign(input.car) * carPosition.y > Constants.PITCHLENGTH) continue; //Inside enemy goal
-				Vector2 trace = Utils.traceToY(carPosition.flatten(), location.minus(carPosition).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH);
+				if(Utils.teamSign(input.car) * carLocation.y > Constants.PITCHLENGTH) continue; //Inside enemy goal
+				Vector2 trace = Utils.traceToY(carLocation.flatten(), ballLocation.minus(carLocation).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH);
 				if(trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS) continue;
 			}
-			
-//			if(i < 100) System.out.println(Utils.round(time) + "s (" + i + ") would be " + (int)distance + "uu away");
 
 			if(distance < Constants.BALLRADIUS + dodgeDistance){
-				this.target = new PredictionSlice(trueLocation, i);
+				this.target = new PredictionSlice(ballLocation, i);
 				break;
 			}
 		}
@@ -81,15 +76,8 @@ public class SmartDodgeAction extends Action {
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			if(location.z < 100) break;
 			
-//			Vector3 velocity = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().velocity());
-//			if(Math.signum(enemyGoal.y) == Math.signum(velocity.y)) velocity = new Vector3(velocity.x, 0, velocity.z);
-			
 			if(location.z - Constants.BALLRADIUS < maxJumpHeight - dodgeDistance){
-				//Add an offset, which considers the ball's velocity, and the direction to their goal
-//				location = location.plus(location.flatten().minus(enemyGoal).plus(velocity.scaled(0.5).flatten()).scaledToMagnitude(50).withZ(0));
-				
-				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.45));
-				
+				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.3));
 				return new PredictionSlice(location, i);
 			}
 		}
@@ -129,10 +117,10 @@ public class SmartDodgeAction extends Action {
 		wildfire.renderer.drawCrosshair(input.car, this.target.getPosition(), Color.ORANGE, 60);
 		if(timeDifference < this.target.getTime()) wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.YELLOW, 0, this.target.getFrame() - (int)(timeDifference * 60));
 		
-		if(timeDifference < Math.min(0.2, this.target.getTime() - tick * 4)){
+		if(timeDifference < Math.min(0.2, this.target.getTime() - tick * 3)){
 			return controller.withJump(true);
 		}else if(timeDifference >= this.target.getTime()){
-			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 0.5){
+			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 0.7){
 				Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 			}
 			
@@ -149,7 +137,7 @@ public class SmartDodgeAction extends Action {
 			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(400)).toFramework());
 			direction = Utils.toLocalFromRelative(input.car, direction);
 			
-//			System.out.println(direction.toString());
+			System.out.println(direction.toString());
 			
 			double pitch = pitchPID.getOutput(input.elapsedSeconds, 0, Math.signum(direction.z) * Math.atan(direction.z / 12));
 			double roll = rollPID.getOutput(input.elapsedSeconds, 0, -Math.signum(direction.y) * Math.atan(direction.y / 32));

@@ -55,15 +55,16 @@ public class ShootState extends State {
 		
 		if(!hasAction()){
 			if(input.car.hasWheelContact){
+				boolean dodgeBallDist = distance < 500;
 				if(Math.abs(aimImpact) > Math.PI * 0.7 && distance < 560){
 					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 				}else if(Math.abs(aimImpact) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-				}else if((distance < 500 && Math.abs(aimImpact) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(aimImpact) < 0.25 && !input.car.isSupersonic)){
+				}else if((dodgeBallDist && Math.abs(aimImpact) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(aimImpact) < 0.25 && !input.car.isSupersonic)){
 					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 					
 					double forwardVelocity = input.car.forwardMagnitude();
-					if(forwardVelocity > 1300) currentAction = new DodgeAction(this, aimImpact, input);
+					if(forwardVelocity > 1300) currentAction = new DodgeAction(this, (dodgeBallDist ? 1.4 : 1) * aimImpact, input);
 				}
 			}else if(Behaviour.isCarAirborne(input.car)){
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);
