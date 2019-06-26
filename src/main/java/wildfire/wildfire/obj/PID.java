@@ -18,9 +18,9 @@ public class PID {
 	public double errorSum, lastError;
 	private double kp, ki, kd;
 	
-	public PID(Color colour, double kp, double ki, double kd){
+	public PID(WRenderer renderer, Color colour, double kp, double ki, double kd){
 		this.render = true;
-		this.renderer = null;
+		this.renderer = renderer;
 		this.colour = colour;
 		this.data = new ArrayList<Double>();
 		
@@ -50,19 +50,6 @@ public class PID {
 		this.ki = other.ki;
 		this.kd = other.kd;
 	}
-	
-	public PID(Color colour, PID other){
-		this.render = true;
-		this.renderer = null;
-		this.colour = colour;
-		this.data = new ArrayList<Double>();
-		
-		this.errorSum = 0;
-		this.lastTime = -1;
-		this.kp = other.kp;
-		this.ki = other.ki;
-		this.kd = other.kd;
-	}
 
 	public double getOutput(float time, double start, double target){
 		//How long since we last calculated
@@ -83,7 +70,7 @@ public class PID {
 //		if(render && errorSum != error * timeDifference) data.add(output);
 
 		//Rendering
-		if(render && data.size() > 1 && this.renderer != null){
+		if(render && data.size() > 1){
 			double width = 400;
 			double height = 50;
 			double startY = 150;
@@ -124,7 +111,7 @@ public class PID {
 	}
 
 	public PID updateRenderer(WRenderer renderer){
-		if(!this.render) this.renderer = renderer;
+		if(this.render) this.renderer = renderer;
 		return this;
 	}
 

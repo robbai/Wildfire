@@ -26,7 +26,7 @@ public class SmartDodgeAction extends Action {
 	/*
 	 * Tweaky things
 	 */
-	public final static double dodgeDistance = 52, peakThreshold = 0.25; 
+	public final static double dodgeDistance = 45, peakThreshold = 0.2; 
 	
 	public PredictionSlice target = null;
 	private PID rollPID, pitchPID;
@@ -65,18 +65,23 @@ public class SmartDodgeAction extends Action {
 		
 		this.failed = (target == null);
 		if(!failed){
-			this.pitchPID = new PID(6.5, 0, 0.5);
-			this.rollPID = new PID(3, 0, 0.2);
+//			this.pitchPID = new PID(6.5, 0, 0.5);
+//			this.rollPID  = new PID(3.0, 0, 0.2);
+			
+			this.pitchPID = new PID(3.65, 0, 0.75);
+			this.rollPID  = new PID(3.80, 0, 0.60);
 		}
 	}
 	
-	public static PredictionSlice getCandidateLocation(BallPrediction ballPrediction, Vector2 enemyGoal){
-//		double peakTime = (jumpVelocity / Constants.GRAVITY);
+	public static PredictionSlice getCandidateLocation(BallPrediction ballPrediction, CarData car){
+		Vector2 enemyGoal = Constants.enemyGoal(car);
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			if(location.z < 100) break;
 			
-			if(location.z - Constants.BALLRADIUS < maxJumpHeight - dodgeDistance){
+			double jumpHeight = getJumpPosition(car, jumpVelocity, ballPrediction.slices(i).gameSeconds() - car.elapsedSeconds).z - car.position.z;
+			
+			if(location.z - Constants.BALLRADIUS < jumpHeight - dodgeDistance){
 				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.3));
 				return new PredictionSlice(location, i);
 			}
@@ -84,7 +89,7 @@ public class SmartDodgeAction extends Action {
 		return null;
 	}
 
-	private Vector3 getJumpPosition(CarData car, double jumpVelocity, double time){
+	private static Vector3 getJumpPosition(CarData car, double jumpVelocity, double time){
 		Vector3 lastPosition = car.position;
 		Vector3 position = car.position;		
 		Vector3 velocity = car.velocity;
@@ -120,7 +125,7 @@ public class SmartDodgeAction extends Action {
 		if(timeDifference < Math.min(0.2, this.target.getTime() - tick * 3)){
 			return controller.withJump(true);
 		}else if(timeDifference >= this.target.getTime()){
-			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 0.7){
+			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 0.9){
 				Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 			}
 			
@@ -133,16 +138,16 @@ public class SmartDodgeAction extends Action {
 		}else if(input.car.velocity.z > 50){
 			//Point the car
 			Vector3 direction = target.getPosition().minus(input.car.position).normalized();
-			direction = new Vector3(direction.x, direction.y, direction.z).normalized();
-			wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(400)).toFramework());
-			direction = Utils.toLocalFromRelative(input.car, direction);
+			direction = new Vector3(-direction.x, -direction.y, 2).normalized();
+			wildfire.renderer.drawLine3d(Color.RED, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(120)).toFramework());
 			
-			System.out.println(direction.toString());
+			Vector2 angles = Handling.getAnglesRoof(Utils.toLocalFromRelative(input.car, direction));
 			
-			double pitch = pitchPID.getOutput(input.elapsedSeconds, 0, Math.signum(direction.z) * Math.atan(direction.z / 12));
-			double roll = rollPID.getOutput(input.elapsedSeconds, 0, -Math.signum(direction.y) * Math.atan(direction.y / 32));
-			controller.withPitch((float)pitch);
-			controller.withRoll((float)roll);
+			double pitch = this.pitchPID.getOutput(input.elapsedSeconds, 0, angles.y);;
+			double roll = this.rollPID.getOutput(input.elapsedSeconds, 0, angles.x);
+			
+			controller.withPitch(pitch);
+			controller.withRoll(roll);
 		}
 		
 		return controller;
