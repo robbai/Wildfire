@@ -22,12 +22,13 @@ public class PathState extends State {
 	 * Fresh and new path planning state
 	 */
 		
-	private final boolean force = false;
+	private final boolean force;
 	
 	private Path path;
 
-	public PathState(Wildfire wildfire){
+	public PathState(Wildfire wildfire, boolean force){
 		super("Path", wildfire);
+		this.force = force;
 		path = null;
 	}
 	
@@ -77,32 +78,43 @@ public class PathState extends State {
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition().withZ(Constants.BALLRADIUS), Color.WHITE, 90);
 		
 		// Make a target from the path.
-		double targetPly = getTargetPly(input.car);
+		double targetPly = getTargetPly(input.car, input.car.velocity.flatten().magnitude());
 		Vector2 target = path.getPly(targetPly);
 		wildfire.renderer.drawCircle(input.car.team == 0 ? Color.CYAN : Color.RED, target, 10);
 		
 		// Controller.
 		double steer = Handling.aimLocally(input.car, target);
-		Path maxPath = (input.car.boost == 0 || input.car.isSupersonic || Math.abs(steer) > 0.3 ? null : Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), path.getVelocity() + Constants.BOOSTACC * (10D / 120), false));
-		if(maxPath != null) wildfire.renderer.drawString2d("Boost Time: " + Utils.round(maxPath.getTime()) + "s", Color.WHITE, new Point(0, 60), 2, 2);
-		return new ControlsOutput().withSteer(steer * -3).withThrottle(1)
-				.withBoost(maxPath != null && path.getTime() >= maxPath.getTime());
+		double boostedVelocity = (input.car.velocity.flatten().magnitude() + Constants.BOOSTACC * (10D / 120));
+		Path boostPath = (input.car.boost == 0 || input.car.isSupersonic || Math.abs(steer) > 0.5 ? null : Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), boostedVelocity, false));
+		boolean boost = false;
+		if(boostPath != null && path.getTime() >= boostPath.getTime() + 0.035){
+			steer = Handling.aimLocally(input.car, boostPath.getPly(getTargetPly(input.car, boostedVelocity)));
+			wildfire.renderer.drawString2d("Boost Time: " + Utils.round(boostPath.getTime()) + "s", Color.WHITE, new Point(0, 60), 2, 2);
+			boost = true;
+		}
+		return new ControlsOutput().withSteer(steer * -5).withThrottle(1).withBoost(boost);
 	}
 	
-	private double getTargetPly(CarData car){
+	private double getTargetPly(CarData car, double velocity){
 		if(path.isBadPath()) return 0; // Only when forcing is enabled.
-		double targetUnits = 470;
-		double velocity = car.velocity.magnitude();
+		double targetUnits = 360;
 		return (targetUnits / (velocity * Path.scale));
 	}
 	
 	private boolean requirements(DataPacket input){
-		if(Behaviour.isBallAirborne(input.ball) || input.ball.velocity.flatten().magnitude() > 3200 || Behaviour.isKickoff(input) || Utils.distanceToWall(input.car.position) < 400 || input.car.magnitudeInDirection(input.ball.position.minus(input.car.position).flatten()) < -1100) return false;
+		if(Behaviour.isBallAirborne(input.ball) || Behaviour.isKickoff(input) || input.ball.velocity.flatten().magnitude() > 3200
+				|| Utils.distanceToWall(input.car.position) < 400 || input.car.magnitudeInDirection(input.ball.position.minus(input.car.position).flatten()) < -1000) return false;
+		
+		boolean opponentBehind = Behaviour.isOpponentBehindBall(input);
 		
 		//This state isn't exactly the best defence
+		boolean correctSide = Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition());
+		double opponentDistance = Behaviour.closestOpponentDistance(input, input.ball.position);
+		boolean opponentClose = (opponentDistance < (opponentBehind ? 2800 : 1000));
+		if(!correctSide && opponentClose && Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < 4100) return false;
 		if(Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team)) return false;
-		if(Utils.teamSign(input.car) * input.ball.velocity.y < (Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition()) ? -1800 : -1200)) return false;
-		if(Utils.teamSign(input.car) * input.ball.position.y < -3500 && Math.abs(wildfire.impactPoint.getPosition().x) < 1700) return false;
+		if(Utils.teamSign(input.car) * input.ball.velocity.y < (correctSide ? -1800 : -1200)) return false;
+		if(Utils.teamSign(input.car) * input.ball.position.y < (opponentClose ? -2750 : -3500) && (opponentClose || Math.abs(wildfire.impactPoint.getPosition().x) < 1700)) return false;
 		
 		double impactDistance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position);
 		
@@ -121,9 +133,9 @@ public class PathState extends State {
 		}
 		
 		//This occurs when we have to correct to face the ball, but its in a shooting position		
-		if(trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH - 140){
+		if(trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH - 140 && input.car.isSupersonic){
 			double steerImpact = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-			return impactDistance < 6000 && (impactDistance > 2200 || Math.abs(steerImpact) > Math.toRadians(60));
+			return impactDistance < 6000 && (impactDistance > 2200 || Math.abs(steerImpact) > Math.toRadians(70));
 		}
 		
 		//Shoot from the wing
@@ -132,7 +144,7 @@ public class PathState extends State {
 		}
 		
 		//Slight shot correction
-		if(trace != null && Math.abs(trace.x) < 1630 && Math.abs(trace.x) > 620){
+		if(trace != null && Math.abs(trace.x) < 1630 && Math.abs(trace.x) > 560){
 			return true;
 		}	
 		
@@ -140,7 +152,7 @@ public class PathState extends State {
 		Vector2 goalBall = wildfire.impactPoint.getPosition().flatten().minus(Constants.enemyGoal(input.car.team));
 		Vector2 ballCar = input.car.position.minus(wildfire.impactPoint.getPosition()).flatten();
 		double arc = goalBall.angle(ballCar);
-		return impactDistance < 2900 && arc > 0.785398 && (arc < 1.48353 || Constants.enemyGoal(input.car.team).distance(wildfire.impactPoint.getPosition().flatten()) < 2300); //45, 85
+		return impactDistance < 2900 && arc > Math.toRadians(40) && (arc < Math.toDegrees(85) || Constants.enemyGoal(input.car.team).distance(wildfire.impactPoint.getPosition().flatten()) < 2300);
 	}
 
 }

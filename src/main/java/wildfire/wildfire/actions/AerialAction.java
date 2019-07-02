@@ -18,7 +18,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class AerialAction extends Action {
 			
-	private final double maxJumpVelocity = 547.7225575D, jumpTime = 0.2 + (1D / 60), maxDoubleJumpVelocity = 623.100916053663D, angleBoostThreshold = 0.2;
+	private final double maxJumpVelocity = 547.7225575D, jumpTime = 0.2 + (1D / 60), maxDoubleJumpVelocity = 623.100916053663D, angleBoostThreshold = 0.4;
 	
 	private PID rollPID, pitchPID, yawPID;
 
@@ -37,13 +37,13 @@ public class AerialAction extends Action {
 			this.target = target;
 			this.time = time;
 			
-//			this.pitchPID = new PID(6.4, 0, 1.10);
-//			this.yawPID   = new PID(5.4, 0, 1.00);
-//			this.rollPID  = new PID(3.0, 0, 0.40);
+			this.pitchPID = new PID(6.4, 0, 1.10);
+			this.yawPID   = new PID(5.4, 0, 1.00);
+			this.rollPID  = new PID(3.0, 0, 0.40);
 			
-			this.pitchPID = new PID(3.65, 0, 0.75);
-			this.yawPID   = new PID(4.05, 0, 1.10);
-			this.rollPID  = new PID(3.80, 0, 0.60);
+//			this.pitchPID = new PID(3.55, 0, 0.95);
+//			this.yawPID   = new PID(4.00, 0, 1.30);
+//			this.rollPID  = new PID(3.30, 0, 0.80);
 		}
 	}
 	
@@ -57,12 +57,12 @@ public class AerialAction extends Action {
 			
 			//Double jumping
 			AerialAction a;
-//			if(!forceDoubleJump){
+			if(!forceDoubleJump){
 				a = new AerialAction(state, car, location, (double)i / 60, false);
 				if(!a.failed) return a;
-//			}
-//			a = new AerialAction(state, car, location, (double)i / 60, true);
-//			if(!a.failed) return a;
+			}
+			a = new AerialAction(state, car, location, (double)i / 60, true);
+			if(!a.failed) return a;
 		}
 		return null;
 	}
@@ -92,10 +92,17 @@ public class AerialAction extends Action {
 		Vector3 connection = renderFall(Color.ORANGE, input.car.position, input.car.velocity, timeDifference);
 		if(connection != null){
 			wildfire.renderer.drawCrosshair(input.car, connection, Color.YELLOW, 150);
+			
 			Vector2 angles = Handling.getAngles(Utils.toLocal(input.car, target));
 			double pitch = pitchPID.getOutput(input.elapsedSeconds, 0, angles.y);
 			double yaw = yawPID.getOutput(input.elapsedSeconds, 0, angles.x);
 			double roll = 0;
+			
+//			Vector2 angles = Handling.getAnglesRoof(Utils.toLocal(input.car, target.plus(input.ball.position).scaled(0.5)).scaled(-1));
+//			double pitch = pitchPID.getOutput(input.elapsedSeconds, 0, angles.y);
+//			double yaw = 0;
+//			double roll = rollPID.getOutput(input.elapsedSeconds, 0, angles.x);
+			
 			return controls.withPitch(pitch).withYaw(yaw).withRoll(roll).withJump(true);
 		}
 		
@@ -120,9 +127,9 @@ public class AerialAction extends Action {
 //		double roll = -Math.signum(input.car.orientation.eularRoll);
 		
 		if(!controls.holdJump()){
-			controls.withPitch((float)pitch);
-			controls.withYaw((float)yaw);
-			controls.withRoll((float)roll);
+			controls.withPitch(pitch);
+			controls.withYaw(yaw);
+			controls.withRoll(roll);
 		}else{
 			controls.withPitch(0);
 			controls.withYaw(0);
@@ -130,8 +137,8 @@ public class AerialAction extends Action {
 		}
 		
 		//Boost
-		int boostThreshold = (input.car.position.z < 500 ? 20 : 280);
-		controls.withBoost(Math.cos(angles.x) >= angleBoostThreshold  && Math.cos(angles.y) >= angleBoostThreshold && accelerationReqForwards > boostThreshold);
+		double boostThreshold = (input.car.position.z < 500 ? 20 : 70);
+		controls.withBoost(Math.sin(angles.x) + Math.sin(angles.y) < angleBoostThreshold && accelerationReqForwards > boostThreshold);
 		
 		return controls;
 	}
@@ -153,12 +160,12 @@ public class AerialAction extends Action {
 		}
 		
 		//Compensate for turning by reducing the time we have left
-//		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalized();
-//		double angleDifference = car.orientation.noseVector.minus(generalDirection).withZ(0).magnitude();
-//		double angleTime = Math.min(1, angleDifference * 1.4);
-//		System.out.println("Angular time: " + Utils.round(angleTime) + "s");
-//		t -= angleTime;
-		t -= 0.3;
+		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalized();
+		double angleDifference = (2 - car.orientation.noseVector.dotProduct(generalDirection)) / 2;
+		double angleTime = (angleDifference * 1.05);
+		System.out.println("Angular time: " + Utils.round(angleTime) + "s [" + Utils.round(car.orientation.noseVector.dotProduct(generalDirection)) + "]");
+		t -= angleTime;
+//		t -= 0.4;
 		
 		Vector3 a = new Vector3(acceleration(s.x, u.x, t), acceleration(s.y, u.y, t), accelerationGravity(s.z, u.z, t));
 		averageAcceleration = a.magnitude();
@@ -185,7 +192,7 @@ public class AerialAction extends Action {
 	private final double renderScale = (1D / 50);
 	private Vector3 renderFall(Color colour, Vector3 start, Vector3 velocity, double t){
 		if(start.z < 0) return null;
-		if(start.distance(target) < 30 && Math.abs(t - time) < renderScale) return start;
+		if(start.distance(target) < 40 && Math.abs(t - time) < renderScale * 2) return start;
 		
 		velocity = velocity.plus(new Vector3(0, 0, -Constants.GRAVITY * renderScale)); //Gravity
 		velocity = velocity.capMagnitude(2300);

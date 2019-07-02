@@ -22,6 +22,7 @@ public class ControlsOutput implements ControllerState {
     private boolean jumpDepressed;
     private boolean boostDepressed;
     private boolean slideDepressed;
+    private boolean useItemDepressed;
 
     public ControlsOutput(){
     }
@@ -65,6 +66,11 @@ public class ControlsOutput implements ControllerState {
         this.slideDepressed = slideDepressed;
         return this;
     }
+    
+    public ControlsOutput withUseItem(boolean useItemDepressed){
+        this.useItemDepressed = useItemDepressed;
+        return this;
+    }
 
     public ControlsOutput withJump(){
         this.jumpDepressed = true;
@@ -78,6 +84,11 @@ public class ControlsOutput implements ControllerState {
 
     public ControlsOutput withSlide(){
         this.slideDepressed = true;
+        return this;
+    }
+    
+    public ControlsOutput withUseItem(){
+        this.useItemDepressed = true;
         return this;
     }
 
@@ -129,8 +140,13 @@ public class ControlsOutput implements ControllerState {
         return slideDepressed;
     }
     
+    @Override
+    public boolean holdUseItem(){
+        return useItemDepressed;
+    }
+    
     public ControlsOutput withNone(){
-    	this.withBoost(false).withSlide(false).withJump(false).withSteer(0).withPitch(0).withRoll(0).withYaw(0).withThrottle(0);
+    	this.withBoost(false).withSlide(false).withJump(false).withSteer(0).withPitch(0).withRoll(0).withYaw(0).withThrottle(0).withUseItem(false);
     	return this;
     }
     

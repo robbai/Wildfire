@@ -157,7 +157,7 @@ public class ReturnState extends State {
 	}
 
 	private CarData getAttacker(DataPacket input){
-		double shortestDistance = 4500;
+		double shortestDistance = 4000;
 		CarData attacker = null;
 		for(CarData c : input.cars){
 			if(c == null || c.team == input.car.team) continue;

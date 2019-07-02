@@ -23,12 +23,12 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.165, scope = 0.39;
+	private static final double dropoff = 0.172, scope = 0.405;
 	
 	/*
 	 * Yeah this one too, I guess
 	 */
-	private final int targetPly = 6;
+	private final int targetPly = 7;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);
@@ -63,12 +63,13 @@ public class FallbackState extends State {
 		Vector2 trace = Utils.traceToY(input.car.position.flatten(), impactPoint.minus(input.car.position).flatten(), Utils.teamSign(input.car) * -Constants.PITCHLENGTH);
 		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 900);
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.75, 80, 900), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.85, 85, 800), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(input.car, impactPoint, Color.PINK, 125);
 		}
 
 		//Target
 		Vector2 target = getPosition(input.car.position.flatten(), goal, 0, impactPoint);
+		target = Behaviour.goalStuck(input.car, target);
 		wildfire.renderer.drawCircle(Color.ORANGE, target, Constants.BALLRADIUS * 0.2F);
 
 		//Handling
@@ -81,9 +82,9 @@ public class FallbackState extends State {
 			double velocityTowardsImpact = input.car.magnitudeInDirection(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
 			double velocity = input.car.velocity.magnitude();
 			double forwardsComponent = Math.cos(input.car.orientation.noseVector.flatten().correctionAngle(input.car.velocity.flatten()));
-			double aimImpact = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+			double steerImpact = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 			if(distance < (wall ? 380 : (input.car.isSupersonic ? 800 : 500)) && velocityTowardsImpact > 1200 && forwardsComponent > 0.95){
-				double dodgeAngle = aimImpact;
+				double dodgeAngle = steerImpact;
 				double goalAngle = Vector2.angle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), goal.minus(input.car.position.flatten()));
 				
 				//Check if we can go for a shot
@@ -92,7 +93,7 @@ public class FallbackState extends State {
 				
 				if((Math.abs(dodgeAngle) < 0.3 && !shotOpportunity) || goalAngle < 0.5 || Utils.teamSign(input.car) * input.ball.velocity.y < -500 ||  Utils.teamSign(input.car) * input.car.position.y < -3000){
 					//If the dodge angle is small, make it big - trust me, it works
-					if(Math.abs(dodgeAngle) < 1.39626){ //80 degrees
+					if(Math.abs(dodgeAngle) < Math.toDegrees(80)){
 						dodgeAngle = Utils.clamp(dodgeAngle * 3.25D, -Math.PI, Math.PI);
 					}
 					currentAction = new DodgeAction(this, dodgeAngle, input);
@@ -101,12 +102,13 @@ public class FallbackState extends State {
 				currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			}else if(wall && Math.abs(input.car.position.x) < Constants.GOALHALFWIDTH - 50){
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-			}else if(wildfire.impactPoint.getTime() > (avoidOwnGoal ? 1.4 : 1.7) && !input.car.isSupersonic 
-					&& velocity > (input.car.boost == 0 ? 1200 : 1500) && Math.abs(aimImpact) < 0.2){
+			}else if(wildfire.impactPoint.getTime() > (avoidOwnGoal ? 1.45 : 2.05) && !input.car.isSupersonic 
+					&& velocity > (input.car.boost == 0 ? 1200 : 1500) && Math.abs(steerImpact) < 0.2){
 				//Front flip for speed
-				if(input.car.boost < 10 || Math.abs(aimImpact) > 0.05 || velocity > 1300){
+				if(input.car.boost < 10 || Math.abs(steerImpact) > 0.1 || wildfire.impactPoint.getTime() < 2.5){
 					currentAction = new DodgeAction(this, 0, input);
 				}else{
+					// Throw out a little wavedash
 					currentAction = new WavedashAction(this, input);
 				}
 			}

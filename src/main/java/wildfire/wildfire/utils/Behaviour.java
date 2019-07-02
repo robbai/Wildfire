@@ -94,25 +94,30 @@ public class Behaviour {
 	 * Returns a 2D vector of a point inside of the enemy's goal,
 	 * it should be a good place to shoot relative to this car
 	 */
-	public static Vector2 getTarget(CarData car, BallData ball){
-		final double goalSafeZone = 750D;
+	public static Vector2 getTarget(CarData car, Vector2 ballPosition){
+		final double goalSafeZone = 700D;
+		
 		Vector2 target = null;
-		Vector2 ballDifference = ball.position.minus(car.position).flatten();
+		Vector2 ballDifference = ballPosition.minus(car.position.flatten());
 		ballDifference = ballDifference.scaled(1D / Math.abs(ballDifference.y)); //Make the Y-value 1
 		if(car.team == 0 && ballDifference.y > 0){
-			double distanceFromGoal = Constants.PITCHLENGTH - ball.position.y;
+			double distanceFromGoal = Constants.PITCHLENGTH - ballPosition.y;
 			ballDifference = ballDifference.scaled(distanceFromGoal);
-			target = ball.position.flatten().plus(ballDifference);
+			target = ballPosition.plus(ballDifference);
 		}else if(car.team == 1 && ballDifference.y < 0){
-			double distanceFromGoal = Constants.PITCHLENGTH + ball.position.y;
+			double distanceFromGoal = Constants.PITCHLENGTH + ballPosition.y;
 			ballDifference = ballDifference.scaled(distanceFromGoal);
-			target = ball.position.flatten().plus(ballDifference);
+			target = ballPosition.plus(ballDifference);
 		}
 		if(target != null){
 			target = new Vector2(Math.max(-goalSafeZone, Math.min(goalSafeZone, target.x)), target.y);
 			return target;
 		}
 		return Constants.enemyGoal(car.team);
+	}
+	
+	public static Vector2 getTarget(CarData car, BallData ball){
+		return getTarget(car, ball.position.flatten());
 	}
 
 	/*
@@ -241,6 +246,14 @@ public class Behaviour {
 		}
 		
 		return null;
+	}
+
+	public static Vector2 goalStuck(CarData car, Vector2 target){
+		Vector2 carPosition = car.position.flatten();
+		if(Math.max(Math.abs(carPosition.y), Math.abs(target.y)) > Constants.PITCHLENGTH){
+			return new Vector2(Utils.clamp(target.x, -600, 600), target.y);
+		}
+		return target;
 	}
 
 }

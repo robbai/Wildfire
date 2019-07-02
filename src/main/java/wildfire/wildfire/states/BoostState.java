@@ -12,6 +12,7 @@ import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
+import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.obj.BezierCurve;
 import wildfire.wildfire.obj.State;
@@ -37,7 +38,7 @@ public class BoostState extends State {
 		
 		//World's longest line
 		boolean teammateAtBall = Behaviour.isTeammateCloser(input);
-		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2400 && !steal) || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2400 : 4000) || Math.abs(wildfire.impactPoint.getPosition().x) < 1400 || ((Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && !steal) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 5000) || Math.abs(input.car.position.y) > Constants.PITCHLENGTH){
+		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2400 && !steal) || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4000) || Math.abs(wildfire.impactPoint.getPosition().x) < 1400 || ((Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && !steal) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 3000)){
 			return false;
 		}
 		boost = getBoost(input);
@@ -49,6 +50,7 @@ public class BoostState extends State {
 		if(Behaviour.isKickoff(input) || boost == null || !boost.isActive() || input.car.boost > maxBoostMega) return true;
 		if(boost.getLocation().distanceFlat(input.car.position) < 1800) return false;
 		return input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < 3600 || Math.abs(wildfire.impactPoint.getPosition().x) < 1200;
+//		return false;
 	}
 
 	@Override
@@ -73,8 +75,10 @@ public class BoostState extends State {
 		if(distance > 2000 && input.car.velocity.magnitude() < 1000) wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		
 		double forwardVelocity = input.car.forwardMagnitude();
-		if(!hasAction() && input.car.hasWheelContact && distance > 2200 && !input.car.isSupersonic){			
-			if(Math.abs(steer) < 0.15 && forwardVelocity > 1000){
+		if(!hasAction() && input.car.hasWheelContact && distance > 1500 && !input.car.isSupersonic){	
+			if(Behaviour.isOnWall(input.car)){
+				currentAction = new HopAction(this, input, boostLocation);
+			}else if(Math.abs(steer) < 0.12 && forwardVelocity > 1100){
 				currentAction = new DodgeAction(this, steer, input);
 			}else if(Math.abs(steer) > 0.95 * Math.PI && forwardVelocity < -850){
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
@@ -84,8 +88,11 @@ public class BoostState extends State {
 		
 		//Render
 		double circleRadius = 100;
-		BezierCurve bezier = new BezierCurve(input.car.position.flatten(), 
-				input.car.position.flatten().plus(boostLocation).scaled(0.5).plus(input.car.velocity.flatten()), 
+		Vector2 carPosition = input.car.position.flatten();
+		BezierCurve bezier = new BezierCurve(carPosition, 
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(input.car.velocity.flatten()), 
+				carPosition.plus(boostLocation).scaled(0.5),
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(input.car.velocity.flatten().scaled(-0.5)),
 				boostLocation.plus(input.car.position.flatten().minus(boostLocation).scaledToMagnitude(circleRadius)));
 		bezier.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.blue, boostLocation, circleRadius);
@@ -93,17 +100,17 @@ public class BoostState extends State {
 		//Stuck in goal
 		boolean stuckInGoal = Math.abs(input.car.position.y) > Constants.PITCHLENGTH;
 		if(stuckInGoal){
-			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -600, 600), Utils.clamp(boostLocation.y, -Constants.PITCHLENGTH + 200, Constants.PITCHLENGTH - 200));
+			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -700, 700), Utils.clamp(boostLocation.y, -Constants.PITCHLENGTH + 500, Constants.PITCHLENGTH - 500));
 		}
 		
 		boolean reverse = (forwardVelocity < -200 && !stuckInGoal);
 		
-		float throttle = (Handling.insideTurningRadius(input.car, boostLocation) ? 0 : (reverse ? -1 : 1));
+		double throttle = (Handling.insideTurningRadius(input.car, boostLocation) ? 0 : (reverse ? -1 : 1));
 		
 		if(reverse){
-			return new ControlsOutput().withSteer((float)Utils.invertAim(steer) * 3).withThrottle(throttle).withBoost(false);
+			return new ControlsOutput().withSteer(Utils.invertAim(steer) * 3).withThrottle(throttle).withBoost(false);
 		}else{
-			return new ControlsOutput().withSteer((float)steer * -3).withThrottle(throttle)
+			return new ControlsOutput().withSteer(steer * -3).withThrottle(throttle)
 					.withBoost(Math.abs(steer) < 0.1 && (distance > 1200 || forwardVelocity < 800))
 					.withSlide(Math.abs(steer) > 1.2 && distance < 1200 && !input.car.isDrifting());
 		}

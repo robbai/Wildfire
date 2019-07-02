@@ -9,7 +9,7 @@ import wildfire.vector.Vector3;
 public class Handling {
 
 	private static Vector2 forwardVector = new Vector2(0, 1);
-	private static Vector3 forwardVector3 = new Vector3(0, 1, 0);
+//	private static Vector3 forwardVector3 = new Vector3(0, 1, 0);
 
 	public static double aim(CarData car, Vector2 point){
 		Vector2 carPosition = car.position.flatten();
@@ -28,18 +28,18 @@ public class Handling {
 		return new ControlsOutput().withThrottle(1).withBoost(false)
 				.withSteer((float)(-3F * aimLocally(input.car, 
 						input.car.position.plus(input.car.orientation.roofVector.scaledToMagnitude(50)).flatten())))
-				.withSlide(!input.car.isDrifting() && input.car.orientation.noseVector.z > -0.25 && input.car.velocity.magnitude() > 700);
+				.withSlide(!input.car.isDrifting() && input.car.orientation.noseVector.z > -0.3 && input.car.velocity.magnitude() > 500);
 	}
 
 	/**
 	 * ATBA controller (no wiggle)
 	 */
 	public static ControlsOutput driveBall(DataPacket input){
-		return new ControlsOutput().withSteer((float)-aim(input.car, input.ball.position.flatten()) * 2.5F).withBoost(false).withThrottle(1);
+		return new ControlsOutput().withSteer(aim(input.car, input.ball.position.flatten()) * -3).withBoost(false).withSlide(false).withThrottle(1);
 	}
 
 	public static ControlsOutput atba(DataPacket input, Vector3 target){
-		return new ControlsOutput().withSteer((float)-Math.signum(aim(input.car, target.flatten()))).withBoost(false).withSlide(false).withThrottle(1);
+		return new ControlsOutput().withSteer(-Math.signum(aim(input.car, target.flatten()))).withBoost(false).withSlide(false).withThrottle(1);
 	}
 	
 	public static boolean insideTurningRadius(CarData car, Vector2 point){
@@ -70,7 +70,7 @@ public class Handling {
 	}
 	
 	public static double aimLocally(CarData car, Vector3 point){
-		return forwardVector .correctionAngle(Utils.toLocal(car, point).flatten());
+		return forwardVector.correctionAngle(Utils.toLocal(car, point).flatten());
 	}
 	
 	public static double aimLocally(CarData car, Vector2 point){

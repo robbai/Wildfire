@@ -36,9 +36,9 @@ public class MixerState extends State {
 		Vector2 teamSignVec = new Vector2(0, teamSign);
 		
 		// The ball must be on the wing.
-		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 750) return false;
-		if(teamSign * impactLocation.y < -2500) return false;
-		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 1200) return false;
+		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 550) return false;
+		if(teamSign * impactLocation.y < -1000) return false;
+		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 1100) return false;
 		
 		// We must be solidly behind the ball.
 		if(wildfire.impactPoint.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
@@ -73,7 +73,7 @@ public class MixerState extends State {
 			currentAction = null;
 		}
 		
-		double offsetMagnitude = 100;
+		double offsetMagnitude = 110;
 		Vector2 offset = impactLocation.flatten().minus(corner).scaledToMagnitude(offsetMagnitude);
 		Vector3 destination = impactLocation.plus(offset.withZ(0));
 		

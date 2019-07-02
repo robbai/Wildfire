@@ -14,6 +14,7 @@ import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
+import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
@@ -45,6 +46,12 @@ public class WallHitState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
+		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+			currentAction = new RecoveryAction(this, input.elapsedSeconds);
+			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+			currentAction = null;
+		}
+		
 		boolean wall = input.car.hasWheelContact && input.car.position.z > 180;
 		
 		if(wall){
@@ -66,7 +73,7 @@ public class WallHitState extends State {
 				double aim = forward.correctionAngle(localTarget.flatten());
 				
 				//Dodge
-				if((localTarget.z > 100 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 750 ? 460 : 260)){
+				if((localTarget.z > 90 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 950 ? 460 : 320)){
 					currentAction = new DodgeAction(this, aim, input);
 					if(!currentAction.failed){
 						if(input.car.position.z > 1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
@@ -85,7 +92,7 @@ public class WallHitState extends State {
 			}
 			
 			boolean sideWall = (Constants.PITCHWIDTH - Math.abs(wildfire.impactPoint.getPosition().x) < maxWallDistance + 50);
-			boolean backWall = (Constants.PITCHLENGTH - Math.abs(wildfire.impactPoint.getPosition().y) < maxWallDistance + 50);
+			boolean backWall = (Constants.PITCHLENGTH - Math.abs(wildfire.impactPoint.getPosition().y) < maxWallDistance + 50) || !sideWall;
 			wildfire.renderer.drawString2d((sideWall ? "Side" : (backWall ? "Back" : "Unknown")) + " Wall", Color.WHITE, new Point(0, 40), 2, 2);
 			
 			Vector2 destination = wildfire.impactPoint.getPosition().minus(input.car.position).scaled(100).plus(input.car.position).flatten();

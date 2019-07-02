@@ -41,15 +41,16 @@ public class ShadowState extends State {
 		if(Math.abs(velocityImpactCorrection) < 0.1 && correctSide && input.car.forwardMagnitude() > 1200 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -3200) return false;
 		
 		//Ball must not be close to our net
-		if(input.ball.position.flatten().distance(homeGoal) < 3200) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
+		if(input.ball.position.flatten().distance(homeGoal) < 3500) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < -2900) return false;
 		
 		//The ball must not be centralised
 		if(Math.abs(input.ball.position.x) < (Behaviour.isOpponentBehindBall(input) ? 1600 : 1400)) return false;
 		
 		//We're on the wrong side of the ball
-		if(Math.signum(input.car.position.y - input.ball.position.y) == Utils.teamSign(input.car) && input.ball.velocity.y * Utils.teamSign(input.car) < 800){
-			return Utils.teamSign(input.car) * input.car.velocity.y > -1500 || Behaviour.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition());
+		if(!correctSide && input.ball.velocity.y * Utils.teamSign(input.car) < 1100){
+			double opponentDist = Behaviour.closestOpponentDistance(input, input.ball.position);
+			return opponentDist > Math.max(1500, wildfire.impactPoint.getTime() * 1200) || Behaviour.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition());
 		}
 		
 		//There is no defender
@@ -77,7 +78,7 @@ public class ShadowState extends State {
 		if(Math.abs(input.ball.position.x) < (Behaviour.hasTeammate(input) ? 1400 : 1200) && distance < 7000) return true;
 		
 		//Ball is close to our net
-		if(input.ball.position.flatten().distance(homeGoal) < 4500 || Utils.teamSign(input.car) * input.ball.position.y < -4500) return true;
+		if(input.ball.position.flatten().distance(homeGoal) < 3300 || Utils.teamSign(input.car) * input.ball.position.y < -4500) return true;
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < -2400) return true;		
 		
 		//Beating the opponent

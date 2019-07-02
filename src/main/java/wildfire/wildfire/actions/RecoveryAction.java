@@ -28,14 +28,18 @@ public class RecoveryAction extends Action {
 	private final int fallDepth = (int)(2.6 / fallStep), // It only takes around 2.5 seconds to fall from the ceiling, so this is a safe bet
 			fallStepIndex = 10; 
 
+	private boolean bangBang;
+	
 	private boolean boostDown;
 
 	public RecoveryAction(State state, float elapsedSeconds){
 		super("Recovery", state, elapsedSeconds);
 		
-		this.pitchPID = new PID(3.4, 0, 0.9);
-		this.yawPID = new PID(2.8, 0, 1.4);
-		this.rollPID = new PID(2.8, 0, 0.7);
+		this.pitchPID = new PID(3.4, 0, 0.7);
+		this.yawPID = new PID(2.8, 0, 1.2);
+		this.rollPID = new PID(2.8, 0, 0.5);
+		
+		this.bangBang = false;
 		
 		this.boostDown = false;
 	}
@@ -53,11 +57,10 @@ public class RecoveryAction extends Action {
 		Triangle triangle = (intersect == null ? null : intersect.getOne());
 		Vector3 triangleCentre = (triangle == null ? null : triangle.getCentre());
 //		Vector3 intersectLocation = (intersect == null ? null : intersect.getTwo().getPosition());
-		double intersectTime = (intersect == null ? 0 : intersect.getTwo().getTime());
+		double intersectTime = (intersect == null ? 10 : intersect.getTwo().getFrame() * fallStep);
 		
 		// whatisaphone's Secret Recipe.
-		boostDown = (input.car.boost > 5 && (triangle == null || intersectTime > 1.1)
-				&& (triangle == null || triangleCentre.z < Constants.CEILING - 500));
+		boostDown = (input.car.boost > 5 && (triangle == null || (intersectTime > 0.7 && triangleCentre.z < Constants.CEILING - 500)));
 		
 		// Roll and pitch.
 		boolean correctEnough = true;
@@ -108,6 +111,13 @@ public class RecoveryAction extends Action {
 						.withYaw(0).withRoll(0);
 			}
 			yaw = 0;
+		}
+		
+		// Bang-bang controls
+		if(this.bangBang){
+			pitch = Math.signum(pitch);
+			yaw = Math.signum(yaw);
+			roll = Math.signum(roll);
 		}
 		
 		return new ControlsOutput().withRoll(roll).withPitch(pitch).withYaw(yaw)
@@ -161,6 +171,11 @@ public class RecoveryAction extends Action {
 		
 		wildfire.renderer.drawTriangle(Color.GREEN, intersect.getOne());
 		return intersect;
+	}
+
+	public Action bangBang(boolean bangBang){
+		this.bangBang = bangBang;
+		return this;
 	}
 
 //	private double distanceToArena(Vector3 carPosition){

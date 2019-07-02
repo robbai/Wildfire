@@ -63,11 +63,11 @@ public class PatienceState extends State {
 		// Don't look like a fool and wait for a straight shot instead of a quick curved shot.
 		if(this.point != null){
 			Vector2 pointDisplace = this.point.getPosition().minus(input.car.position).flatten();
-			if(pointDisplace.magnitude() > 1000 || input.car.velocity.magnitude() > 900){
+			if(pointDisplace.magnitude() > 1500 || input.car.velocity.magnitude() > 1200){
 				Vector2 impactDisplace = wildfire.impactPoint.getPosition().minus(input.car.position).flatten();
 				double angle = pointDisplace.angle(impactDisplace);
-				System.out.println((int)Math.toDegrees(angle) + " degrees");
-				if(angle < 0.1) return false;
+//				System.out.println((int)Math.toDegrees(angle) + " degrees");
+				if(angle < 0.11) return false;
 			}
 		}
 		

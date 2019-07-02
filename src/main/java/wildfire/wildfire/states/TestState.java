@@ -38,6 +38,7 @@ public class TestState extends State {
 		
 		double steer = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		double throttle = Math.signum(Math.cos(steer));
+		if(Math.abs(input.car.position.y) < 3000) throttle *= 0.5; 
 		return new ControlsOutput().withSteer((float)(throttle < 0 ? Utils.invertAim(steer) : -steer) * 3F).withThrottle((float)throttle).withBoost(throttle > 0.9 && !Behaviour.isBallAirborne(input.ball));
 	}
 

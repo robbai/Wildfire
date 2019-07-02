@@ -18,9 +18,9 @@ public class Path {
 	/*
 	 * Constants
 	 */
-	public final static double scale = 0.02, distanceThreshold = 70;
-	public final static Vector2 confineBorder = new Vector2(120, 240);
-	public final static int maxPathLength = 200, polyRender = 1;
+	public final static double scale = 0.01, distanceThreshold = 60, lineupUnits = (Constants.BALLRADIUS + 30);
+//	public final static Vector2 confineBorder = new Vector2(120, 240);
+	public final static int maxPathLength = 350, polyRender = 9;
 		
 	private Vector2 ball;
 	private CarData car;
@@ -48,7 +48,7 @@ public class Path {
 	public static Path fromBallPrediction(Wildfire wildfire, CarData car, Vector2 destination, double desiredVelocity, boolean force){
 		BallPrediction ballPrediction = wildfire.ballPrediction;
 		
-		double initialVelocity = car.velocity.flatten().magnitude();
+//		double initialVelocity = car.velocity.flatten().magnitude();
 		
 		for(int i = wildfire.impactPoint.getFrame(); i < ballPrediction.slicesLength(); i++){
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
@@ -60,12 +60,10 @@ public class Path {
 //				if(p.isBadPath()) continue;
 			}
 			
-			double displacement = (p.getDistance() - Constants.BALLRADIUS);
-			double time = (double)i / 60D;
-			double acceleration = 2 * (displacement - initialVelocity * time) / Math.pow(time, 2);
+			double distance = (p.getDistance() - lineupUnits);
+			double time = (ballPrediction.slices(i).gameSeconds() - car.elapsedSeconds);
 			
-			if(initialVelocity + acceleration * time < Math.max(initialVelocity, Physics.boostMaxSpeed(initialVelocity, car.boost))
-					|| (force && i == ballPrediction.slicesLength() - 1)){
+			if(Math.abs(desiredVelocity - distance / time) < 60){
 				return p.setTime(time);
 			}
 		}
@@ -87,27 +85,32 @@ public class Path {
 		Vector2 step = ball.minus(destination).scaledToMagnitude(stepDistance);
 		
 		// Offset, this is so we line up the goal before we reach the ball.
-		double lineupUnits = (Constants.BALLRADIUS + 100);
-		for(int i = 0; i < (lineupUnits / stepDistance); i++){
+		for(int i = 0; i < Math.ceil(lineupUnits / stepDistance); i++){
 			start = start.plus(start.minus(destination).scaledToMagnitude(stepDistance));
 			points.add(start);
-		}
-		
-		for(int i = 0; i < maxPathLength; i++){
-			double direction = Utils.clampSign(Handling.aimFromPoint(start, step, finish) * 3); // Direction sign.d
-			double angle = (2 * stepDistance) / (2 * turningRadius);
-			step = step.rotate(angle * direction);
-			
-			Vector2 end = start.plus(step);
-			points.add(end);
-			
-			// Path has finished, successfully!
-			if(end.distance(finish) < distanceThreshold){
+			if(start.distance(finish) < distanceThreshold){
 				this.bad = false;
 				break;			
 			}
-			
-			start = end;
+		}
+		
+		if(this.bad){
+			for(int i = 0; i < maxPathLength; i++){
+				double dirAngle = Handling.aimFromPoint(start, step, finish);
+				double maxAngle = (2 * stepDistance) / (2 * turningRadius);
+				step = step.rotate(Utils.clamp(dirAngle, -maxAngle, maxAngle));
+				
+				Vector2 end = start.plus(step);
+				points.add(end);
+				
+				// Path has finished, successfully!
+				if(end.distance(finish) < distanceThreshold){
+					this.bad = false;
+					break;			
+				}
+				
+				start = end;
+			}
 		}
 	}
 	
@@ -128,7 +131,7 @@ public class Path {
 	}
 	
 	public Vector2 getPly(double targetPly){
-		targetPly = Math.max(0, Math.min(this.points.size() - 1, points.size() - targetPly));
+		targetPly = Math.max(0, Math.min(this.points.size() - 1, points.size() - 1 - targetPly));
 		
 		//Whole number
 		if(targetPly == Math.ceil(targetPly)){

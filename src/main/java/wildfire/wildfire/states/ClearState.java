@@ -78,7 +78,7 @@ public class ClearState extends State {
 //			boolean chip = (Math.abs(angleImpact) < 0.1 && forwardVelocity > 1600 && !input.car.isDrifting() &&
 //					wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y * Utils.teamSign(input.car) > 0.9);
 			
-			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 280 : 320))){
+			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 250 : 290))){
 //				if(!chip) currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
 				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 1.75 : 1), input);
 			}else if(impactDistance > (onTarget ? 3500 : 2200) && forwardVelocity < -900){
@@ -109,7 +109,7 @@ public class ClearState extends State {
 			if(ballTime < 1.5 && intersect != null){
 				//Check if our X-coordinate is close-by when we should intersect with the ball's path
 				double xDifference = Math.abs(input.car.position.x - intersect.x);
-				boolean closeby = (xDifference < 140);
+				boolean closeby = (xDifference < 120);
 				wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten().toFramework(), intersect.toFramework());
 				wildfire.renderer.drawString2d("Stop" + (closeby ? " (" + (int)xDifference + ")" : ""), Color.WHITE, new Point(0, 20), 2, 2);
 				if(closeby){
@@ -127,6 +127,7 @@ public class ClearState extends State {
 			Vector2 goal = Behaviour.getTarget(input.car, input.ball);
 			offset = wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);
 		}else{
+			if(Math.abs(wildfire.impactPoint.getPosition().y) > 4600) offsetMagnitude += 15; // Back-wall bonus.
 			offset = new Vector2(offsetMagnitude * 
 					-Math.signum(Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).x), 
 					0);

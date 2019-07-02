@@ -163,9 +163,7 @@ public class KickoffState extends State {
 			}
 			
 			boolean reverse = (Math.abs(input.car.position.y) < Math.abs(destination.y));
-//			double steerRadians = Handling.aim(input.car, destination);
-//			if(reverse) steerRadians = -Utils.invertAim(steerRadians);
-			double steer = fakeAlignPID.getOutput(input.elapsedSeconds, input.car.position.x, 0) * (reverse ? -1 : 1);
+			double steer = fakeAlignPID.getOutput(input.elapsedSeconds, input.car.position.x * -Utils.teamSign(input.car), 0) * (reverse ? -1 : 1);
 			double throttle = (grabBoost ? 1 : destination.distance(input.car.position.flatten()) / 1000);
 			
 			return new ControlsOutput().withSteer(steer).withThrottle((reverse ? -1 : 1) * throttle).withBoost(false).withSlide(Math.abs(steer) > pidSlide);
