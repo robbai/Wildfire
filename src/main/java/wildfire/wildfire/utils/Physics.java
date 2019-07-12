@@ -107,5 +107,20 @@ public class Physics {
 
 		return 0;
 	}
+	
+	public static double maxVelocity(double velocityForward, double boost, double maxTime){
+		final double step = (1D / 60);
+		
+		double velocity = velocityForward, time = 0;
+		while(time < maxTime){
+			velocity += determineAcceleration(velocity, 1, boost >= 1);
+			velocity = Utils.clamp(velocity, -Constants.MAXCARSPEED, Constants.MAXCARSPEED);
+			boost -= (100D / 3) * step;
+			time += step;
+		}
+		
+//		return (velocity - velocityForward) / time;
+		return velocity;
+	}
 
 }

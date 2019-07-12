@@ -118,7 +118,7 @@ public class ReturnState extends State {
 						currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 						if(!currentAction.failed) return currentAction.getOutput(input);
 					}
-					return Handling.stayStill(input); 
+					return Handling.stayStill(input.car); 
 				}else{
 					wildfire.renderer.drawLine3d(Color.RED, input.car.position.flatten().toFramework(), target.toFramework());
 					
@@ -147,7 +147,7 @@ public class ReturnState extends State {
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 				if(!currentAction.failed) return currentAction.getOutput(input);
 			}
-			return Handling.stayStill(input);
+			return Handling.stayStill(input.car);
 		}
 		return Handling.drivePoint(input, homeGoal, false);
 	}
