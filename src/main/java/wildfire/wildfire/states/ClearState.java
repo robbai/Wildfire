@@ -83,6 +83,10 @@ public class ClearState extends State {
 				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 1.75 : 1), input);
 			}else if(impactDistance > (onTarget ? 3500 : 2200) && forwardVelocity < -900){
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+			}else if(wildfire.impactPoint.getTime() > 1.8 && !input.car.isSupersonic 
+					&& input.car.forwardMagnitude() > (input.car.boost == 0 ? 1200 : 1500) && Math.abs(angleImpact) < 0.25){
+				//Front flip for speed
+				currentAction = new DodgeAction(this, 0, input);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
@@ -127,7 +131,7 @@ public class ClearState extends State {
 			Vector2 goal = Behaviour.getTarget(input.car, input.ball);
 			offset = wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);
 		}else{
-			if(Math.abs(wildfire.impactPoint.getPosition().y) > 4600) offsetMagnitude += 15; // Back-wall bonus.
+			if(Math.abs(wildfire.impactPoint.getPosition().y) > 4600) offsetMagnitude += 10; // Back-wall bonus.
 			offset = new Vector2(offsetMagnitude * 
 					-Math.signum(Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).x), 
 					0);

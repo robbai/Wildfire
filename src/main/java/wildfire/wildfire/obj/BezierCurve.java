@@ -15,7 +15,7 @@ public class BezierCurve {
 		this.points = points;
 	}
 	
-	public Vector2 atTime(double t){
+	public Vector2 T(double t){
 		ArrayList<Vector2> p = new ArrayList<Vector2>();
 		
 		//Fixed points
@@ -23,15 +23,13 @@ public class BezierCurve {
 		
 		//Loop to find the final point
 		while(true){
-			ArrayList<Vector2> newP = new ArrayList<Vector2>();
-			for(int i = 0; i < (p.size() - 1); i++){
-				newP.add(t(p.get(i), p.get(i + 1), t));
-			}
-			if(newP.size() > 1){
+			Vector2[] newP = new Vector2[p.size() - 1];
+			for(int i = 0; i < (p.size() - 1); i++) newP[i] = (t(p.get(i), p.get(i + 1), t));
+			if(newP.length > 1){
 				p.clear();
 				for(Vector2 point : newP) p.add(point);
 			}else{
-				return newP.get(0);
+				return newP[0];
 			}
 		}
 	}	
@@ -49,10 +47,16 @@ public class BezierCurve {
 		//Draw curve
 		Vector2 last = null;
 		for(double t = 0; t <= 1; t += 0.01){
-			Vector2 next = this.atTime(t);
+			Vector2 next = this.T(t);
 			if(last != null) r.drawLine3d(colour, last.toFramework(), next.toFramework());
 			last = next;
 		}
+	}
+
+	public Vector2[] discrete(int count){
+		Vector2[] d = new Vector2[count];
+		for(int i = 0; i < count; i++) d[i] = this.T((double)i / (count - 1));
+		return d;
 	}
 
 }

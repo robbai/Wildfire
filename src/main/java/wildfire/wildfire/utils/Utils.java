@@ -128,5 +128,9 @@ public class Utils {
 	public static Vector3 toLocal(CarData car, Vector3 vec){
 		return toLocalFromRelative(car, vec.minus(car.position));
 	}
+	
+	public static double lerp(double a, double b, double f) {
+		return a + f * (b - a);
+	}
 
 }

@@ -58,7 +58,7 @@ public class SmartDodgeAction extends Action {
 				if(trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS) continue;
 			}
 
-			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < 0.75){
+			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < 0.9){
 				this.target = new PredictionSlice(ballLocation, i);
 				break;
 			}
@@ -82,8 +82,8 @@ public class SmartDodgeAction extends Action {
 //			double time = ballPrediction.slices(i).gameSeconds() - car.elapsedSeconds;
 //			double jumpHeight = getJumpPosition(car, jumpVelocity, time).z - car.position.z;
 			
-			if(location.z < maxJumpHeight /*jumpHeight*/ + dodgeDistance * 0.6){
-				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.46));
+			if(location.z < maxJumpHeight /*jumpHeight*/ + dodgeDistance * 0.8){
+				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.43));
 				return new PredictionSlice(location, i);
 			}
 		}
@@ -127,16 +127,21 @@ public class SmartDodgeAction extends Action {
 			return controller.withJump(true);
 		}else if(timeDifference >= this.target.getTime() - tick){
 //			if(input.car.doubleJumped){
-			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 0.8){
+			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 1){
 				Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds).bangBang(input.car.position.z < 500));
 			}
 			
-			//Dodge
-			controller.withJump(true);
-			double angle = Handling.aim(input.car, this.target.getPosition().flatten());
-			controller.withPitch((float)-Math.cos(angle));
-	        controller.withRoll((float)-Math.sin(angle) * 1.5F);
-	        wildfire.resetDodgeTime(input.elapsedSeconds); //No spamming!
+			if(!input.car.doubleJumped){
+				//Dodge
+				controller.withJump(true);
+				double angle = Handling.aim(input.car, this.target.getPosition().flatten());
+				controller.withPitch(-Math.cos(angle));
+		        controller.withRoll(-Math.sin(angle) * 1.5F);
+		        wildfire.resetDodgeTime(input.elapsedSeconds); //No spamming!
+			}else{
+				controller.withPitch(0);
+		        controller.withRoll(0);
+			}
 		}else if(input.car.velocity.z > 50){
 			//Point the car
 			Vector3 direction = target.getPosition().minus(input.car.position).normalized();

@@ -23,7 +23,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.172, scope = 0.405;
+	private static final double dropoff = 0.16, scope = 0.403;
 	
 	/*
 	 * Yeah this one too, I guess
@@ -61,9 +61,10 @@ public class FallbackState extends State {
 
 		//Avoid own-goaling
 		Vector2 trace = Utils.traceToY(input.car.position.flatten(), impactPoint.minus(input.car.position).flatten(), Utils.teamSign(input.car) * -Constants.PITCHLENGTH);
-		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 900);
+//		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 900);
+		boolean avoidOwnGoal = !Behaviour.correctSideOfTarget(input.car, input.ball.position) && trace != null;
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.85, 85, 800), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.95, 85, 800), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(input.car, impactPoint, Color.PINK, 125);
 		}
 
@@ -105,7 +106,7 @@ public class FallbackState extends State {
 			}else if(wildfire.impactPoint.getTime() > (avoidOwnGoal ? 1.45 : 2.05) && !input.car.isSupersonic 
 					&& velocity > (input.car.boost == 0 ? 1200 : 1500) && Math.abs(steerImpact) < 0.2){
 				//Front flip for speed
-				if(input.car.boost < 10 || Math.abs(steerImpact) > 0.1 || wildfire.impactPoint.getTime() < 2.5){
+				if(input.car.boost < 10 || Math.abs(steerImpact) > 0.1 || wildfire.impactPoint.getTime() < 2.5 || Utils.distanceToWall(input.car.position) < 300){
 					currentAction = new DodgeAction(this, 0, input);
 				}else{
 					// Throw out a little wavedash

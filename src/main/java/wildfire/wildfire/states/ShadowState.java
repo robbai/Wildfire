@@ -38,14 +38,12 @@ public class ShadowState extends State {
 		
 		//Zooming at the ball
 		double velocityImpactCorrection = input.car.velocity.flatten().correctionAngle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
-		if(Math.abs(velocityImpactCorrection) < 0.1 && correctSide && input.car.forwardMagnitude() > 1200 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -3200) return false;
+		if(Math.abs(velocityImpactCorrection) < 0.1 && wildfire.impactPoint.getTime() < (correctSide ? 1.5 : 1.1)
+				&& input.car.forwardMagnitude() > 1200 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -3200) return false;
 		
 		//Ball must not be close to our net
 		if(input.ball.position.flatten().distance(homeGoal) < 3500) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < -2900) return false;
-		
-		//The ball must not be centralised
-		if(Math.abs(input.ball.position.x) < (Behaviour.isOpponentBehindBall(input) ? 1600 : 1400)) return false;
 		
 		//We're on the wrong side of the ball
 		if(!correctSide && input.ball.velocity.y * Utils.teamSign(input.car) < 1100){
@@ -53,13 +51,16 @@ public class ShadowState extends State {
 			return opponentDist > Math.max(1500, wildfire.impactPoint.getTime() * 1200) || Behaviour.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition());
 		}
 		
-		//There is no defender
-		if(!Behaviour.isOpponentBehindBall(input)) return false;
+		//The ball must not be centralised
+		if(Math.abs(input.ball.position.x) < (Behaviour.isOpponentBehindBall(input) ? 1600 : 1400)) return false;
 		
 		//Outside of the "useful hitting arc"
 		if(Math.abs(input.ball.position.y) < 3500 && new Vector3(0, -Utils.teamSign(input.car), 0).angle(input.car.position.minus(wildfire.impactPoint.getPosition())) > Math.PI * 0.55){
 			if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) > 2800) return true;
 		}
+		
+		//There is no defender
+		if(!Behaviour.isOpponentBehindBall(input)) return false;
 		
 		return Math.abs(Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten())) > Math.PI * 0.6 && Utils.teamSign(input.car.team) * input.ball.velocity.y > -800;
 	}
@@ -70,12 +71,13 @@ public class ShadowState extends State {
 		if(avoidStoppingForever(input)) return true;
 		
 		double distance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position);
+		boolean correctSide = Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition());
 				
 		//Aiming very close to the ball, and close-by		
-		if(Math.abs(Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.2 && distance < 3200) return true;
+		if(Math.abs(Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.2 && distance < 3600) return true;
 		
 		//Ball is centralised
-		if(Math.abs(input.ball.position.x) < (Behaviour.hasTeammate(input) ? 1400 : 1200) && distance < 7000) return true;
+		if(correctSide && Math.abs(input.ball.position.x) < (Behaviour.hasTeammate(input) ? 1400 : 1200) && distance < 7000) return true;
 		
 		//Ball is close to our net
 		if(input.ball.position.flatten().distance(homeGoal) < 3300 || Utils.teamSign(input.car) * input.ball.position.y < -4500) return true;
@@ -154,7 +156,7 @@ public class ShadowState extends State {
 		Vector2 target = homeGoal.plus(input.ball.position.flatten().minus(homeGoal).scaled(0.5D));
 		
 		BoostPad bestBoost = null;
-		if(input.car.boost <= 60){
+		if(input.car.boost <= 70 && input.ball.position.y * Utils.teamSign(input.car) > 1000){
 			double bestBoostDistance = 0;
 			for(BoostPad b : BoostManager.getSmallBoosts()){
 				if(!b.isActive() || Math.signum(b.getLocation().y - target.y) == Utils.teamSign(input.car)) continue;

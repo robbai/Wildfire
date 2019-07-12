@@ -146,5 +146,11 @@ public class Vector2 {
     	double component = Math.cos(direction.correctionAngle(this));
     	return this.magnitude() * component;
     }
+	
+	public Vector2 capMagnitude(double max){
+		if(max < 0) max = 0;
+		double mag = this.magnitude();
+		return (mag > max ? this.scaledToMagnitude(max) : new Vector2(this.x, this.y));
+	}
     
 }

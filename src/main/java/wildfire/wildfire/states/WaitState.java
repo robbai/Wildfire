@@ -29,7 +29,7 @@ public class WaitState extends State {
 	/*
 	 * How far we want to be from the ball's bounce
 	*/
-	private final double desiredDistanceGround = 41D;
+	private final double desiredDistanceGround = 44;
 	private final double offsetDecrement = 0.05;
 
 	private Vector2 bounce = null;
@@ -147,7 +147,7 @@ public class WaitState extends State {
 		Vector2 target = null;
 		double velocityNeeded = -1;
 		
-		for(double offset = (towardsOwnGoal ? 0.9 : (planSmartDodge ? (bounceDistance > 2000 ? 0.3 : 0.1) : 0.8)); offset > (towardsOwnGoal ? 0.15 : 0); offset -= offsetDecrement){
+		for(double offset = (towardsOwnGoal ? 0.9 : (planSmartDodge ? (bounceDistance > 2000 ? 1.5 : 0.1) : 0.8)); offset > (towardsOwnGoal ? 0.15 : 0); offset -= offsetDecrement){
 			target = getNextPoint(input.car.position.flatten(), destination, enemyGoal, offset);
 			
 			double distance = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, offset, Color.YELLOW, desiredDist);
@@ -179,7 +179,7 @@ public class WaitState extends State {
 			velocityNeeded = pathDistanceChosen / timeEffective;			
 //			wildfire.renderer.drawString2d("Velocity Needed: " + (int)velocityNeeded + "uu/s", Color.WHITE, new Point(0, 60), 2, 2);
 			
-			boolean dribble = (input.ball.position.z > 110 && input.ball.position.distance(input.car.position) < 260);
+			boolean dribble = (input.ball.position.z > 100 && input.ball.position.distance(input.car.position) < 290);
 			
 			// Dodge.
 			if(!hasAction() && !dribble && !towardsOwnGoal && input.car.velocity.magnitude() > 950){
@@ -200,16 +200,20 @@ public class WaitState extends State {
 					);
 		}
 		double acceleration = ((velocityNeeded - currentVelocity) / timeEffective);
-		if(Math.abs(steerRadians) > 0.5){
+		if(Math.abs(steerRadians) > 0.4){
 			// Turn.
-			controls.withThrottle(Math.signum(acceleration)).withSlide(!input.car.isDrifting() && Math.abs(steerRadians) > 1.1);
-		}else if(planSmartDodge && velocityNeeded < Physics.boostMaxSpeed(currentVelocity, input.car.boost) - 300 && pathDistanceChosen > 600){
-			// Stall.
-			controls.withThrottle(-Math.signum(input.car.forwardMagnitude()));
+			controls.withThrottle(Math.signum(acceleration)).withSlide(!input.car.isDrifting() && Math.abs(steerRadians) > 1);
+//		}else if(planSmartDodge && pathDistanceChosen > 500
+//				&& velocityNeeded < Physics.boostMaxSpeed(currentVelocity, input.car.boost) - Utils.lerp(350, 500, Utils.clamp(input.car.boost / 25, 0, 1))){
+//			// Stall.
+//			double forward = input.car.forwardMagnitude();
+//			controls.withThrottle(Math.abs(acceleration) > 1000 ? Math.signum(forward) / -3000 : 0);
 		}else if((acceleration > Constants.BOOSTACC || velocityNeeded > 1410) && pathDistanceChosen > 500){
-			controls.withThrottle(1).withBoost(Math.abs(steerRadians) < 0.3);
+			controls.withThrottle(1).withBoost(Math.abs(steerRadians) < 0.25);
+//		}else if(acceleration < 0){
+//			controls.withThrottle(acceleration > -1000 ? 0 : acceleration / 800);
 		}else{
-			controls.withThrottle(acceleration / 900);
+			controls.withThrottle(acceleration / 1000);
 		}
 		
 	    return controls;
@@ -245,9 +249,9 @@ public class WaitState extends State {
 	}
 	
 	private Vector2 getNextPoint(Vector2 start, Vector2 bounce, Vector2 enemyGoal, double length){
-		double offset = length * bounce.distance(start) / 3;
+		double offset = length * bounce.distance(start) / 2.25;
 		Vector2 target = bounce.plus(bounce.minus(enemyGoal).scaledToMagnitude(offset));
-		target = start.plus(target.minus(start).scaled(0.25)).confine();
+		target = start.plus(target.minus(start).scaled(0.2)).confine();
 		
 		return target;
 	}

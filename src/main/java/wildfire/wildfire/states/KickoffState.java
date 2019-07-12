@@ -28,7 +28,7 @@ public class KickoffState extends State {
 	/**
 	 * Used for enabling/disabling the chance of fake kickoffs
 	 */
-	private final boolean fakeKickoffs = true;
+	private final boolean fakeKickoffs = false;
 	private final double fakeChance = 0.2;
 	
 	private final double pidSlide = Double.MAX_VALUE;
@@ -40,6 +40,7 @@ public class KickoffState extends State {
 	private float timeStarted;
 	private boolean timedOut;
 	private boolean fake;
+	private Vector2 randomOffset;
 
 	public KickoffState(Wildfire wildfire){
 		super("Kickoff", wildfire);
@@ -53,6 +54,7 @@ public class KickoffState extends State {
 		wildfire.unlimitedBoost = (input.car.boost > 99);
 		getSpawn(input.car.position);
 		timeStarted = input.elapsedSeconds;
+		randomOffset = new Vector2(random.nextDouble() * 2 - 1, random.nextDouble() -Utils.teamSign(input.car)).scaledToMagnitude(15);
 
 		//Choosing to fake
 		timedOut = false;
@@ -109,14 +111,16 @@ public class KickoffState extends State {
 					//Line-up like a pro!
 					target = new Vector2(0, input.car.position.y * 0.15);
 				}else{
-					target = new Vector2(0, Constants.BALLRADIUS * -Utils.teamSign(input.car));
+					target = new Vector2(0, Constants.BALLRADIUS * -Utils.teamSign(input.car)).plus(this.randomOffset).scaledToMagnitude(Constants.BALLRADIUS);
+//					target = input.ball.position.flatten().plus(this.randomOffset);
 				}
 				
 				dodge = (input.car.position.magnitude() < (spawn == KickoffSpawn.CORNER ? 760 : 800));
 				wavedash = (!dodge && input.car.velocity.magnitude() > (spawn == KickoffSpawn.CORNER ? 1200 : 1150) && !input.car.isSupersonic);
 			}else{
 				//Generic kickoff
-				target = input.ball.position.flatten(); 
+//				target = input.ball.position.flatten(); 
+				target = input.ball.position.flatten().plus(this.randomOffset);
 				dodge = (input.car.position.magnitude() < 1000 && input.car.velocity.magnitude() > 1000);
 				wavedash = false;
 			}
@@ -152,7 +156,12 @@ public class KickoffState extends State {
 //			wildfire.renderer.drawTurningRadius(Color.BLUE, input.car);
 			
 			// Get the boost in front of us.
-			boolean grabBoost = (BoostManager.getBoosts().get(input.car.team == 0 ? 0 : 33).isActive() && input.car.boost < 100);
+			boolean grabBoost;
+			try{
+				grabBoost = (BoostManager.getBoosts().get(input.car.team == 0 ? 0 : 33).isActive() && input.car.boost < 100);
+			}catch(Exception e){
+				grabBoost = false; // We're probably on an irregular map.
+			}
 			
 			Vector2 destination;
 			if(grabBoost){

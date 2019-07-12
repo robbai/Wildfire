@@ -23,7 +23,7 @@ public class MixerState extends State {
 	 * This can be better than going for a shot
 	 */
 	
-	private double maxGoalArea = 3000;
+	private double maxGoalArea = 3400;
 
 	public MixerState(Wildfire wildfire){
 		super("Mixer", wildfire);
@@ -38,7 +38,7 @@ public class MixerState extends State {
 		// The ball must be on the wing.
 		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 550) return false;
 		if(teamSign * impactLocation.y < -1000) return false;
-		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 1100) return false;
+		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 900) return false;
 		
 		// We must be solidly behind the ball.
 		if(wildfire.impactPoint.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
@@ -48,7 +48,7 @@ public class MixerState extends State {
 		
 		// We must not have a (good) shot.
 		if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition()) 
-				&& Math.abs(wildfire.impactPoint.getPosition().y) < 2800) return false;
+				&& Math.abs(wildfire.impactPoint.getPosition().y) < 2600) return false;
 		
 		// There must be a goalkeeper.
 		CarData goalkeeper = Behaviour.getGoalkeeper(input.cars, 1 - input.car.team, maxGoalArea);

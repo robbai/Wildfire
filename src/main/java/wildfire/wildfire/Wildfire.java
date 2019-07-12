@@ -88,10 +88,11 @@ public class Wildfire implements Bot {
         //Test states
 //        new TestState(this);
 //        fallbackState = new TestState2(this);
-//        fallbackState = new PathState(this);
+//        fallbackState = new PathState(this, true);
 //        fallbackState = new DemoState(this);
 //        fallbackState = new IdleState(this);
 //        fallbackState = new ReturnState(this);
+//        fallbackState = new ShadowState(this);
         
         WildfireJava.bots.add(this);
     }
@@ -100,7 +101,8 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, !Behaviour.hasTeammate(input) && isTestVersion(), isTestVersion());
     	
-//    	stateSetting.catchTest(input);
+//    	stateSetting.path(input, true, true);
+//    	stateSetting.shoot(input, false);
     	
     	//Get the ball prediction
     	try{

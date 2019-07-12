@@ -164,15 +164,19 @@ public class StateSettingManager {
 		gameState.withBallState(new BallState().withPhysics(ballPhysics));		
 		RLBotDll.setGameState(gameState.buildPacket());    	
 	}
-
+	
 	public void path(DataPacket input, boolean boost){
+		path(input, boost, false);
+	}
+
+	public void path(DataPacket input, boolean boost, boolean ballStill){
 		//!input.ball.velocity.isZero() || 
-		if(getCooldown(input) > (input.car.velocity.magnitude() < 100 ? 2 : 10) || Math.abs(input.ball.position.y) > 4800){ // || input.ball.position.z > Utils.BALLRADIUS + 5){
+		if(getCooldown(input) > (input.car.velocity.magnitude() < 50 ? 2 : (ballStill ? 8 : 10)) || (Math.abs(input.ball.position.y) > 4700 && Math.abs(input.ball.position.x) < 1000)){ // || input.ball.position.z > Utils.BALLRADIUS + 5){
 			final double border = 1000;
 					
 			GameState gameState = new GameState();
 			Vector3 ballLocation = new Vector3(Utils.random(-Constants.PITCHWIDTH + border, Constants.PITCHWIDTH - border), Utils.random(-Constants.PITCHLENGTH + border, Constants.PITCHLENGTH - border), Constants.BALLRADIUS);
-			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(ballLocation.withZ(0).scaled(-0.5).toDesired()).withLocation(ballLocation.toDesired())));
+			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(ballStill ? new Vector3().toDesired() : ballLocation.withZ(0).scaled(-0.5).toDesired()).withLocation(ballLocation.toDesired())));
 			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(boost ? 100F : 0).withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(new Vector3().toDesired()).withLocation(new Vector3(Utils.random(-Constants.PITCHWIDTH + border, Constants.PITCHWIDTH - border), Utils.random(-Constants.PITCHLENGTH + border, Constants.PITCHLENGTH - border), 20).toDesired())));
 			
 			RLBotDll.setGameState(gameState.buildPacket());

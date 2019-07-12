@@ -38,7 +38,7 @@ public class BoostState extends State {
 		
 		//World's longest line
 		boolean teammateAtBall = Behaviour.isTeammateCloser(input);
-		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2400 && !steal) || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4000) || Math.abs(wildfire.impactPoint.getPosition().x) < 1400 || ((Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && !steal) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 3000)){
+		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2400 && !steal) || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4500) || Math.abs(wildfire.impactPoint.getPosition().x) < 1500 || ((Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && !steal) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 2500)){
 			return false;
 		}
 		boost = getBoost(input);

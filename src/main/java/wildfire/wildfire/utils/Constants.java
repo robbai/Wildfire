@@ -7,6 +7,10 @@ public class Constants {
 
 	public static final float BALLRADIUS = 92.75F;
 	public static final float BOOSTACC = (911F + (2F / 3));
+	public static final float COASTACC = 525;
+	public static final float BRAKEACC = 3500;
+	public static final float MAXCARSPEED = 2300;
+	public static final float SUPERSONIC = 2200;
 	public static final float CEILING = 2044F;
 	public static final float GOALHALFWIDTH = 892.755F;
 	public static final float GOALHEIGHT = 642.775F;

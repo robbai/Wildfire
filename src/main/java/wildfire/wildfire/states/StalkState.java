@@ -39,7 +39,7 @@ public class StalkState extends State {
 				|| !Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition())) return false;
 		
 		// We want to hit it!
-		if(wildfire.impactPoint.getTime() < 0.6) return false;
+		if(wildfire.impactPoint.getTime() < 0.7) return false;
 		
 		// It's not in their danger zone.
 		enemyGoal = Constants.enemyGoal(input.car);
@@ -52,7 +52,8 @@ public class StalkState extends State {
 		this.defenderVelocity = enemy.getTwo().getTwo();
 		
 		return this.defender != null
-				&& this.defenderDistance < input.car.position.distanceFlat(input.ball.position) * (input.car.isSupersonic ? 1.2 : 1.4);
+//				&& this.defenderDistance < input.car.position.distanceFlat(input.ball.position) * (input.car.isSupersonic ? 1.2 : 1.4);
+				&& this.defenderDistance < input.car.position.distanceFlat(input.ball.position) * (Behaviour.correctSideOfTarget(this.defender, input.ball.position) ? 1.2 : 0.65);
 	}
 
 	@Override
@@ -80,13 +81,13 @@ public class StalkState extends State {
 		
 		// Controller
 		ControlsOutput controller = Handling.drivePoint(input, destination, false);
-		double throttleCap = (destinationDistance / 3000);
+		double throttleCap = (destinationDistance / 2000);
 		controller = controller.withThrottle(Utils.clamp(controller.getThrottle(), -throttleCap, throttleCap));
 		return controller;
 	}
 	
 	private double getSitbackDistance(){
-		return 1400 + (Math.max(this.defenderVelocity, 5700) + this.defenderDistance / 1.5) / 2;
+		return 2000 + (Math.max(this.defenderVelocity / 1.5, 1100) + this.defenderDistance / 1.75) * 1.25;
 	}
 
 	private Pair<CarData, Pair<Double, Double>> getDefender(CarData[] cars, BallData ball){
@@ -104,7 +105,8 @@ public class StalkState extends State {
 			
 			// Some conditions.
 			if(!car.hasWheelContact) continue;
-			if(!backboard && !Behaviour.correctSideOfTarget(car, ballPosition)) continue;
+			if(!backboard) continue;
+//			if(!backboard && !Behaviour.correctSideOfTarget(car, ballPosition)) continue;
 						
 			double ballDistance = car.position.distanceFlat(ballPosition);
 			double velocity = car.velocity.flatten().magnitudeInDirection(ballPosition.minus(car.position.flatten()));
