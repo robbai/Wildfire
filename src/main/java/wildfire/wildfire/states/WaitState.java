@@ -105,7 +105,7 @@ public class WaitState extends State {
 		}
 		PredictionSlice smartDodgeCandidate = (planSmartDodge ? SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, input.car, enemyGoal) : null);
 		planSmartDodge = (planSmartDodge && smartDodgeCandidate != null);
-		wildfire.renderer.drawString2d("Plan Smart Dodge: " + planSmartDodge, Color.WHITE, new Point(0, 40), 2, 2);
+//		wildfire.renderer.drawString2d("Plan Smart Dodge: " + planSmartDodge, Color.WHITE, new Point(0, 40), 2, 2);
 		double desiredDist = getDesiredDistance(input.car, planSmartDodge ? smartDodgeCandidate.getPosition() : null);
 		wildfire.renderer.drawCircle(Color.ORANGE, bounce, desiredDist);
 		if(!hasAction() && planSmartDodge){
@@ -128,6 +128,12 @@ public class WaitState extends State {
 		
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s", Color.WHITE, new Point(0, 20), 2, 2);
 		
+		// Make use of the candidate position from the smart dodge.
+		if(planSmartDodge){
+			wildfire.renderer.drawCrosshair(input.car, smartDodgeCandidate.getPosition(), Color.RED, 70);
+			return Handling.arriveAtSmartDodgeCandidate(input.car, smartDodgeCandidate, wildfire.renderer);
+		}
+		
 		// Catch (don't move out the way anymore).
 		if(input.car.position.distanceFlat(bounce) < Constants.BALLRADIUS && Behaviour.correctSideOfTarget(input.car, bounce)){
 			wildfire.renderer.drawString2d("Catch", Color.WHITE, new Point(0, 60), 2, 2);
@@ -136,18 +142,11 @@ public class WaitState extends State {
 		
 		double timeEffective = timeLeft;
 		Vector2 destination = bounce;
-		
-		// Make use of the candidate position from the smart dodge.
-		if(smartDodgeCandidate != null){
-			destination = smartDodgeCandidate.getPosition().flatten();
-			wildfire.renderer.drawCrosshair(input.car, smartDodgeCandidate.getPosition(), Color.RED, 70);
-			timeEffective = (smartDodgeCandidate.getTime() - SmartDodgeAction.jumpVelocity / Constants.GRAVITY);
-		}
 				
 		Vector2 target = null;
 		double velocityNeeded = -1;
 		
-		for(double offset = (towardsOwnGoal ? 0.9 : (planSmartDodge ? (bounceDistance > 2000 ? 1.5 : 0.1) : 0.8)); offset > (towardsOwnGoal ? 0.15 : 0); offset -= offsetDecrement){
+		for(double offset = (towardsOwnGoal ? 0.9 : (bounceDistance > 2000 ? 1.5 : 0.1)); offset > (towardsOwnGoal ? 0.15 : 0); offset -= offsetDecrement){
 			target = getNextPoint(input.car.position.flatten(), destination, enemyGoal, offset);
 			
 			double distance = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, offset, Color.YELLOW, desiredDist);
@@ -194,24 +193,12 @@ public class WaitState extends State {
 	    double steer = steerRadians * -3;
 		ControlsOutput controls = new ControlsOutput().withSteer(steer);
 		double currentVelocity = input.car.magnitudeInDirection(target.minus(input.car.position.flatten()));
-		if(planSmartDodge){
-			velocityNeeded = Math.max(velocityNeeded, 
-					Utils.toLocalFromRelative(input.car, smartDodgeCandidate.getPosition().minus(input.car.position).scaled(1D / (SmartDodgeAction.jumpVelocity / Constants.GRAVITY))).y
-					);
-		}
 		double acceleration = ((velocityNeeded - currentVelocity) / timeEffective);
 		if(Math.abs(steerRadians) > 0.4){
 			// Turn.
 			controls.withThrottle(Math.signum(acceleration)).withSlide(!input.car.isDrifting() && Math.abs(steerRadians) > 1);
-//		}else if(planSmartDodge && pathDistanceChosen > 500
-//				&& velocityNeeded < Physics.boostMaxSpeed(currentVelocity, input.car.boost) - Utils.lerp(350, 500, Utils.clamp(input.car.boost / 25, 0, 1))){
-//			// Stall.
-//			double forward = input.car.forwardMagnitude();
-//			controls.withThrottle(Math.abs(acceleration) > 1000 ? Math.signum(forward) / -3000 : 0);
 		}else if((acceleration > Constants.BOOSTACC || velocityNeeded > 1410) && pathDistanceChosen > 500){
 			controls.withThrottle(1).withBoost(Math.abs(steerRadians) < 0.25);
-//		}else if(acceleration < 0){
-//			controls.withThrottle(acceleration > -1000 ? 0 : acceleration / 800);
 		}else{
 			controls.withThrottle(acceleration / 1000);
 		}

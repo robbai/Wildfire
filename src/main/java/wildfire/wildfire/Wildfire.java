@@ -74,7 +74,7 @@ public class Wildfire implements Bot {
         new WallHitState(this);
         new PatienceState(this);
         new BoostState(this);
-        new WaitState(this, false);
+        new WaitState(this, true);
         new MixerState(this);
         new StalkState(this);
         new ShootState(this);
@@ -101,8 +101,9 @@ public class Wildfire implements Bot {
     	//Get a renderer
     	renderer = new WRenderer(this, !Behaviour.hasTeammate(input) && isTestVersion(), isTestVersion());
     	
-//    	stateSetting.path(input, true, true);
+//    	stateSetting.path(input, true, false);
 //    	stateSetting.shoot(input, false);
+    	stateSetting.airRoll(input);
     	
     	//Get the ball prediction
     	try{

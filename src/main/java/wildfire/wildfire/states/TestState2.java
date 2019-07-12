@@ -25,8 +25,8 @@ public class TestState2 extends State {
 	 * Testing state
 	 */
 	
-	private final double steerUnits = 450, speedUnits = 5;
-	private final boolean verboseRender = true, dodge = false;
+	private final double steerUnits = 410, speedUnits = 20;
+	private final boolean verboseRender = false, dodge = true;
 
 	public TestState2(Wildfire wildfire){
 		super("Test2", wildfire);
@@ -77,12 +77,12 @@ public class TestState2 extends State {
 		// Get some info.
 		Vector2 target = curve.S(Math.min(curve.getDistance(), steerUnits));
 		if(target == null) return Handling.atba(input, input.ball.position); 
-		double a = curve.getAcceleration(speedUnits / curve.getDistance());
+		double acc = curve.getAcceleration(speedUnits / curve.getDistance());
 		
 		// Render.
 		if(verboseRender){
 			wildfire.renderer.drawString2d("Current Vel.: " + (int)u + "uu/s", Color.WHITE, new Point(0, 80), 2, 2);
-			wildfire.renderer.drawString2d("Desired Acc.: " + (int)a + "uu/s^2", Color.WHITE, new Point(0, 100), 2, 2);
+			wildfire.renderer.drawString2d("Desired Acc.: " + (int)acc + "uu/s^2", Color.WHITE, new Point(0, 100), 2, 2);
 		}
 		wildfire.renderer.drawString2d("Distance: " + (int)curve.getDistance() + "uu", Color.WHITE, new Point(0, 20), 2, 2);
 		wildfire.renderer.drawString2d("Time: " + Utils.round(curve.getTime()) + "s", Color.WHITE, new Point(0, 40), 2, 2);
@@ -92,7 +92,7 @@ public class TestState2 extends State {
 		
 		// Handling.
 		double radians = Handling.aimLocally(input.car, target);
-		if(!hasAction() && dodge && Math.abs(radians) < 0.4){
+		if(!hasAction() && Math.abs(radians) < 0.4 && dodge){
 			boolean dodgeIntoBall = (curve.getTime() < 0.22);
 //			boolean dodgeForSpeed = (curve.getTime() > 1.4 && curve.getSpeed(700 / curve.getDistance()) - u > 500 && !input.car.isSupersonic);
 			if(dodgeIntoBall){
@@ -101,10 +101,11 @@ public class TestState2 extends State {
 			}
 		}
 		double curveCorrect = (input.car.orientation.noseVector.flatten().angle(points[1].minus(points[0])));
+		double throttle = Handling.produceAcceleration(input.car, acc);
 		return new ControlsOutput()
 				.withSteer(radians * -3)
-				.withThrottle(a / 600)
-				.withBoost(a >= Constants.BOOSTACC && input.car.hasWheelContact 
+				.withThrottle(throttle)
+				.withBoost(throttle > 1 && input.car.hasWheelContact 
 					&& (curveCorrect < Math.PI * 0.65 || wildfire.stateSetting.getCooldown(input) > 1))
 				.withSlide(curveCorrect > Math.PI * 0.85 && wildfire.stateSetting.getCooldown(input) < 1);
 	}
@@ -137,7 +138,7 @@ public class TestState2 extends State {
 		Vector2 destination = ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(offset));
 		BezierCurve bezier = new BezierCurve(
 				carLocation,
-				carLocation.plus(car.orientation.noseVector.flatten().scaledToMagnitude(Utils.clamp((distance - Constants.BALLRADIUS) * 0.4, 0, 700))),
+				carLocation.plus(car.orientation.noseVector.flatten().scaledToMagnitude(Utils.clamp((distance - Constants.BALLRADIUS) * 0.25, 0, 400))),
 				destination,
 				ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS))
 				);

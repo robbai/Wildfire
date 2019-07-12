@@ -1,10 +1,16 @@
 package wildfire.wildfire.utils;
 
+import java.awt.Color;
+import java.awt.Point;
+
 import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
+import wildfire.wildfire.actions.SmartDodgeAction;
+import wildfire.wildfire.obj.PredictionSlice;
+import wildfire.wildfire.obj.WRenderer;
 
 public class Handling {
 
@@ -65,6 +71,16 @@ public class Handling {
 				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.3 && !input.car.isDrifting() && velocity > 600);
 	}
 	
+	public static ControlsOutput driveDestination(CarData car, Vector3 destination){
+		double velocityForward = car.forwardMagnitude();
+		double steer = aimLocally(car, destination);
+		
+		return new ControlsOutput().withThrottle(1)
+				.withBoost(Math.abs(steer) < 0.25 && !car.isSupersonic)
+				.withSteer(-steer * 3F)
+				.withSlide(Math.abs(steer) > 1.1 && velocityForward > 400 && !car.isDrifting());
+	}
+	
 	public static ControlsOutput stayStill(DataPacket input){
 		return new ControlsOutput().withThrottle((float)-input.car.forwardMagnitude() / 2500).withBoost(false);
 	}
@@ -95,6 +111,74 @@ public class Handling {
 		double pitch = Utils.wrapAngle(Math.atan2(-target.y, target.z));
 
 		return new Vector2(roll, pitch);
+	}
+	
+	/*
+	 * https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc#L112-L160
+	 */
+	public static double produceAcceleration(CarData car, double acceleration){
+		double velocityForward = car.forwardMagnitude();
+		double throttleAcceleration = Physics.determineAcceleration(velocityForward, 1, false);
+		
+		double brakeCoastTransition = -0.45 * Constants.BRAKEACC - 0.55 * Constants.COASTACC;
+		double coastingThrottleTransition = -0.5 * Constants.COASTACC;
+		double throttleBoostTransition = throttleAcceleration + 0.5 * Constants.BOOSTACC;
+		
+		// Sliding down the wall.
+		if(car.orientation.roofVector.z < 0.7){
+			brakeCoastTransition = -0.5 * Constants.BRAKEACC;
+			coastingThrottleTransition = brakeCoastTransition;
+		}
+		
+		if(acceleration <= brakeCoastTransition){
+			return -1; // Brake.
+		}else if(brakeCoastTransition < acceleration && acceleration < coastingThrottleTransition){
+			return 0; // Coast.
+		}else if(coastingThrottleTransition <= acceleration && acceleration <= throttleBoostTransition){
+			return Utils.clamp(acceleration / throttleAcceleration, 0.02, 1); // Throttle.
+		}else if(throttleBoostTransition < acceleration){
+			return 10; // Boost.
+		}
+		return 0.02;
+	}
+	
+	public static ControlsOutput arriveAtSmartDodgeCandidate(CarData car, PredictionSlice candidate, WRenderer renderer){
+		Vector3 carPosition = car.position;
+		Vector3 ballPosition = candidate.getPosition();
+		
+		ControlsOutput controls = driveDestination(car, ballPosition);
+		
+		// Jump constants.
+		double gravity = -Constants.GRAVITY;
+		double jumpVelocity = SmartDodgeAction.jumpVelocity;
+		
+		// Jump calculations.
+		double jumpHeight = Math.min(SmartDodgeAction.maxJumpHeight - 1, ballPosition.z - car.position.z);
+		double peakTime = (-jumpVelocity + Math.sqrt(Math.pow(jumpVelocity, 2) + 2 * gravity * jumpHeight)) / gravity; // https://math.stackexchange.com/questions/2119238/rearrange-equation-of-motion-for-time
+		
+		// Drive.
+		double driveTime = candidate.getTime() - peakTime;
+		double fullDistance = carPosition.distanceFlat(ballPosition);
+		double initialVelocity = car.magnitudeInDirection(ballPosition.minus(carPosition).flatten());
+		// full distance - peak time * final velocity = 0.5 * drive time * (initial velocity + final velocity)
+		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
+		double acceleration = (finalVelocity - initialVelocity) / driveTime;
+		
+		if(renderer != null){
+			renderer.drawString2d("Initial Vel.: " + Utils.round(initialVelocity) + "uu/s", Color.WHITE, new Point(0, 60), 2, 2);
+			renderer.drawString2d("Final Vel.: " + Utils.round(finalVelocity) + "uu/s", Color.WHITE, new Point(0, 80), 2, 2);
+			renderer.drawString2d("Acceleration: " + Utils.round(acceleration) + "uu/s^2", Color.WHITE, new Point(0, 100), 2, 2);
+			
+//			renderer.drawString2d("Drive Time: " + Utils.round(driveTime) + "uu/s", Color.WHITE, new Point(0, 140), 2, 2);
+//			renderer.drawString2d("Full Distance: " + Utils.round(fullDistance) + "uu/s", Color.WHITE, new Point(0, 160), 2, 2);
+//			renderer.drawString2d("Peak Time: " + Utils.round(peakTime) + "uu/s^2", Color.WHITE, new Point(0, 180), 2, 2);
+//			renderer.drawString2d("Jump Height: " + Utils.round(jumpHeight) + "uu/s^2", Color.WHITE, new Point(0, 200), 2, 2);
+		}
+		
+		// Controls.
+		double throttle = produceAcceleration(car, acceleration);
+		return controls.withThrottle(throttle)
+				.withBoost(throttle > 1 && Math.abs(controls.getSteer()) < 0.6);
 	}
 
 }

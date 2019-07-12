@@ -48,7 +48,7 @@ public class DiscreteCurve {
 		// Apply acceleration limits.
 //		double[][] speeds = new double[2][analysePoints];
 		double[] speeds = new double[analysePoints], accelerations = new double[analysePoints];
-		double s = 0, time = 0, v = this.initialVelocity, boost = this.boost, brakeCheckedS = -1;
+		double s = 0, time = 0, v = this.initialVelocity, boost = this.boost;
 		speeds[0] = v;
 		accelerations[0] = 0;
 		while(s < this.distance){
@@ -56,20 +56,16 @@ public class DiscreteCurve {
 			
 			// Slide the braking curve.
 			boolean brake = false;
-			if(s > brakeCheckedS){
-				double brakeDistance = 0;
-				for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity --){
-					brakeDistance = (s + brakeCurve[brakeVelocity]);
-					if(brakeDistance > this.distance) break;
-					
-					double brakeIndex = this.indexS(brakeDistance);
-					if(Utils.lerp(optimalSpeeds[(int)Math.floor(brakeIndex)], optimalSpeeds[(int)Math.ceil(brakeIndex)], brakeIndex - Math.floor(brakeIndex))
-							< brakeVelocity){
-						brake = true;
-						break; // Brake - Kappa.
-					}
+			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= 20){
+				double brakeDistance = (s + brakeCurve[brakeVelocity]);
+				if(brakeDistance > this.distance) break;
+
+				double brakeIndex = this.indexS(brakeDistance);
+				if(Utils.lerp(optimalSpeeds[(int)Math.floor(brakeIndex)], optimalSpeeds[(int)Math.ceil(brakeIndex)], brakeIndex - Math.floor(brakeIndex))
+						< brakeVelocity){
+					brake = true;
+					break; // Brake - Kappa.
 				}
-				if(!brake) brakeCheckedS = brakeDistance;
 			}
 			
 			// Create the realistic curve.
@@ -83,7 +79,7 @@ public class DiscreteCurve {
 				boolean useBoost = ((this.unlimitedBoost || boost >= 1) && (optimalSpeed - v) > Constants.BOOSTACC * Math.pow(curveStep, 2));
 				a = Physics.determineAcceleration(v, 1, useBoost);
 				if(useBoost) boost -= (100D / 3) * curveStep; // Consume boost.
-//				if(v + a * curveStep > optimalSpeed) a = (optimalSpeed - v) / curveStep;
+//				if(!useBoost && v + a * curveStep > optimalSpeed) a = (optimalSpeed - v) / curveStep;
 			}
 			
 			v = Utils.clamp(v + a * curveStep, 0, Constants.MAXCARSPEED);

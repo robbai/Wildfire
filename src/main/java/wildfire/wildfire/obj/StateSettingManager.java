@@ -62,14 +62,14 @@ public class StateSettingManager {
 		int teamSign = Utils.teamSign(input.car);
 		if((dribble && input.ball.position.z < 99) || input.ball.position.magnitude() > 3000){
 			GameState gameState = new GameState();
-			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(Utils.random(-2500, 2500), Utils.random(2000, 4800) * -teamSign, 10).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, teamSign * Math.PI / 2, 0).toDesired())));
+			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(Utils.random(-2500, 2500), Utils.random(500, 4900) * -teamSign, 10).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, teamSign * Math.PI / 2, 0).toDesired())));
 			Vector2 ballLocation = new Vector2(Utils.random(-1500, 1500), Utils.random(-1500, 1500));
 			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(ballLocation.x, ballLocation.y, 200).toDesired()).withVelocity(new Vector3(-ballLocation.x / 2, -ballLocation.y / 2, Utils.random(1000, 1400)).toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
 		}
 	}
 	
-	public void catchTest(DataPacket input){
+	public void airRoll(DataPacket input){
 		catchTest(input, false);
 	}
 
