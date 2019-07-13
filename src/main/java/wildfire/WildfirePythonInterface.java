@@ -2,13 +2,13 @@ package wildfire;
 
 import rlbot.Bot;
 import rlbot.manager.BotManager;
-import rlbot.pyinterop.DefaultPythonInterface;
+import rlbot.pyinterop.SocketServer;
 import wildfire.wildfire.Wildfire;
 
-public class WildfirePythonInterface extends DefaultPythonInterface {
+public class WildfirePythonInterface extends SocketServer {
 
-    public WildfirePythonInterface(BotManager botManager){
-        super(botManager);
+    public WildfirePythonInterface(int port, BotManager botManager){
+        super(port, botManager);
     }
 
     protected Bot initBot(int index, String botType, int team){

@@ -1,7 +1,11 @@
 package wildfire;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.ActionListener;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +13,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -18,8 +23,6 @@ import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 import rlbot.manager.BotManager;
-import rlbot.pyinterop.PythonInterface;
-import rlbot.pyinterop.PythonServer;
 import wildfire.util.PortReader;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.pitch.Pitch;
@@ -31,6 +34,8 @@ public class WildfireJava {
 	 */
 	private final static boolean testGui = false;
 	
+	private static final Integer DEFAULT_PORT = 25963;
+	
 	public static ArrayList<Wildfire> bots = new ArrayList<Wildfire>();
 
 	private static List<String> arguments;
@@ -41,11 +46,13 @@ public class WildfireJava {
     	
     	//Bot Manager
     	BotManager botManager = new BotManager();
-    	Integer port = PortReader.readPortFromFile("port.cfg");
+    	Integer port = PortReader.readPortFromArgs(args).orElseGet(() -> {
+            System.out.println("Could not read port from args, using default!");
+            return DEFAULT_PORT;
+        });
     	if(!testGui){
-	        PythonInterface pythonInterface = new WildfirePythonInterface(botManager);
-	        PythonServer pythonServer = new PythonServer(pythonInterface, port);
-	        pythonServer.start();
+    		WildfirePythonInterface pythonInterface = new WildfirePythonInterface(port, botManager);
+            new Thread(pythonInterface::start).start();
 	        
 	        Pitch.initTriangles();
     	}
@@ -56,22 +63,36 @@ public class WildfireJava {
         
         //Panel
         JPanel panel = new JPanel();
-        final int borderSize = 10;
+        final int borderSize = 15;
         panel.setBorder(new EmptyBorder(borderSize, borderSize, borderSize, borderSize));
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setLayout(new BorderLayout());
+        
+        //Icon
+        URL url = WildfireJava.class.getClassLoader().getResource("icon.png");
+        Image image = Toolkit.getDefaultToolkit().createImage(url);
+        frame.setIconImage(image);
         
         //Labels
-        panel.add(new JLabel("Wildfire, a Java bot by r0bbi3#0269"));
-        panel.add(new JLabel("Port Number: " + port));
-        panel.add(new JLabel("Bots Running:"));
+        JPanel dataPanel = new JPanel();
+        dataPanel.setLayout(new BoxLayout(dataPanel, BoxLayout.Y_AXIS));
+        dataPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
+        dataPanel.add(new JLabel(new ImageIcon(image.getScaledInstance(140, 140, 100))), BorderLayout.CENTER);
+        dataPanel.add(new JLabel("Wildfire, by r0bbi3#0269"));
+        dataPanel.add(new JLabel("Port Number: " + port));
+        panel.add(dataPanel, BorderLayout.WEST);
+        
         
         //Table
-        String column[] = {"Index", "Name", "Team"};
-        JTable table = new JTable(new String[][] {}, column);    
-        table.setBounds(borderSize, borderSize, borderSize, borderSize);     
+        JPanel tablePanel = new JPanel();
+        tablePanel.setLayout(new BoxLayout(tablePanel, BoxLayout.Y_AXIS));
+        tablePanel.setBounds(borderSize, borderSize, borderSize, borderSize);     
+        tablePanel.add(new JLabel("Bots Running:"), BorderLayout.CENTER);
+        final String columns[] = {"Index", "Name", "Team"};
+        JTable table = new JTable(new String[][] {}, columns);
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(80, 120));
-        panel.add(scrollPane);
+        scrollPane.setPreferredSize(new Dimension(200, table.getHeight()));
+        tablePanel.add(scrollPane);
+        panel.add(tablePanel);
         
         frame.add(panel);
         frame.pack();
@@ -96,11 +117,11 @@ public class WildfireJava {
                 }
                 
                 //Update the table
-                JTable newTable = new JTable(toDataArray(data), column);
+                JTable newTable = new JTable(toDataArray(data), columns);
                 newTable.setRowHeight(newTable.getRowHeight() * 2);
+                scrollPane.setBounds(scrollPane.getX(), scrollPane.getY(), scrollPane.getWidth(), Math.max(newTable.getRowHeight() * (botListSize + 2), scrollPane.getHeight()));
                 scrollPane.getViewport().add(newTable);
-                scrollPane.setBounds(scrollPane.getX(), scrollPane.getY(), scrollPane.getWidth(), Math.min(newTable.getRowHeight() * (botListSize + 2), scrollPane.getHeight()));
-                panel.add(scrollPane);
+                tablePanel.add(scrollPane);
             }
         };
         new Timer(1000, myListener).start();

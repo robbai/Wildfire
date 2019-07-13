@@ -1,8 +1,8 @@
 package wildfire.wildfire.pitch;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -10,6 +10,7 @@ import java.util.Random;
 import de.javagl.obj.FloatTuple;
 import de.javagl.obj.ObjReader;
 import de.javagl.obj.ReadableObj;
+import wildfire.WildfireJava;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.utils.Constants;
@@ -20,8 +21,6 @@ public class Pitch {
 	 * An array of all the pitch triangles
 	 */
 	private static Triangle[] triangles;
-
-	private static final String directory = "res/pitch.obj";
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
@@ -56,7 +55,8 @@ public class Pitch {
 	public static boolean initTriangles(){
 		InputStream inputStream;
 		try {
-			inputStream = new FileInputStream(directory);
+			URL url = WildfireJava.class.getClassLoader().getResource("pitch.obj");
+			inputStream = url.openStream();
 			ReadableObj obj = ObjReader.read(inputStream);
 			
 			// Create a sorted list.
