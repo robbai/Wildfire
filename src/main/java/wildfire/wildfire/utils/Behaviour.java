@@ -256,4 +256,30 @@ public class Behaviour {
 		return target;
 	}
 
+	public static boolean nobodyElseIntersect(int ourIndex, CarData[] cars, BallPrediction ballPrediction){
+		for(int i = 0; i < ballPrediction.slicesLength(); i++){
+			Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			if(Math.abs(ballPosition.y) > Constants.PITCHLENGTH + Constants.BALLRADIUS + 10) break;
+			double time = (ballPrediction.slices(i).gameSeconds() - cars[0].elapsedSeconds);
+			
+			for(CarData car : cars){
+				if(car.index == ourIndex) continue;
+				double distance = ballPosition.distance(car.position);
+				if(distance < 800 || distance / time < 2300) return false;
+			}
+		}
+		
+		return true;
+	}
+
+	public static boolean blocksPrediction(CarData car, BallPrediction ballPrediction){
+		Vector3 carPosition = car.position;
+		for(int i = 0; i < ballPrediction.slicesLength(); i++){
+			Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			if(Math.abs(ballPosition.y) > Constants.PITCHLENGTH + Constants.BALLRADIUS + 10) break;
+			if(ballPosition.distance(carPosition) < 800) return true;
+		}
+		return false;
+	}
+
 }

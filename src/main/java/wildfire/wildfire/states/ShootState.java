@@ -55,7 +55,7 @@ public class ShootState extends State {
 		
 		if(!hasAction()){
 			if(input.car.hasWheelContact){
-				boolean dodgeBallDist = (distance < 500);
+				boolean dodgeBallDist = (distance < Utils.lerp(420, 500, input.car.velocity.magnitude() / 2300));
 				if(Math.abs(aimImpact) > Math.PI * 0.7 && distance < 560){
 					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 				}else if(Math.abs(aimImpact) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){

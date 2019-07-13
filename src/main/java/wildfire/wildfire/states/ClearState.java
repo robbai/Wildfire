@@ -11,6 +11,8 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
+import wildfire.wildfire.actions.SmartDodgeAction;
+import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
@@ -22,6 +24,7 @@ public class ClearState extends State {
 	private final double homeZoneSize = 3500D;
 	
 	private boolean onTarget = false;
+	private Vector2 offset = null;
 
 	public ClearState(Wildfire wildfire){
 		super("Clear", wildfire);
@@ -52,24 +55,32 @@ public class ClearState extends State {
 		onTarget  = Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team);
 		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000 && Utils.teamSign(input.car.team) * input.ball.position.y > -4000) return false;
 		
-		//We'd prefer an aerial
-		if(Behaviour.isBallAirborne(input.ball) && input.car.boost < 16) return false;
-		
 		return Behaviour.defendNotReturn(input, wildfire.impactPoint.getPosition(), homeZoneSize, onTarget);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		//Drive down the wall
+		// Drive down the wall.
 		boolean onWall = Behaviour.isOnWall(input.car);
 		if(onWall){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
 		}
 		
+		// Smart-dodge.
+		if(!hasAction() && Behaviour.isBallAirborne(input.ball) && offset != null){
+			currentAction = new SmartDodgeAction(this, input, false);
+			if(!currentAction.failed) return currentAction.getOutput(input);
+			currentAction = null;
+			
+			Vector2 trace = Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().plus(offset.withZ(0)).minus(input.car.position).flatten());
+			PredictionSlice candidate = SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, input.car, trace);
+			if(candidate != null) return Handling.arriveAtSmartDodgeCandidate(input.car, candidate, wildfire.renderer);
+		}
+		
 		double angleImpact = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 				
-		//Dodge or half-flip
+		// Dodge or half-flip
 		if(!hasAction() && !input.car.isDrifting()){
 			double impactDistance = input.car.position.distanceFlat(wildfire.impactPoint.getPosition());
 			double forwardVelocity = input.car.forwardMagnitude();
@@ -78,7 +89,8 @@ public class ClearState extends State {
 //			boolean chip = (Math.abs(angleImpact) < 0.1 && forwardVelocity > 1600 && !input.car.isDrifting() &&
 //					wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y * Utils.teamSign(input.car) > 0.9);
 			
-			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 250 : 290))){
+			if(impactDistance < (likelyBackflip ? 290 : (input.car.position.z > 80 ? 250 : 290))
+					&& Math.abs(input.car.position.z - wildfire.impactPoint.getPosition().z) < 350){
 //				if(!chip) currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
 				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 1.75 : 1), input);
 			}else if(impactDistance > (onTarget ? 3500 : 2200) && forwardVelocity < -900){
@@ -91,7 +103,7 @@ public class ClearState extends State {
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		}
 		
-		//Aerial
+		// Aerial
 		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle(input.car.position.minus(input.ball.position).flatten())); 
 		if(!hasAction() && input.car.hasWheelContact && wildfire.impactPoint.getPosition().z > (ballSpeedAtCar > 1700 ? 300 : 500) && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 0 && input.car.position.z < 140){
 			double maxRange = wildfire.impactPoint.getPosition().z * 4;
@@ -105,7 +117,7 @@ public class ClearState extends State {
 		
 		wildfire.renderer.drawCircle(Color.GREEN, Constants.homeGoal(input.car.team), homeZoneSize);
 		
-		//We are in position for the ball to hit us (and we can't quickly turn towards the ball)
+		// We are in position for the ball to hit us (and we can't quickly turn towards the ball)
 		if(input.car.position.y * Utils.teamSign(input.car) > -5050 && Math.abs(angleImpact) > 0.4 * Math.PI && Math.abs(angleImpact) < 0.8 * Math.PI){
 			//We don't want to wait too long for the ball to reach us
 			double ballTime = Math.abs((input.car.position.y - input.ball.position.y) / input.ball.velocity.y);
@@ -125,14 +137,13 @@ public class ClearState extends State {
 			}
 		}
 		
-		Vector2 offset;
-		double offsetMagnitude = (75 + 50 * Math.pow(wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y, 2));
+		double offsetMagnitude = (75 + 40 * Math.pow(wildfire.impactPoint.getPosition().minus(input.car.position).normalized().y, 2));
 		if(Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition().flatten())){
 			Vector2 goal = Behaviour.getTarget(input.car, input.ball);
 			offset = wildfire.impactPoint.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);
 		}else{
 			if(Math.abs(wildfire.impactPoint.getPosition().y) > 4600) offsetMagnitude += 10; // Back-wall bonus.
-			offset = new Vector2(offsetMagnitude * 
+			offset  = new Vector2(offsetMagnitude * 
 					-Math.signum(Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten()).x), 
 					0);
 		}

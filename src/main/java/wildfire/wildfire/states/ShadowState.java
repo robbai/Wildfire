@@ -38,8 +38,8 @@ public class ShadowState extends State {
 		
 		//Zooming at the ball
 		double velocityImpactCorrection = input.car.velocity.flatten().correctionAngle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
-		if(Math.abs(velocityImpactCorrection) < 0.1 && wildfire.impactPoint.getTime() < (correctSide ? 1.5 : 1.1)
-				&& input.car.forwardMagnitude() > 1200 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -3200) return false;
+		if(Math.abs(velocityImpactCorrection) < 0.25 && wildfire.impactPoint.getTime() < (correctSide ? 1.6 : 1.2)
+				&& input.car.forwardMagnitude() > 900 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1500) return false;
 		
 		//Ball must not be close to our net
 		if(input.ball.position.flatten().distance(homeGoal) < 3500) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
@@ -74,7 +74,7 @@ public class ShadowState extends State {
 		boolean correctSide = Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition());
 				
 		//Aiming very close to the ball, and close-by		
-		if(Math.abs(Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.2 && distance < 3600) return true;
+		if(Math.abs(Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten())) < 0.225 && distance < 3300) return true;
 		
 		//Ball is centralised
 		if(correctSide && Math.abs(input.ball.position.x) < (Behaviour.hasTeammate(input) ? 1400 : 1200) && distance < 7000) return true;

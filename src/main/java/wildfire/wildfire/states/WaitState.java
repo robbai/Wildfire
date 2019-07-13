@@ -111,7 +111,7 @@ public class WaitState extends State {
 		if(!hasAction() && planSmartDodge){
 			currentAction = new SmartDodgeAction(this, input, smartDodgeCone);
 			if(!currentAction.failed && ((SmartDodgeAction)currentAction).target.getPosition().z > 240){
-				currentAction.getOutput(input);
+				return currentAction.getOutput(input);
 			}else{
 				currentAction = null;
 			}
@@ -129,10 +129,7 @@ public class WaitState extends State {
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s", Color.WHITE, new Point(0, 20), 2, 2);
 		
 		// Make use of the candidate position from the smart dodge.
-		if(planSmartDodge){
-			wildfire.renderer.drawCrosshair(input.car, smartDodgeCandidate.getPosition(), Color.RED, 70);
-			return Handling.arriveAtSmartDodgeCandidate(input.car, smartDodgeCandidate, wildfire.renderer);
-		}
+		if(planSmartDodge) return Handling.arriveAtSmartDodgeCandidate(input.car, smartDodgeCandidate, wildfire.renderer);
 		
 		// Catch (don't move out the way anymore).
 		if(input.car.position.distanceFlat(bounce) < Constants.BALLRADIUS && Behaviour.correctSideOfTarget(input.car, bounce)){

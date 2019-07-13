@@ -69,14 +69,14 @@ public class Wildfire implements Bot {
         
         //Initialise all the states
         states = new ArrayList<State>();
-        if(!isTestVersion()) new IdleState(this);
+        new IdleState(this);
         new KickoffState(this);
         new WallHitState(this);
         new PatienceState(this);
         new BoostState(this);
-        new WaitState(this, true);
-        new MixerState(this);
+        new WaitState(this, false);
         new StalkState(this);
+        new MixerState(this);        
         new ShootState(this);
         new ClearState(this);
         new ReturnState(this);
@@ -103,7 +103,7 @@ public class Wildfire implements Bot {
     	
 //    	stateSetting.path(input, true, false);
 //    	stateSetting.shoot(input, false);
-    	stateSetting.airRoll(input);
+//    	stateSetting.airRoll(input);
     	
     	//Get the ball prediction
     	try{

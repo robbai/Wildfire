@@ -21,7 +21,17 @@ public class IdleState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		return !input.gameInfo.isRoundActive() && !Behaviour.isKickoff(input);
+		if(Behaviour.isKickoff(input)) return false;
+		if(!input.gameInfo.isRoundActive()) return true;
+		
+		boolean onTarget = Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team);
+		if(!onTarget) return false;
+		
+		boolean noIntersect = Behaviour.nobodyElseIntersect(input.car.index, input.cars, wildfire.ballPrediction);
+		if(!noIntersect) return false;
+		
+		boolean block = Behaviour.blocksPrediction(input.car, wildfire.ballPrediction);
+		return !block;
 	}
 
 	@Override
@@ -37,7 +47,7 @@ public class IdleState extends State {
 			if(opponent != null) return Handling.atba(input, opponent.position);
 		}
 		
-		return new ControlsOutput().withNone().withThrottle(input.car.forwardMagnitude() / -1000);
+		return Handling.stayStill(input.car);
 	}
 
 }

@@ -97,7 +97,7 @@ public class PathState extends State {
 	
 	private double getTargetPly(CarData car, double velocity){
 		if(path.isBadPath()) return 0; // Only when forcing is enabled.
-		double targetUnits = 360;
+		double targetUnits = 340;
 		return (targetUnits / (velocity * Path.scale));
 	}
 	

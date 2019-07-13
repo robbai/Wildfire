@@ -56,7 +56,7 @@ public class Handling {
 	}
 	
 	public static ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
-		double steer = Handling.aim(input.car, point);
+		double steer = Handling.aimLocally(input.car, point);
 		
 		double throttle = (rush ? 1 : Math.signum(Math.cos(steer)));
 		
@@ -163,21 +163,20 @@ public class Handling {
 		// full distance - peak time * final velocity = 0.5 * drive time * (initial velocity + final velocity)
 		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 		double acceleration = (finalVelocity - initialVelocity) / driveTime;
-		double driveDistance = fullDistance - peakTime * finalVelocity;
 		
 		if(renderer != null){
+			renderer.drawCrosshair(car, ballPosition, Color.RED, 70);
 			renderer.drawString2d("Initial Vel.: " + (int)initialVelocity + "uu/s", Color.WHITE, new Point(0, 60), 2, 2);
 			renderer.drawString2d("Final Vel.: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 80), 2, 2);
 			renderer.drawString2d("Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 100), 2, 2);
-//			renderer.drawString2d("Drive Time: " + (int)driveTime + "uu/s", Color.WHITE, new Point(0, 140), 2, 2);
-//			renderer.drawString2d("Full Distance: " + (int)fullDistance + "uu/s", Color.WHITE, new Point(0, 160), 2, 2);
-//			renderer.drawString2d("Peak Time: " + (int)peakTime + "uu/s^2", Color.WHITE, new Point(0, 180), 2, 2);
-//			renderer.drawString2d("Jump Height: " + (int)jumpHeight + "uu/s^2", Color.WHITE, new Point(0, 200), 2, 2);
 		}
 		
 		// Controls.
-		if(Math.abs(controls.getSteer()) > 0.6) return controls;
-//		if(driveDistance > 600) acceleration /= Math.max(1, Math.pow(driveTime, 1.25)); // We do a little manipulation to increase our final velocity
+		double driveDistance = fullDistance - peakTime * finalVelocity;
+		if(Math.abs(controls.getSteer()) > 0.6 || driveDistance < 0){
+			return controls;
+		}
+		if(driveDistance > 600) acceleration /= Math.max(1, Math.pow(driveTime, 1.25)); // We do a little manipulation to increase our final velocity
 		double throttle = produceAcceleration(car, acceleration); 
 		return controls.withThrottle(throttle).withBoost(throttle > 1);
 	}
