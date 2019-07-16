@@ -23,9 +23,10 @@ import wildfire.wildfire.utils.Utils;
 
 public class BoostState extends State {
 
-	private double maxBoost = 40, maxBoostMega = 72;
+	private final double maxBoost = 40, maxBoostMega = 72;
+	
 	private BoostPad boost = null;
-	private boolean steal = false;
+	private boolean steal = false, possession = false;
 
 	public BoostState(Wildfire wildfire){
 		super("Boost", wildfire);
@@ -34,11 +35,12 @@ public class BoostState extends State {
 	@Override
 	public boolean ready(DataPacket input){
 		Vector2 impactFlat = wildfire.impactPoint.getPosition().flatten(); 
-		steal  = (Utils.teamSign(input.car) * impactFlat.y > 4000 && Constants.enemyGoal(input.car.team).distance(impactFlat) > 1800 && !Behaviour.isInCone(input.car, impactFlat.withZ(0), 700));
+		steal = (Utils.teamSign(input.car) * impactFlat.y > 4000 && Constants.enemyGoal(input.car.team).distance(impactFlat) > 1800 && !Behaviour.isInCone(input.car, impactFlat.withZ(0), 700));
+		possession = (Behaviour.closestOpponentDistance(input, input.ball.position) > Math.max(2400, input.car.position.distanceFlat(impactFlat)));
 		
 		//World's longest line
 		boolean teammateAtBall = Behaviour.isTeammateCloser(input);
-		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2400 && !steal) || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4500) || Math.abs(wildfire.impactPoint.getPosition().x) < 1500 || ((Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && !steal) && wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 2500)){
+		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.car.position.distanceFlat(wildfire.impactPoint.getPosition()) < 2400 && !(steal || possession)) || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4500) || (Math.abs(wildfire.impactPoint.getPosition().x) < 1500 && !possession) || ((Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), 200) && !(steal || possession)))){
 			return false;
 		}
 		boost = getBoost(input);
@@ -49,7 +51,7 @@ public class BoostState extends State {
 	public boolean expire(DataPacket input){
 		if(Behaviour.isKickoff(input) || boost == null || !boost.isActive() || input.car.boost > maxBoostMega) return true;
 		if(boost.getLocation().distanceFlat(input.car.position) < 1800) return false;
-		return input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < 3600 || Math.abs(wildfire.impactPoint.getPosition().x) < 1200;
+		return input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (Math.abs(wildfire.impactPoint.getPosition().x) < 1200 ? 3300 : 2400);
 //		return false;
 	}
 

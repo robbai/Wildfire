@@ -31,7 +31,7 @@ public class Behaviour {
 			double acceleration = 2 * (displacement - initialVelocity * timeLeft) / Math.pow(timeLeft, 2);
 			
 			if(initialVelocity + acceleration * timeLeft < Math.max(initialVelocity, Physics.boostMaxSpeed(initialVelocity, input.car.boost))){
-				return new PredictionSlice(location.plus(carPosition.minus(location.flatten()).normalized().scaled(Constants.BALLRADIUS).withZ(0)), i);
+				return new PredictionSlice(location.plus(carPosition.minus(location.flatten()).scaledToMagnitude(Constants.BALLRADIUS).withZ(0)), i);
 			}
 		}
 		

@@ -143,7 +143,7 @@ public class WaitState extends State {
 		Vector2 target = null;
 		double velocityNeeded = -1;
 		
-		for(double offset = (towardsOwnGoal ? 0.9 : (bounceDistance > 2000 ? 1.5 : 0.1)); offset > (towardsOwnGoal ? 0.15 : 0); offset -= offsetDecrement){
+		for(double offset = (towardsOwnGoal ? 0.9 : (bounceDistance > 2000 ? 1.2 : 0.5)); offset > (towardsOwnGoal ? 0.2 : 0); offset -= offsetDecrement){
 			target = getNextPoint(input.car.position.flatten(), destination, enemyGoal, offset);
 			
 			double distance = getPathwayDistance(input.car.position.flatten(), destination, enemyGoal, offset, Color.YELLOW, desiredDist);

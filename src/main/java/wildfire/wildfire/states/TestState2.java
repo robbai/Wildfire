@@ -17,6 +17,7 @@ import wildfire.wildfire.obj.DiscreteCurve;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Handling;
+import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class TestState2 extends State {
@@ -25,8 +26,8 @@ public class TestState2 extends State {
 	 * Testing state
 	 */
 	
-	private final double steerUnits = 410, speedUnits = 20;
-	private final boolean verboseRender = false, dodge = true;
+	private final double steerUnits = 450, speedUnits = 5;
+	private final boolean verboseRender = true, dodge = true;
 
 	public TestState2(Wildfire wildfire){
 		super("Test2", wildfire);
@@ -57,9 +58,10 @@ public class TestState2 extends State {
 			for(int i = wildfire.impactPoint.getFrame(); i < wildfire.ballPrediction.slicesLength(); i++){
 				PredictionSlice slice = wildfire.ballPrediction.slices(i);
 				double time = slice.gameSeconds() - input.elapsedSeconds;
+				Vector3 ballLocation = Vector3.fromFlatbuffer(slice.physics().location());
 				
 				// Get the points.
-				points = getPoints(input.car, Vector3.fromFlatbuffer(slice.physics().location()));
+				points = getPoints(input.car, ballLocation);
 			
 				// Get the curve.
 				curve = new DiscreteCurve(u, wildfire.unlimitedBoost ? -1 : input.car.boost, points, time);
@@ -138,11 +140,11 @@ public class TestState2 extends State {
 		Vector2 destination = ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(offset));
 		BezierCurve bezier = new BezierCurve(
 				carLocation,
-				carLocation.plus(car.orientation.noseVector.flatten().scaledToMagnitude(Utils.clamp((distance - Constants.BALLRADIUS) * 0.25, 0, 400))),
+				carLocation.plus(car.orientation.noseVector.flatten().scaledToMagnitude(Utils.clamp((distance - Constants.BALLRADIUS) * 0.4, 0, 900))),
 				destination,
-				ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS))
+				ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS + (dodge ? 70 : 0)))
 				);
-		return bezier.discrete(50);
+		return bezier.discrete(30);
 	}
 
 }

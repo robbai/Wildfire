@@ -82,7 +82,7 @@ public class Handling {
 	}
 	
 	public static ControlsOutput stayStill(CarData car){
-		return new ControlsOutput().withThrottle(-car.forwardMagnitude() / 2500).withBoost(false);
+		return new ControlsOutput().withThrottle(Handling.produceAcceleration(car, car.forwardMagnitude() * -60)).withBoost(false);
 	}
 	
 	public static double aimLocally(CarData car, Vector3 point){
@@ -173,10 +173,12 @@ public class Handling {
 		
 		// Controls.
 		double driveDistance = fullDistance - peakTime * finalVelocity;
-		if(Math.abs(controls.getSteer()) > 0.6 || driveDistance < 0){
+		if(Math.abs(controls.getSteer()) > 0.8){
 			return controls;
+		}else if(!car.isSupersonic && (driveDistance < 0 
+				|| finalVelocity < Physics.maxVelocity(initialVelocity, car.boost, driveTime) - 450 / Math.max(driveTime, 0))){
+			return stayStill(car);
 		}
-		if(driveDistance > 600) acceleration /= Math.max(1, Math.pow(driveTime, 1.25)); // We do a little manipulation to increase our final velocity
 		double throttle = produceAcceleration(car, acceleration); 
 		return controls.withThrottle(throttle).withBoost(throttle > 1);
 	}

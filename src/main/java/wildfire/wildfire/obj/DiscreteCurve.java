@@ -56,12 +56,15 @@ public class DiscreteCurve {
 			
 			// Slide the braking curve.
 			boolean brake = false;
-			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= 20){
+			int brakeIncrement = 25;
+			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= brakeIncrement){
+//			for(int brakeVelocity = 0; brakeVelocity <= Math.floor(v); brakeVelocity += brakeIncrement){
 				double brakeDistance = (s + brakeCurve[brakeVelocity]);
 				if(brakeDistance > this.distance) break;
 
 				double brakeIndex = this.indexS(brakeDistance);
 				if(Utils.lerp(optimalSpeeds[(int)Math.floor(brakeIndex)], optimalSpeeds[(int)Math.ceil(brakeIndex)], brakeIndex - Math.floor(brakeIndex))
+//				if(Math.max(optimalSpeeds[(int)Math.floor(brakeIndex)], optimalSpeeds[(int)Math.ceil(brakeIndex)])
 						< brakeVelocity){
 					brake = true;
 					break; // Brake - Kappa.

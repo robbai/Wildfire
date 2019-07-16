@@ -24,7 +24,7 @@ public class IdleState extends State {
 		if(Behaviour.isKickoff(input)) return false;
 		if(!input.gameInfo.isRoundActive()) return true;
 		
-		boolean onTarget = Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team);
+		boolean onTarget = Behaviour.isOnTarget(wildfire.ballPrediction, 1 - input.car.team);
 		if(!onTarget) return false;
 		
 		boolean noIntersect = Behaviour.nobodyElseIntersect(input.car.index, input.cars, wildfire.ballPrediction);
