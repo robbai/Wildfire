@@ -152,5 +152,9 @@ public class Vector2 {
 		double mag = this.magnitude();
 		return (mag > max ? this.scaledToMagnitude(max) : new Vector2(this.x, this.y));
 	}
+	
+	public Vector2 cross(){
+		return new Vector2(-this.y, this.x);
+	}
     
 }

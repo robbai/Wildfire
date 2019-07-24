@@ -233,9 +233,9 @@ public class WaitState extends State {
 	}
 	
 	private Vector2 getNextPoint(Vector2 start, Vector2 bounce, Vector2 enemyGoal, double length){
-		double offset = length * bounce.distance(start) / 2.25;
+		double offset = length * bounce.distance(start) / 2.3;
 		Vector2 target = bounce.plus(bounce.minus(enemyGoal).scaledToMagnitude(offset));
-		target = start.plus(target.minus(start).scaled(0.2)).confine();
+		target = start.plus(target.minus(start).scaled(0.225)).confine();
 		
 		return target;
 	}

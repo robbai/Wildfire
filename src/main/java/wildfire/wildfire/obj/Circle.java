@@ -10,7 +10,7 @@ public class Circle {
 	public Circle(Vector2 centre, double radius){
 		super();
 		this.centre = centre;
-		this.radius = radius;
+		this.radius = Math.abs(radius);
 	}
 	
 	public Vector2 getCentre(){
@@ -36,6 +36,14 @@ public class Circle {
 				);
 		
 		return tangents;
+	}
+	
+	public double getCircumference(){
+		return this.radius * 2 * Math.PI;
+	}
+	
+	public double getSectorCircumference(double radians){
+		return this.getCircumference() * radians / (2 * Math.PI);
 	}
 	
 }

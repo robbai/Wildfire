@@ -23,7 +23,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.157, scope = 0.395;
+	private static final double dropoff = 0.155, scope = 0.41;
 	
 	/*
 	 * Yeah this one too, I guess
@@ -64,7 +64,7 @@ public class FallbackState extends State {
 //		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 900);
 		boolean avoidOwnGoal = !Behaviour.correctSideOfTarget(input.car, input.ball.position) && trace != null;
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.95, 85, 800), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.85, 85, 800), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(input.car, impactPoint, Color.PINK, 125);
 		}
 

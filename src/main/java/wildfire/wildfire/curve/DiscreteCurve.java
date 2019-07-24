@@ -1,12 +1,18 @@
-package wildfire.wildfire.obj;
+package wildfire.wildfire.curve;
 
 import java.awt.Color;
 import java.util.Arrays;
 
 import wildfire.vector.Vector2;
+import wildfire.wildfire.obj.Pair;
+import wildfire.wildfire.obj.WRenderer;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
+
+/**
+ * https://samuelpmish.github.io/notes/RocketLeague/path_analysis/
+ */
 
 public class DiscreteCurve {
 	
@@ -56,7 +62,7 @@ public class DiscreteCurve {
 			
 			// Slide the braking curve.
 			boolean brake = false;
-			int brakeIncrement = 25;
+			int brakeIncrement = 15;
 			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= brakeIncrement){
 //			for(int brakeVelocity = 0; brakeVelocity <= Math.floor(v); brakeVelocity += brakeIncrement){
 				double brakeDistance = (s + brakeCurve[brakeVelocity]);
@@ -82,7 +88,7 @@ public class DiscreteCurve {
 				boolean useBoost = ((this.unlimitedBoost || boost >= 1) && (optimalSpeed - v) > Constants.BOOSTACC * Math.pow(curveStep, 2));
 				a = Physics.determineAcceleration(v, 1, useBoost);
 				if(useBoost) boost -= (100D / 3) * curveStep; // Consume boost.
-//				if(!useBoost && v + a * curveStep > optimalSpeed) a = (optimalSpeed - v) / curveStep;
+				if(!useBoost && v + a * curveStep > optimalSpeed) a = (optimalSpeed - v);
 			}
 			
 			v = Utils.clamp(v + a * curveStep, 0, Constants.MAXCARSPEED);

@@ -12,12 +12,11 @@ import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.RecoveryAction;
-import wildfire.wildfire.obj.BezierCurve;
-import wildfire.wildfire.obj.DiscreteCurve;
+import wildfire.wildfire.curve.Biarc;
+import wildfire.wildfire.curve.DiscreteCurve;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Handling;
-import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class TestState2 extends State {
@@ -26,8 +25,8 @@ public class TestState2 extends State {
 	 * Testing state
 	 */
 	
-	private final double steerUnits = 450, speedUnits = 5;
-	private final boolean verboseRender = true, dodge = true;
+	private final double steerUnits = 350, speedUnits = 5;
+	private final boolean verboseRender = true, dodge = false;
 
 	public TestState2(Wildfire wildfire){
 		super("Test2", wildfire);
@@ -78,7 +77,11 @@ public class TestState2 extends State {
 		
 		// Get some info.
 		Vector2 target = curve.S(Math.min(curve.getDistance(), steerUnits));
-		if(target == null) return Handling.atba(input, input.ball.position); 
+		if(target == null){
+			return Handling.atba(input, input.ball.position); 
+		}else{
+			target = target.confine(50);
+		}
 		double acc = curve.getAcceleration(speedUnits / curve.getDistance());
 		
 		// Render.
@@ -90,7 +93,7 @@ public class TestState2 extends State {
 		wildfire.renderer.drawString2d("Time: " + Utils.round(curve.getTime()) + "s", Color.WHITE, new Point(0, 40), 2, 2);
 		curve.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.CYAN, target, 10);
-		wildfire.renderer.drawCircle(Color.RED, curve.S(Math.min(curve.getDistance(), speedUnits)), 5);
+		wildfire.renderer.drawCircle(Color.RED, curve.S(Math.min(curve.getDistance(), u / 60)), 5);
 		
 		// Handling.
 		double radians = Handling.aimLocally(input.car, target);
@@ -134,17 +137,23 @@ public class TestState2 extends State {
 //		}
 //		return points.toArray(new Vector2[points.size()]);
 		
-		double distance = carLocation.distance(ballLocation);
-		double angle = enemyGoal.minus(ballLocation).angle(carLocation.minus(ballLocation).scaled(-1));
-		double offset = (distance * angle * 0.9);
-		Vector2 destination = ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(offset));
-		BezierCurve bezier = new BezierCurve(
-				carLocation,
-				carLocation.plus(car.orientation.noseVector.flatten().scaledToMagnitude(Utils.clamp((distance - Constants.BALLRADIUS) * 0.4, 0, 900))),
-				destination,
-				ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS + (dodge ? 70 : 0)))
-				);
-		return bezier.discrete(30);
+//		double distance = carLocation.distance(ballLocation);
+//		double angle = enemyGoal.minus(ballLocation).angle(carLocation.minus(ballLocation).scaled(-1));
+//		double offset = (distance * angle * 0.9);
+//		Vector2 destination = ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(offset));
+//		BezierCurve bezier = new BezierCurve(
+//				carLocation,
+//				carLocation.plus(car.orientation.noseVector.flatten().scaledToMagnitude(Utils.clamp((distance - Constants.BALLRADIUS) * 0.4, 0, 900))),
+//				destination,
+//				ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS + (dodge ? 70 : 0)))
+//				);
+//		return bezier.discretise(30);
+		
+		Biarc biarc = new Biarc(carLocation, 
+				car.orientation.noseVector.flatten(), 
+				ballLocation.plus(ballLocation.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS + (dodge ? 70 : 15))), 
+				enemyGoal.minus(ballLocation));
+		return biarc.discretise(50);
 	}
 
 }

@@ -14,7 +14,7 @@ import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.WavedashAction;
-import wildfire.wildfire.obj.BezierCurve;
+import wildfire.wildfire.curve.BezierCurve;
 import wildfire.wildfire.obj.KickoffSpawn;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;

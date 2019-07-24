@@ -176,7 +176,8 @@ public class Handling {
 		if(Math.abs(controls.getSteer()) > 0.8){
 			return controls;
 		}else if(!car.isSupersonic && (driveDistance < 0 
-				|| finalVelocity < Physics.maxVelocity(initialVelocity, car.boost, driveTime) - 450 / Math.max(driveTime, 0))){
+				|| finalVelocity < Physics.maxVelocity(initialVelocity, car.boost, driveTime) - 200 / Math.max(driveTime, 0.0001)
+				)){
 			return stayStill(car);
 		}
 		double throttle = produceAcceleration(car, acceleration); 

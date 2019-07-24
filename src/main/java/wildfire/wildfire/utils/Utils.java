@@ -129,7 +129,7 @@ public class Utils {
 		return toLocalFromRelative(car, vec.minus(car.position));
 	}
 	
-	public static double lerp(double a, double b, double f) {
+	public static double lerp(double a, double b, double f){
 		return a + f * (b - a);
 	}
 

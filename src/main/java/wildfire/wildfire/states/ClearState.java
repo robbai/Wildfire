@@ -69,15 +69,17 @@ public class ClearState extends State {
 		
 		// Smart-dodge.
 		if(!hasAction() && Behaviour.isBallAirborne(input.ball) && offset != null){
-			currentAction = new SmartDodgeAction(this, input, false);
-			if(!currentAction.failed) return currentAction.getOutput(input);
-			currentAction = null;
-			
 			Vector2 trace = Utils.traceToWall(input.car.position.flatten(), wildfire.impactPoint.getPosition().plus(offset.withZ(0)).minus(input.car.position).flatten());
 			PredictionSlice candidate = SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, input.car, trace);
-			if(candidate != null
-					&& Utils.toLocal(input.car, candidate.getPosition()).flatten().magnitude() / candidate.getTime() < 2300){
-				return Handling.arriveAtSmartDodgeCandidate(input.car, candidate, wildfire.renderer);
+			
+			if(candidate != null && candidate.getPosition().z - input.car.position.z > 180){
+				currentAction = new SmartDodgeAction(this, input, false);
+				if(!currentAction.failed) return currentAction.getOutput(input);
+				currentAction = null;
+				
+				if(Utils.toLocal(input.car, candidate.getPosition()).flatten().magnitude() / candidate.getTime() < 2300){
+					return Handling.arriveAtSmartDodgeCandidate(input.car, candidate, wildfire.renderer);
+				}
 			}
 		}
 		

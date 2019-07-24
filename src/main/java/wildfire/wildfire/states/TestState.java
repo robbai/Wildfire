@@ -1,18 +1,23 @@
 package wildfire.wildfire.states;
 
+import java.awt.Color;
+
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.actions.AerialAction;
+import wildfire.wildfire.curve.Biarc;
+import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Handling;
-import wildfire.wildfire.utils.Utils;
+import wildfire.wildfire.utils.Physics;
 
 public class TestState extends State {
 	
 	/*
-	 * This state is solely for the purpose of testing actions
+	 * This state is solely for the purpose of testing
 	 */
 
 	public TestState(Wildfire wildfire){
@@ -26,20 +31,18 @@ public class TestState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(!hasAction() && input.car.hasWheelContact && (input.car.velocity.magnitude() > 800 || input.car.position.z > 400) && (input.ball.position.z > 800 || input.car.position.z > 2000)){		
-			currentAction = AerialAction.fromBallPrediction(this, input.car, wildfire.ballPrediction, false);
-			
-			if(currentAction != null && !currentAction.failed){
-				return currentAction.getOutput(input); //Start overriding
-			}else{
-				currentAction = null;
-			}
-		}
+		Biarc biarc = new Biarc(input.car.position.flatten(), input.car.orientation.noseVector.flatten(), input.ball.position.flatten(), Constants.enemyGoal(input.car).minus(input.ball.position.flatten()));
+		biarc.render(wildfire.renderer, true);
 		
-		double steer = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-		double throttle = Math.signum(Math.cos(steer));
-		if(Math.abs(input.car.position.y) < 3000) throttle *= 0.5; 
-		return new ControlsOutput().withSteer((float)(throttle < 0 ? Utils.invertAim(steer) : -steer) * 3F).withThrottle((float)throttle).withBoost(throttle > 0.9 && !Behaviour.isBallAirborne(input.ball));
+		double t = 0.225;
+		Vector2 target = biarc.T(t);
+		wildfire.renderer.drawCircle(Color.GREEN, target, 25);
+		
+		double steer = Handling.aimLocally(input.car, target) * -3;
+		Pair<Double, Double> radii = biarc.getRadii();
+		double targetVelocity = Math.max(250, Physics.getSpeedFromRadius(Math.max(radii.getOne(), radii.getTwo())));
+		double throttle = Handling.produceAcceleration(input.car, (targetVelocity - input.car.velocity.magnitude()) * 60);
+		return new ControlsOutput().withSteer(steer).withThrottle(throttle).withBoost(throttle > 1);
 	}
 
 }
