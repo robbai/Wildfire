@@ -14,27 +14,25 @@ import wildfire.wildfire.obj.WRenderer;
 
 public class Handling {
 
-	private static Vector2 forwardVector = new Vector2(0, 1);
-//	private static Vector3 forwardVector3 = new Vector3(0, 1, 0);
-
+	private static Vector2 forwardVector = new Vector2(0, 1)/**, sideVector = new Vector2(1, 0)*/;
+	
+	public static double aim(CarData car, Vector3 point){
+		return forwardVector.correctionAngle(Utils.toLocal(car, point).flatten());
+	}
+	
 	public static double aim(CarData car, Vector2 point){
-		Vector2 carPosition = car.position.flatten();
-	    Vector2 carDirection = car.orientation.noseVector.flatten();
-		return carDirection.correctionAngle(point.minus(carPosition));
+		return aim(car, point.withZ(Constants.CARHEIGHT));
 	}
 
 	public static double aimFromPoint(Vector2 carPosition, Vector2 carDirection, Vector2 point){
 		return carDirection.correctionAngle(point.minus(carPosition));
 	}
 
-	/**
-	 * Inspired by the wonderful Darxeal
-	 */
 	public static ControlsOutput driveDownWall(DataPacket input){
+		double radians = aim(input.car, input.car.position.plus(input.car.orientation.roofVector.scaledToMagnitude(70)).flatten());
 		return new ControlsOutput().withThrottle(1).withBoost(false)
-				.withSteer((float)(-3F * aimLocally(input.car, 
-						input.car.position.plus(input.car.orientation.roofVector.scaledToMagnitude(50)).flatten())))
-				.withSlide(!input.car.isDrifting() && input.car.orientation.noseVector.z > -0.3 && input.car.velocity.magnitude() > 500);
+				.withSteer(-3 * radians)
+				.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > Math.toDegrees(60)); // && input.car.velocity.magnitude() > 500
 	}
 
 	/**
@@ -55,8 +53,16 @@ public class Handling {
     	return Math.min(point.distance(right), point.distance(left)) < turningRadius;
 	}
 	
+	public static boolean insideTurningRadius(CarData car, Vector3 point){
+    	double turningRadius = Physics.getTurnRadius(car.velocity.flatten().magnitude());
+    	Vector3 localPoint = Utils.toLocal(car, point);
+    	Vector3 right = car.orientation.rightVector.scaledToMagnitude(turningRadius);
+    	Vector3 left = car.orientation.rightVector.scaledToMagnitude(-turningRadius);
+    	return Math.min(localPoint.distance(right), localPoint.distance(left)) < turningRadius;
+	}
+	
 	public static ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
-		double steer = Handling.aimLocally(input.car, point);
+		double steer = Handling.aim(input.car, point);
 		
 		double throttle = (rush ? 1 : Math.signum(Math.cos(steer)));
 		
@@ -68,29 +74,21 @@ public class Handling {
 		
 		return new ControlsOutput().withThrottle(throttle)
 				.withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > (rush ? 1200 : 2000))
-				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.3 && !input.car.isDrifting() && velocity > 600);
+				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.3 && Handling.canHandbrake(input.car) && velocity > 600);
 	}
 	
 	public static ControlsOutput driveDestination(CarData car, Vector3 destination){
-		double velocityForward = car.forwardMagnitude();
-		double steer = aimLocally(car, destination);
+		double velocityForward = car.forwardVelocity;
+		double steer = aim(car, destination);
 		
 		return new ControlsOutput().withThrottle(1)
 				.withBoost(Math.abs(steer) < 0.25 && !car.isSupersonic)
 				.withSteer(-steer * 3F)
-				.withSlide(Math.abs(steer) > 1.1 && velocityForward > 400 && !car.isDrifting());
+				.withSlide(Math.abs(steer) > 1.1 && velocityForward > 400 && Handling.canHandbrake(car));
 	}
 	
 	public static ControlsOutput stayStill(CarData car){
-		return new ControlsOutput().withThrottle(Handling.produceAcceleration(car, car.forwardMagnitude() * -60)).withBoost(false);
-	}
-	
-	public static double aimLocally(CarData car, Vector3 point){
-		return forwardVector.correctionAngle(Utils.toLocal(car, point).flatten());
-	}
-	
-	public static double aimLocally(CarData car, Vector2 point){
-		return aimLocally(car, point.withZ(0));
+		return new ControlsOutput().withThrottle(Handling.produceAcceleration(car, car.forwardVelocity * -60)).withBoost(false);
 	}
 	
 	/**
@@ -117,7 +115,7 @@ public class Handling {
 	 * https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc#L112-L160
 	 */
 	public static double produceAcceleration(CarData car, double acceleration){
-		double velocityForward = car.forwardMagnitude();
+		double velocityForward = car.forwardVelocity;
 		double throttleAcceleration = Physics.determineAcceleration(velocityForward, 1, false);
 		
 		double brakeCoastTransition = -0.45 * Constants.BRAKEACC - 0.55 * Constants.COASTACC;
@@ -159,10 +157,11 @@ public class Handling {
 		// Drive.
 		double driveTime = candidate.getTime() - peakTime;
 		double fullDistance = carPosition.distanceFlat(ballPosition);
-		double initialVelocity = car.magnitudeInDirection(ballPosition.minus(carPosition).flatten());
+		double initialVelocity = car.velocityDir(ballPosition.minus(carPosition).flatten());
 		// full distance - peak time * final velocity = 0.5 * drive time * (initial velocity + final velocity)
 		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
-		double acceleration = (finalVelocity - initialVelocity) / driveTime;
+		double acceleration = (finalVelocity - initialVelocity) / Math.max(0.00001, driveTime);
+//		double driveDistance = fullDistance - peakTime * finalVelocity;
 		
 		if(renderer != null){
 			renderer.drawCrosshair(car, ballPosition, Color.RED, 70);
@@ -172,16 +171,28 @@ public class Handling {
 		}
 		
 		// Controls.
-		double driveDistance = fullDistance - peakTime * finalVelocity;
-		if(Math.abs(controls.getSteer()) > 0.8){
-			return controls;
-		}else if(!car.isSupersonic && (driveDistance < 0 
-				|| finalVelocity < Physics.maxVelocity(initialVelocity, car.boost, driveTime) - 200 / Math.max(driveTime, 0.0001)
-				)){
-			return stayStill(car);
+//		if(Math.abs(controls.getSteer()) > 0.5) return controls;
+		if(Math.abs(controls.getSteer()) > 0.5) return turnOnSpot(car, ballPosition);
+		if(acceleration > 0 && Behaviour.correctSideOfTarget(car, ballPosition)){
+			double maxVel = Physics.maxVelocity(driveTime, initialVelocity, car.boost);
+			if(maxVel > finalVelocity) acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(350, 800, finalVelocity / Constants.MAXCARSPEED));
 		}
 		double throttle = produceAcceleration(car, acceleration); 
 		return controls.withThrottle(throttle).withBoost(throttle > 1);
+	}
+
+	private static ControlsOutput turnOnSpot(CarData car, Vector3 ballPosition){
+		ControlsOutput controls = driveDestination(car, ballPosition);
+		double targetVelocity = 600;
+		double acceleration = (targetVelocity - car.forwardVelocity) / 0.05;
+		double throttle = produceAcceleration(car, acceleration);
+		return controls.withThrottle(throttle).withBoost(throttle > 1);
+	}
+	
+	public static boolean canHandbrake(CarData car){
+		Vector2 localVel = Utils.toLocalFromRelative(car, car.velocity).flatten();
+		if(localVel.isZero()) return false;
+		return localVel.normalized().dotProduct(forwardVector) > 0.9 && localVel.magnitude() > 250;
 	}
 
 }

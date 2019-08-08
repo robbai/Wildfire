@@ -36,7 +36,7 @@ public class BoostState extends State {
 	public boolean ready(DataPacket input){
 		Vector2 impactFlat = wildfire.impactPoint.getPosition().flatten(); 
 		steal = (Utils.teamSign(input.car) * impactFlat.y > 4000 && Constants.enemyGoal(input.car.team).distance(impactFlat) > 1800 && !Behaviour.isInCone(input.car, impactFlat.withZ(0), 700));
-		possession = (Behaviour.closestOpponentDistance(input, input.ball.position) > Math.max(2400, input.car.position.distanceFlat(impactFlat)));
+		possession = (Behaviour.closestOpponentDistance(input, input.ball.position) > Math.max(2600, input.car.position.distanceFlat(impactFlat)));
 		
 		//World's longest line
 		boolean teammateAtBall = Behaviour.isTeammateCloser(input);
@@ -65,7 +65,7 @@ public class BoostState extends State {
 		if(this.steal) wildfire.renderer.drawString2d("Steal", Color.WHITE, new Point(0, 20), 2, 2);
 		
 		//Recovery
-		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			return currentAction.getOutput(input);
 		}
@@ -76,8 +76,8 @@ public class BoostState extends State {
 		
 		if(distance > 2000 && input.car.velocity.magnitude() < 1000) wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		
-		double forwardVelocity = input.car.forwardMagnitude();
-		if(!hasAction() && input.car.hasWheelContact && distance > 1500 && !input.car.isSupersonic){	
+		double forwardVelocity = input.car.forwardVelocity;
+		if(input.car.hasWheelContact && distance > 1900 && !input.car.isSupersonic){	
 			if(Behaviour.isOnWall(input.car)){
 				currentAction = new HopAction(this, input, boostLocation);
 			}else if(Math.abs(steer) < 0.12 && forwardVelocity > 1100){
@@ -86,6 +86,7 @@ public class BoostState extends State {
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+			currentAction = null;
 		}
 		
 		//Render
@@ -114,7 +115,7 @@ public class BoostState extends State {
 		}else{
 			return new ControlsOutput().withSteer(steer * -3).withThrottle(throttle)
 					.withBoost(Math.abs(steer) < 0.1 && (distance > 1200 || forwardVelocity < 800))
-					.withSlide(Math.abs(steer) > 1.2 && distance < 1200 && !input.car.isDrifting());
+					.withSlide(Math.abs(steer) > 1.2 && distance < 1200 && Handling.canHandbrake(input.car));
 		}
 	}
 
@@ -132,7 +133,7 @@ public class BoostState extends State {
 			if(boost.getLocation().y * Utils.teamSign(input.car) > wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) - 1000) continue;
 			if(steal && boost.getLocation().y * Utils.teamSign(input.car) < 4500) continue; //Steal their boost
 			
-			if(!discardSpeed && input.car.magnitudeInDirection(boost.getLocation().minus(input.car.position).flatten()) < -250) continue;
+			if(!discardSpeed && input.car.velocityDir(boost.getLocation().minus(input.car.position).flatten()) < -250) continue;
 			
 			if(bestBoost == null || distance < bestDistance){
 				bestBoost = boost;

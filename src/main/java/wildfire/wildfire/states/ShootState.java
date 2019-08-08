@@ -45,32 +45,34 @@ public class ShootState extends State {
 		
 		double aimBall = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		if(Math.abs(aimBall) > Math.PI * 0.7 && input.car.velocity.magnitude() > 1100) return false;
-		return Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), -150);
+		return Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), -180);
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		double aimImpact = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
 		double distance = input.ball.position.distance(input.car.position);
-		
-		if(!hasAction()){
-			if(input.car.hasWheelContact){
-				boolean dodgeBallDist = (distance < Utils.lerp(420, 500, input.car.velocity.magnitude() / 2300));
-				if(Math.abs(aimImpact) > Math.PI * 0.7 && distance < 560){
-					currentAction = new HalfFlipAction(this, input.elapsedSeconds);
-				}else if(Math.abs(aimImpact) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
-					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-				}else if((dodgeBallDist && Math.abs(aimImpact) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(aimImpact) < 0.25 && input.car.velocity.magnitude() > 1800)){
-					if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
-					
-					double forwardVelocity = input.car.forwardMagnitude();
-					if(forwardVelocity > 1300) currentAction = new DodgeAction(this, (dodgeBallDist ? 2 : 1) * aimImpact, input);
-				}
-			}else if(Behaviour.isCarAirborne(input.car)){
-				currentAction = new RecoveryAction(this, input.elapsedSeconds);
+				
+		/*
+		 * Actions.
+		 */
+		if(input.car.hasWheelContact){
+			boolean dodgeBallDist = (distance < Utils.lerp(420, 500, input.car.velocity.magnitude() / 2300));
+			if(Math.abs(aimImpact) > Math.PI * 0.7 && distance < 560){
+				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+			}else if(Math.abs(aimImpact) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
+				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
+			}else if((dodgeBallDist && Math.abs(aimImpact) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(aimImpact) < 0.25 && input.car.velocity.magnitude() > 1800)){
+				if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
+
+				double forwardVelocity = input.car.forwardVelocity;
+				if(forwardVelocity > 1300) currentAction = new DodgeAction(this, (dodgeBallDist ? 2 : 1) * aimImpact, input);
 			}
-			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+		}else if(Behaviour.isCarAirborne(input.car)){
+			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 		}
+		if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+		currentAction = null;
 		
 		float throttle = (float)(Math.abs(Math.cos(aimImpact)) * (1D - minThrottle) + minThrottle);
 		

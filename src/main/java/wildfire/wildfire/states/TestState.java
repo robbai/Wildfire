@@ -1,18 +1,16 @@
 package wildfire.wildfire.states;
 
-import java.awt.Color;
-
+import rlbot.flat.BallPrediction;
+import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.curve.Biarc;
-import wildfire.wildfire.obj.Pair;
+import wildfire.wildfire.curve.*;
+import wildfire.wildfire.mechanics.FollowDiscreteMechanic;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
-import wildfire.wildfire.utils.Physics;
 
 public class TestState extends State {
 	
@@ -31,18 +29,23 @@ public class TestState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		Biarc biarc = new Biarc(input.car.position.flatten(), input.car.orientation.noseVector.flatten(), input.ball.position.flatten(), Constants.enemyGoal(input.car).minus(input.ball.position.flatten()));
-		biarc.render(wildfire.renderer, true);
+		CarData car = input.car;
+		Vector2 enemyGoal = Constants.enemyGoal(car);
 		
-		double t = 0.225;
-		Vector2 target = biarc.T(t);
-		wildfire.renderer.drawCircle(Color.GREEN, target, 25);
+		DiscreteCurve discrete = null;
+		BallPrediction ballPrediction = wildfire.ballPrediction;
+		for(int i = Math.max(0, wildfire.impactPoint.getFrame() - 1); i < ballPrediction.slicesLength(); i++){
+			Vector2 ballPosition = Vector2.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			double time = (ballPrediction.slices(i).gameSeconds() - car.elapsedSeconds);
+			
+			Curve curve = new Biarc(car.position.flatten(), car.orientation.noseVector.flatten(), ballPosition.plus(ballPosition.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS)), enemyGoal.minus(ballPosition));
+//			Curve curve = new BezierCurve(car.position.flatten(), ballPosition.plus(ballPosition.minus(enemyGoal).scaledToMagnitude(car.position.flatten().distance(ballPosition) * 0.75)), ballPosition.plus(ballPosition.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS)));
+			
+			discrete = new DiscreteCurve(car.forwardVelocity, car.boost, curve);
+			if(discrete.getTime() < time || input.ball.velocity.magnitude() < 1) break;
+		}
 		
-		double steer = Handling.aimLocally(input.car, target) * -3;
-		Pair<Double, Double> radii = biarc.getRadii();
-		double targetVelocity = Math.max(250, Physics.getSpeedFromRadius(Math.max(radii.getOne(), radii.getTwo())));
-		double throttle = Handling.produceAcceleration(input.car, (targetVelocity - input.car.velocity.magnitude()) * 60);
-		return new ControlsOutput().withSteer(steer).withThrottle(throttle).withBoost(throttle > 1);
+		return this.startMechanic(new FollowDiscreteMechanic(this, discrete, input.elapsedSeconds, true), input);
 	}
 
 }

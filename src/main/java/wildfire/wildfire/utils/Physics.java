@@ -2,6 +2,7 @@ package wildfire.wildfire.utils;
 
 import wildfire.input.CarData;
 import wildfire.vector.Vector2;
+import wildfire.vector.Vector3;
 
 public class Physics {
 	
@@ -121,6 +122,25 @@ public class Physics {
 		
 //		return (velocity - velocityForward) / time;
 		return velocity;
+	}
+
+	public static double maxVelForTurn(CarData car, Vector3 target){
+		Vector2 local = Utils.toLocal(car, target).flatten();
+		
+		int step = 20;
+		for(int v = 0; v <= Constants.MAXCARSPEED; v += step){
+			double turningRadius = getTurnRadius(v);
+			
+			Vector2 left = new Vector2(turningRadius, 0);
+			Vector2 right = left.scaled(-1);
+			
+			double distance = Math.min(local.distance(left), local.distance(right));
+			if(distance < turningRadius){
+				return Utils.lerp(Math.max(v - step, 0), v, distance / turningRadius);
+			}
+		}
+		
+		return Constants.MAXCARSPEED;
 	}
 
 }

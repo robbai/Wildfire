@@ -1,7 +1,7 @@
 package wildfire.wildfire.curve;
 
 import java.awt.Color;
-import java.util.Arrays;
+import java.util.OptionalDouble;
 
 import wildfire.vector.Vector2;
 import wildfire.wildfire.obj.Pair;
@@ -16,16 +16,17 @@ import wildfire.wildfire.utils.Utils;
 
 public class DiscreteCurve {
 	
-	private static final int analysePoints = 80, polyRender = 3;
-	public static final double curveStep = (1D / 60);
+	private static final int analysePoints = 80, polyRender = 1;
+	public static final double curveStep = (1D / 45);
 	private static final double[] brakeCurve = formAccCurve(false);
 	
 	private final Vector2[] points;
-	private final double initialVelocity, distance, boost, time, timeRestriction;
+	private final double initialVelocity, distance, boost, time;
+	private final OptionalDouble timeRestriction;
 	private final boolean valid, unlimitedBoost;
 	private final double[] turningRadii, speeds, accelerations;
 
-	public DiscreteCurve(double initialVelocity, double boost, Vector2[] points, double timeRestriction){
+	public DiscreteCurve(double initialVelocity, double boost, Vector2[] points, OptionalDouble timeRestriction){
 		super();
 		this.points = points;
 		this.valid = !this.invalidCurve();
@@ -40,6 +41,18 @@ public class DiscreteCurve {
 		this.accelerations = (this.valid ? result.getOne()[1] : null);
 		this.time = (this.valid ? result.getTwo() : 0);
 	}
+	
+	public DiscreteCurve(double initialVelocity, double boost, Vector2[] points){
+		this(initialVelocity, boost, points, OptionalDouble.empty());
+	}
+	
+	public DiscreteCurve(double initialVelocity, double boost, Curve curve){
+		this(initialVelocity, boost, curve.discretise(analysePoints), OptionalDouble.empty());
+	}
+	
+	public DiscreteCurve(double initialVelocity, double boost, Curve curve, OptionalDouble timeRestriction){
+		this(initialVelocity, boost, curve.discretise(analysePoints), timeRestriction);
+	}
 
 	private Pair<double[][], Double> calculateSpeed(){
 		if(this.turningRadii == null) return null;
@@ -52,17 +65,16 @@ public class DiscreteCurve {
 		}
 
 		// Apply acceleration limits.
-//		double[][] speeds = new double[2][analysePoints];
 		double[] speeds = new double[analysePoints], accelerations = new double[analysePoints];
 		double s = 0, time = 0, v = this.initialVelocity, boost = this.boost;
 		speeds[0] = v;
-		accelerations[0] = 0;
+//		accelerations[0] = 0D;
 		while(s < this.distance){
 			double index = this.indexS(s);
 			
 			// Slide the braking curve.
 			boolean brake = false;
-			int brakeIncrement = 15;
+			int brakeIncrement = 20;
 			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= brakeIncrement){
 //			for(int brakeVelocity = 0; brakeVelocity <= Math.floor(v); brakeVelocity += brakeIncrement){
 				double brakeDistance = (s + brakeCurve[brakeVelocity]);
@@ -91,16 +103,18 @@ public class DiscreteCurve {
 				if(!useBoost && v + a * curveStep > optimalSpeed) a = (optimalSpeed - v);
 			}
 			
-			v = Utils.clamp(v + a * curveStep, 0, Constants.MAXCARSPEED);
+			v = Utils.clamp(v + a * curveStep, 1, Constants.MAXCARSPEED);
 			s += v * curveStep;
 			
-			int i = (int)Utils.clamp(speeds.length * s / this.distance, 1, speeds.length - 1);
+			int i = (int)Utils.clamp((double)(analysePoints - 1) * s / this.distance, 1, analysePoints - 1);
 			speeds[i] = v;
 			accelerations[i - 1] = a;
 			
 			time += curveStep;
-			if(time > timeRestriction) break;
+			if(timeRestriction.isPresent() && time > timeRestriction.getAsDouble()) break;
 		}
+		
+//		System.out.println(Arrays.toString(accelerations));
 		
 		return new Pair<double[][], Double>(new double[][] {speeds, accelerations}, time);
 	}
@@ -218,7 +232,7 @@ public class DiscreteCurve {
 			
 			if(boostNotBrake ? v >= Constants.MAXCARSPEED : v <= 0) break;
 		}
-		System.out.println(Arrays.toString(curve));
+//		System.out.println(Arrays.toString(curve));
 		
 		return curve;
 	}
@@ -237,15 +251,12 @@ public class DiscreteCurve {
 	
 	public double getAcceleration(double t){
 		if(this.invalidCurve()) return Constants.MAXCARSPEED;
-		double accIndex = Utils.clamp(t * (this.speeds.length - 1), 0, this.speeds.length - 1);
+		double accIndex = Utils.clamp(t * (double)(this.speeds.length - 1), 0, this.speeds.length - 1);
 		return Utils.lerp(this.accelerations[(int)Math.floor(accIndex)], 
 				this.accelerations[(int)Math.ceil(accIndex)], 
 				accIndex - Math.floor(accIndex));
-	}
-	
-	public double getAcceleration(){
-		if(this.invalidCurve()) return Constants.MAXCARSPEED;
-		return this.accelerations[0];
+//		return Math.max(this.accelerations[(int)Math.floor(accIndex)], this.accelerations[(int)Math.ceil(accIndex)]);
+//		return this.accelerations[(int)Math.ceil(accIndex)];
 	}
 
 	public void render(WRenderer renderer, Color colour){
@@ -262,6 +273,28 @@ public class DiscreteCurve {
 	
 	public boolean isValid(){
 		return valid;
+	}
+	
+	public double findClosestS(Vector2 car, boolean returnDistance){
+		double closestS = 0;
+		double closestDistance = -1;
+		
+		double s = 0;
+		for(int i = 0; i < (this.points.length - 1); i++){
+			Pair<Vector2, Vector2> lineSegment = new Pair<Vector2, Vector2>(this.points[i], this.points[i + 1]);
+			double segmentLength = lineSegment.getOne().distance(lineSegment.getTwo());
+			
+			Pair<Double, Double> result = Utils.closestPointToLineSegment(car, lineSegment);
+			double distance = result.getOne(), t = result.getTwo();
+			
+			if(closestDistance == -1 || closestDistance > distance){
+				closestDistance = distance;
+				closestS = s + segmentLength * t;
+			}
+			s += segmentLength;
+		}
+		
+		return (returnDistance ? closestDistance : closestS);
 	}
 
 }

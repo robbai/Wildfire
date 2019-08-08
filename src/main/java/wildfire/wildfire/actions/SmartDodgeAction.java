@@ -26,7 +26,7 @@ public class SmartDodgeAction extends Action {
 	/*
 	 * Tweaky things
 	 */
-	public final static double dodgeDistance = 53, peakThreshold = 0.15; 
+	public final static double dodgeDistance = 52, peakThreshold = 0.15; 
 	
 	public PredictionSlice target = null;
 	private PID rollPID, pitchPID;
@@ -58,7 +58,7 @@ public class SmartDodgeAction extends Action {
 				if(trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS) continue;
 			}
 
-			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < 0.9){
+			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < 0.92){
 				this.target = new PredictionSlice(ballLocation, i);
 				break;
 			}
@@ -83,7 +83,7 @@ public class SmartDodgeAction extends Action {
 //			double jumpHeight = getJumpPosition(car, jumpVelocity, time).z - car.position.z;
 			
 			if(location.z < maxJumpHeight /*jumpHeight*/ + dodgeDistance * 0.8){
-				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.49));
+				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.55));
 				return new PredictionSlice(location, i);
 			}
 		}

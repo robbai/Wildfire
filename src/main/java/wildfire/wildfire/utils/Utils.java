@@ -7,6 +7,7 @@ import wildfire.input.CarOrientation;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.obj.Action;
+import wildfire.wildfire.obj.Pair;
 
 public class Utils {
 	
@@ -131,6 +132,36 @@ public class Utils {
 	
 	public static double lerp(double a, double b, double f){
 		return a + f * (b - a);
+	}
+	
+	/**
+	 * https://math.stackexchange.com/a/3128850
+	 */
+	public static Pair<Double, Double> closestPointToLineSegment(Vector2 P, Pair<Vector2, Vector2> lineSegment){
+		Vector2 A = lineSegment.getOne(), B = lineSegment.getTwo();
+		
+	    Vector2 v = B.minus(A);
+	    Vector2 u = A.minus(P);
+	    
+	    double vu = v.dotProduct(u);
+	    double vv = v.dotProduct(v);
+	    
+	    double t = -vu / vv;
+	    		
+	    if(t >= 0 && t <= 1) return new Pair<Double, Double>(P.distance(A.lerp(B, t)), t);
+	    
+	    double distA = P.distance(A), distB = P.distance(B);
+	    return new Pair<Double, Double>(Math.min(distA, distB), Utils.clamp(t, 0, 1));
+	}
+	
+	public static double pointLineSegmentT(Vector3 P, Pair<Vector3, Vector3> lineSegment){
+		return closestPointToLineSegment(P.flatten(), new Pair<Vector2, Vector2>(lineSegment.getOne().flatten(), lineSegment.getTwo().flatten())).getTwo();
+	}
+
+	public static Vector3 toGlobal(CarData car, Vector3 localTarget){
+		Vector3 carPosition = car.position;
+		CarOrientation carOrientation = car.orientation;
+		return carPosition.plus(carOrientation.rightVector.scaledToMagnitude(localTarget.x)).plus(carOrientation.noseVector.scaledToMagnitude(localTarget.y)).plus(carOrientation.roofVector.scaledToMagnitude(localTarget.z));
 	}
 
 }

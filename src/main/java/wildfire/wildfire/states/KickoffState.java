@@ -133,7 +133,7 @@ public class KickoffState extends State {
 			bezier.render(wildfire.renderer, Color.WHITE);
 			wildfire.renderer.drawCircle(Color.LIGHT_GRAY, target, 30);
 			
-			if(!hasAction() && (dodge || wavedash) && Behaviour.isKickoff(input) && input.car.velocity.magnitude() > 500){
+			if((dodge || wavedash) && Behaviour.isKickoff(input) && input.car.velocity.magnitude() > 500){
 				if(dodge){
 					double dodgeAngle = Handling.aim(input.car, (spawn == KickoffSpawn.CORNER ? new Vector2(-Math.signum(input.car.velocity.x) * Constants.BALLRADIUS, 0) : target));
 					dodgeAngle = Utils.clamp(dodgeAngle * 3.5, -Math.PI, Math.PI);
@@ -146,6 +146,7 @@ public class KickoffState extends State {
 //					if(currentAction instanceof DodgeAction) currentAction.failed = false;
 					if(!currentAction.failed) return currentAction.getOutput(input); //Start overriding
 				}
+				currentAction = null;
 			}
 			
 			double steerCorrectionRadians = Handling.aim(input.car, target);

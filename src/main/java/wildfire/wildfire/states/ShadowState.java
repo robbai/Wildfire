@@ -39,7 +39,7 @@ public class ShadowState extends State {
 		//Zooming at the ball
 		double velocityImpactCorrection = input.car.velocity.flatten().correctionAngle(wildfire.impactPoint.getPosition().minus(input.car.position).flatten());
 		if(Math.abs(velocityImpactCorrection) < 0.25 && wildfire.impactPoint.getTime() < (correctSide ? 1.6 : 1.2)
-				&& input.car.forwardMagnitude() > 900 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1500) return false;
+				&& input.car.forwardVelocity > 900 && wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < -1500) return false;
 		
 		//Ball must not be close to our net
 		if(input.ball.position.flatten().distance(homeGoal) < 3500) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
@@ -105,8 +105,8 @@ public class ShadowState extends State {
 			return Handling.driveDownWall(input);
 		}
 		
-		//Recovery
-		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+		// Recovery.
+		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			return currentAction.getOutput(input);
 		}
@@ -117,11 +117,13 @@ public class ShadowState extends State {
 		double distance = target.distance(input.car.position.flatten());
 		boolean reverse = false;
 		
-		if(!hasAction() && input.car.hasWheelContact && distance > 2350 && !input.car.isSupersonic && input.car.position.z < 100){
+		// Actions.
+		if(input.car.hasWheelContact && distance > 2350 && !input.car.isSupersonic && input.car.position.z < 100){
 			if(input.car.velocity.magnitude() > (input.car.boost == 0 ? 1250 : 1500) && Math.abs(steerRadians) < 0.4){
-				currentAction = new DodgeAction(this, input.ball.position.distanceFlat(input.car.position) > 600 ? steerRadians : Handling.aim(input.car, input.ball.position.flatten()), input);
+				double dodgeRadians = (wildfire.impactPoint.getPosition().distance(input.car.position) > 500 ? steerRadians : Handling.aim(input.car, input.ball.position.flatten()));
+				currentAction = new DodgeAction(this, dodgeRadians, input);
 			}else if(Math.abs(steerRadians) > Math.PI * 2.7){
-				double forwardVelocity = input.car.forwardMagnitude();
+				double forwardVelocity = input.car.forwardVelocity;
 				reverse = (forwardVelocity < 0);
 				if(reverse && forwardVelocity < -1000) currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}

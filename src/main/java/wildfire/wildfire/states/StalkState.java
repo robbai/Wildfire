@@ -39,7 +39,7 @@ public class StalkState extends State {
 				|| !Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition())) return false;
 		
 		// We want to hit it!
-		if(wildfire.impactPoint.getTime() < 0.7) return false;
+		if(wildfire.impactPoint.getTime() < 0.6) return false;
 		
 		// It's not in their danger zone.
 		enemyGoal = Constants.enemyGoal(input.car);

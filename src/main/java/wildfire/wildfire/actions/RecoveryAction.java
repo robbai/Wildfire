@@ -60,7 +60,7 @@ public class RecoveryAction extends Action {
 		double intersectTime = (intersect == null ? 10 : intersect.getTwo().getFrame() * fallStep);
 		
 		// whatisaphone's Secret Recipe.
-		boostDown = (input.car.boost > 5 && (triangle == null || (intersectTime > 0.7 && triangleCentre.z < Constants.CEILING - 500)));
+		boostDown = (input.car.boost > 5 && (triangle == null || (intersectTime > 0.8 && triangleCentre.z < Constants.CEILING - 500)));
 		
 		// Roll and pitch.
 		boolean correctEnough = true;
@@ -99,7 +99,7 @@ public class RecoveryAction extends Action {
 			}
 			
 			if(correctEnough){
-				double yawCorrection = Handling.aimLocally(input.car, yawIdealDestination);
+				double yawCorrection = Handling.aim(input.car, yawIdealDestination);
 				yaw = yawPID.getOutput(input.elapsedSeconds, yawCorrection, 0);
 			}else{
 				yaw = 0;
@@ -152,14 +152,15 @@ public class RecoveryAction extends Action {
 	}
 	
 	private Pair<Triangle, PredictionSlice> getIntersect(Vector3[] fall){
-		for(int index = 0; index < fall.length; index += fallStepIndex){
-			Pair<Triangle, Vector3> intersect = intersect(fall[index], 
-					fall[Math.min(fall.length - 1, index + fallStepIndex)]);
+		for(int i = 0; i < fall.length; i += fallStepIndex){
+			int j = Math.min(fall.length - 1, i + fallStepIndex);
+			Pair<Vector3, Vector3> lineSegment = new Pair<Vector3, Vector3>(fall[i], fall[j]);
+			Pair<Triangle, Vector3> intersect = intersect(lineSegment.getOne(), lineSegment.getTwo());
 			
 			// Intersected.
 			if(intersect != null){
 				return new Pair<Triangle, PredictionSlice>(intersect.getOne(),
-						new PredictionSlice(intersect.getTwo(), index)); // Time is a lower bound.
+						new PredictionSlice(intersect.getTwo(), Utils.lerp(i, j, Utils.pointLineSegmentT(intersect.getTwo(), lineSegment))));
 			}
 		}
 		return null;

@@ -31,10 +31,10 @@ public class WallHitState extends State {
 	
 	@Override
 	public boolean ready(DataPacket input){
-		//The ball must be in an appropriate wall hit position
+		// The ball must be in an appropriate wall hit position.
 		if(!isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition())) return false;
 		
-		//We would like the hit to be constructive
+		// We would like the hit to be constructive
 		return Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < -4000 || 
 				Utils.teamSign(input.car) * (wildfire.impactPoint.getPosition().y - input.car.position.y) > (Behaviour.hasTeammate(input) ? -900 : -600);
 	}
@@ -46,7 +46,7 @@ public class WallHitState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;
@@ -55,11 +55,11 @@ public class WallHitState extends State {
 		boolean wall = input.car.hasWheelContact && input.car.position.z > 180;
 		
 		if(wall){
-			//Drive down the wall when the opportunity is gone (we might've hit it!)
+			// Drive down the wall when the opportunity is gone (we might've hit it!).
 			if(!isAppropriateWallHit(input.car, wildfire.impactPoint.getPosition())){
 				wildfire.renderer.drawString2d("Abandon", Color.WHITE, new Point(0, 20), 2, 2);
 				
-				if(!hasAction() && input.car.velocity.z < -500 && wildfire.impactPoint.getTime() > 4){
+				if(input.car.velocity.z < -500 && wildfire.impactPoint.getTime() > 4){
 					currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 					return currentAction.getOutput(input);
 				}
@@ -67,27 +67,29 @@ public class WallHitState extends State {
 				return Handling.driveDownWall(input);
 			}else{
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.CYAN, 125);
+				Vector3 target = wildfire.impactPoint.getPosition();
+				if(Math.abs(target.y) < Constants.PITCHLENGTH - 800) target = target.plus(new Vector3(0, 70 * -Utils.teamSign(input.car), 0));
+								
+				double aim = Handling.aim(input.car, target);
+				
+				// Dodge.
 				Vector3 localTarget = Utils.toLocal(input.car, wildfire.impactPoint.getPosition());
-				
-				Vector2 forward = new Vector2(0, 1);
-				double aim = forward.correctionAngle(localTarget.flatten());
-				
-				//Dodge
-				if((localTarget.z > 90 || input.car.position.z > 1000) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 950 ? 460 : 320)){
+				boolean highCar = (input.car.position.z > 1000);
+				if((localTarget.z > 85 || highCar) && wildfire.impactPoint.getPosition().distance(input.car.position) < (input.car.velocity.magnitude() > 950 ? 460 : 320)){
 					currentAction = new DodgeAction(this, aim, input);
 					if(!currentAction.failed){
-						if(input.car.position.z > 1000) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
+						if(highCar) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
 						return currentAction.getOutput(input);
 					}
 				}
 				
-				return new ControlsOutput().withThrottle(1).withBoost(Math.abs(aim) < 0.18).withSteer((float)-aim * 3F).withSlide(false);
+				return new ControlsOutput().withThrottle(1).withBoost(Math.abs(aim) < 0.2).withSteer(-aim * 3).withSlide(false);
 			}
 		}else{
-			//Drive towards the wall
+			// Drive towards the wall
 			wildfire.renderer.drawString2d("Approach", Color.WHITE, new Point(0, 20), 2, 2);
 			
-			if(input.car.forwardMagnitude() > 2000){
+			if(input.car.forwardVelocity > 2000){
 				wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Information_Incoming);
 			}
 			
@@ -102,14 +104,14 @@ public class WallHitState extends State {
 			float steer = (float)Handling.aim(input.car, destination);
 			boolean reverse = false;
 			
-			//Dodging and half-flipping
+			// Dodging and half-flipping
 			if(input.car.boost < 10 && !input.car.isSupersonic){
 				//This should be replaced with the distance to the entry point, at some point
 				double wallDistance = Utils.distanceToWall(input.car.position);
 				
 				Vector3 carVelocity = input.car.velocity;
 				
-				//Aerial of our back wall
+				// Aerial from our back wall
 				if(backWall && Math.abs(steer) < 0.1 && !input.car.isSupersonic && wallDistance > 1000){
 					AerialAction aerial = AerialAction.fromBallPrediction(this, input.car, wildfire.ballPrediction, wallDistance < 2000);
 					if(aerial != null) currentAction = aerial;

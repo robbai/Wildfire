@@ -6,9 +6,12 @@ import wildfire.wildfire.Wildfire;
 
 public abstract class State {
 	
-	private String name;
+	private final String name;
+	
 	public Wildfire wildfire;
+	
 	public Action currentAction;
+	public Mechanic currentMechanic;
 	
 	public State(String name, Wildfire wildfire){
 		this.name = name;
@@ -21,15 +24,24 @@ public abstract class State {
 	public abstract boolean ready(DataPacket input);
 	
 	public boolean expire(DataPacket input){
-		return !ready(input) && !hasAction();
+		return !ready(input);
 	}
 	
 	public boolean hasAction(){
 		return currentAction != null;
 	}
+	
+	public boolean runningMechanic(){
+		return currentMechanic != null;
+	}
 
 	public String getName(){
 		return name;
+	}
+	
+	protected ControlsOutput startMechanic(Mechanic mechanic, DataPacket input){
+		this.currentMechanic = mechanic;
+		return this.currentMechanic.getOutput(input);
 	}
 
 }

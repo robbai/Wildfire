@@ -79,13 +79,14 @@ public class ReturnState extends State {
 		double aimImpact = Handling.aim(input.car, this.wildfire.impactPoint.getPosition().flatten());
 				
 		//Dodge or half-flip into the ball
-		if(!hasAction() && input.car.position.distanceFlat(input.ball.position) < 400){
+		if(input.car.position.distanceFlat(input.ball.position) < 400){
 			if(Math.abs(aimImpact) < 0.75 * Math.PI){
 				currentAction = new DodgeAction(this, aimImpact, input);
 			}else{
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
 			}
 			if(!currentAction.failed) return currentAction.getOutput(input);
+			currentAction = null;
 		}
 
 		//Block the attack!
@@ -123,7 +124,7 @@ public class ReturnState extends State {
 					wildfire.renderer.drawLine3d(Color.RED, input.car.position.flatten().toFramework(), target.toFramework());
 					
 					//Front flip for speed
-					if(!hasAction() && Constants.homeGoal(input.car.team).distance(input.car.position.flatten()) > 2800 && !input.car.isSupersonic){
+					if(Constants.homeGoal(input.car.team).distance(input.car.position.flatten()) > 2800 && !input.car.isSupersonic){
 						if(Math.abs(Handling.aim(input.car, Constants.homeGoal(input.car.team))) < 0.3 && input.car.velocity.magnitude() > (input.car.boost == 0 ? 1000 : 1500) ){
 							currentAction = new DodgeAction(this, 0, input);
 							if(currentAction == null || currentAction.failed){

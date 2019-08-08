@@ -82,7 +82,7 @@ public class WRenderer extends Renderer {
 	public void drawCircle(Color colour, Vector3 centre, double radius){
 		if(!threeD) return;
 		Vector3 last = null;
-		double pointCount = 100;
+		double pointCount = 75;
 		for(double i = 0; i < pointCount; i += 1){
             double angle = 2 * Math.PI * i / pointCount;
             Vector3 latest = new Vector3(centre.x + radius * Math.cos(angle), centre.y + radius * Math.sin(angle), centre.z);

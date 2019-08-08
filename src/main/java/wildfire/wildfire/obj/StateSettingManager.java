@@ -8,6 +8,7 @@ import rlbot.gamestate.CarState;
 import rlbot.gamestate.DesiredRotation;
 import rlbot.gamestate.GameState;
 import rlbot.gamestate.PhysicsState;
+import wildfire.input.CarData;
 import wildfire.input.CarOrientation;
 import wildfire.input.DataPacket;
 import wildfire.vector.Vector2;
@@ -171,7 +172,7 @@ public class StateSettingManager {
 
 	public void path(DataPacket input, boolean boost, boolean ballStill){
 		//!input.ball.velocity.isZero() || 
-		if(getCooldown(input) > (input.car.velocity.magnitude() < 50 ? 2 : (ballStill ? 8 : 10)) || (Math.abs(input.ball.position.y) > 4700 && Math.abs(input.ball.position.x) < 1000)){ // || input.ball.position.z > Utils.BALLRADIUS + 5){
+		if(getCooldown(input) > (input.car.velocity.magnitude() < 50 ? 2 : (ballStill ? 16 : 20)) || (Math.abs(input.ball.position.y) > 4700 && Math.abs(input.ball.position.x) < 1000)){ // || input.ball.position.z > Utils.BALLRADIUS + 5){
 			final double border = 1000;
 					
 			GameState gameState = new GameState();
@@ -261,6 +262,36 @@ public class StateSettingManager {
 	private boolean isInsideArena(Vector2 vec){
 		if(vec == null) return false;
 		return isInsideArena(vec.withZ(Constants.BALLRADIUS));
+	}
+
+	public void wallHit(DataPacket input){
+		if(Math.abs(input.ball.position.y) < 1000 && getCooldown(input) < 10) return;
+		
+		CarData car = input.car;
+		
+		GameState gameState = new GameState();
+		
+		Vector3 ballPosition = new Vector3(0, 0, Constants.BALLRADIUS);
+		Vector3 ballVelocity = new Vector3(Utils.random(2500, 3000), 0, 0);
+		Vector3 ballAngVelocity = new Vector3();
+		gameState.withBallState(new BallState().withPhysics(new PhysicsState()
+				.withLocation(ballPosition.toDesired())
+				.withVelocity(ballVelocity.toDesired())
+				.withAngularVelocity(ballAngVelocity.toDesired())));
+		
+		Vector3 carPosition = new Vector3(Utils.random(3000, 4000), Utils.random(2000, 3500) * -Utils.teamSign(car), Constants.CARHEIGHT);
+		Vector3 carVelocity = new Vector3(0, 0, 0);
+		Vector3 carAngVelocity = new Vector3();
+		CarOrientation carOrientation = CarOrientation.fromVector(new Vector2(Constants.PITCHWIDTH, 0).minus(carPosition.flatten()));
+		float boost = 100;
+		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(boost).withPhysics(new PhysicsState()
+				.withLocation(carPosition.toDesired())
+				.withVelocity(carVelocity.toDesired())
+				.withRotation(carOrientation.toDesired())
+				.withAngularVelocity(carAngVelocity.toDesired())));
+		
+		RLBotDll.setGameState(gameState.buildPacket());
+		resetCooldown(input.elapsedSeconds);
 	}
 
 }

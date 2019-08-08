@@ -255,6 +255,10 @@ public class Behaviour {
 		}
 		return target;
 	}
+	
+	public static Vector3 goalStuck(CarData car, Vector3 target){
+		return goalStuck(car, target.flatten()).withZ(target.z);
+	}
 
 	public static boolean nobodyElseIntersect(int ourIndex, CarData[] cars, BallPrediction ballPrediction){
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){

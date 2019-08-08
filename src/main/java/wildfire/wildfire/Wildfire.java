@@ -29,7 +29,9 @@ public class Wildfire implements Bot {
     public final int playerIndex;
     public final int team;
     
-    /*Whether this is a test version*/
+    /*
+     * Whether this is a test version
+     * */
     private final boolean test;
     public boolean isTestVersion(){
 		return test;
@@ -41,16 +43,16 @@ public class Wildfire implements Bot {
 	public StateSettingManager stateSetting;
 	private Human human;
 	
-	//State info
+	// State info.
 	public ArrayList<State> states;
 	private State fallbackState;
 	private State activeState;
-	private State lastPrintedState = null;
+	private String lastPrintedInfo = "";
 	
-	//Measured in elapsed seconds
+	// Measured in elapsed seconds.
 	private float lastDodge = 0;
 
-	//Measured in milliseconds
+	// Measured in milliseconds.
 	private final long quickChatCooldown = 40000L;
 	private long lastQuickChat = 0L;
 	
@@ -63,11 +65,13 @@ public class Wildfire implements Bot {
         this.stateSetting = new StateSettingManager(this);
         this.unlimitedBoost = false;
         
-        //Human thread
+        // Human thread.
         this.human = new Human(this).setEnabled(false);
         this.human.start();
         
-        //Initialise all the states
+        /*
+         * Initialise all the states.
+         */
         states = new ArrayList<State>();
         new IdleState(this);
         new KickoffState(this);
@@ -81,12 +85,14 @@ public class Wildfire implements Bot {
         new ClearState(this);
         new ReturnState(this);
         new PathState(this, false);
-        new DemoState(this);
+//        new DemoState(this);
         new ShadowState(this);
         fallbackState = new FallbackState(this);
         
-        //Test states
-//        new TestState(this);
+        /*
+         * Test states
+         */
+//        if(this.isTestVersion()) fallbackState = new TestState(this);
 //        fallbackState = new TestState2(this);
 //        fallbackState = new PathState(this, true);
 //        fallbackState = new DemoState(this);
@@ -98,14 +104,15 @@ public class Wildfire implements Bot {
     }
 
     private ControlsOutput processInput(DataPacket input){
-    	//Get a renderer
+    	// Get a renderer.
     	renderer = new WRenderer(this, !Behaviour.hasTeammate(input) && isTestVersion(), isTestVersion());
     	
-//    	stateSetting.path(input, true, false);
+//    	stateSetting.path(input, true, true);
 //    	stateSetting.shoot(input, false);
 //    	stateSetting.airRoll(input);
+//    	stateSetting.wallHit(input);
     	
-    	//Get the ball prediction
+    	// Get the ball prediction.
     	try{
     	    ballPrediction = RLBotDll.getBallPrediction();
     	}catch(RLBotInterfaceException e){
@@ -113,7 +120,7 @@ public class Wildfire implements Bot {
     		ballPrediction = null;
     	}
     	
-    	//GG
+    	// GG.
     	if(input.gameInfo.isMatchEnded()){
     		try{
 				if(lastQuickChat != -1){
@@ -131,7 +138,7 @@ public class Wildfire implements Bot {
     		lastQuickChat = 0;
     	}
     	
-    	//Impact point
+    	// Impact point.
     	try{
     		impactPoint = Behaviour.getEarliestImpactPoint(input, ballPrediction);
     	}catch(Exception e){
@@ -139,55 +146,70 @@ public class Wildfire implements Bot {
     		impactPoint = new PredictionSlice(input.ball.position, 360);
     	}
     	
-    	//Choose whether to continue with the active state
+    	// Choose whether to continue with the active state.
     	if(activeState != null){
-    		//Expire the state's action
+    		// Expire the state's action.
     		if(activeState.hasAction() && activeState.currentAction.expire(input)){
     			activeState.currentAction = null;
 			}
     		
-    		//Expire the state
+    		// Expire the state's mechanic.
+    		if(activeState.runningMechanic() && activeState.currentMechanic.expire(input)){
+    			activeState.currentMechanic = null;
+			}
+    		
+    		// Expire the state.
     		if(!activeState.hasAction() && activeState.expire(input)){
     			activeState = null;
     		}
     	}
     	
-    	//Get a new state if one isn't active
-    	String printPrefix = "[" + (int)(input.elapsedSeconds) + "] " + playerIndex + ": ";
+    	// Get a new state if one isn't active.
     	if(activeState == null && !fallbackState.hasAction()){
 		    for(State state : states){
 		    	 if(state.getClass() != fallbackState.getClass() && state.ready(input)){
 		    		activeState = state;
-		    		if(lastPrintedState == null || activeState.getName() != lastPrintedState.getName()){
-		    			System.out.println(printPrefix + activeState.getName() + (activeState.hasAction() ? " (" + activeState.currentAction.getName() + ")" : ""));
-		    			lastPrintedState = activeState;
-		    		}
 		    		break;
 		    	}
 		    }
-		    if(activeState == null && (lastPrintedState == null || fallbackState.getName() != lastPrintedState.getName())){
-		    	System.out.println(printPrefix + fallbackState.getName() + (fallbackState.hasAction() ? " (" + fallbackState.currentAction.getName() + ")" : ""));
-		    	lastPrintedState = fallbackState;
-		    }
     	}
     	
-    	//Return the output from the state
+    	// Print info.
+    	State effectiveState = (activeState != null ? activeState : this.fallbackState);
+    	String printPrefix = "[" + ((int)input.elapsedSeconds % 1000) + "] " + playerIndex + ": ";
+    	String printInfo = (effectiveState.getName() + (effectiveState.hasAction() ? " (" + effectiveState.currentAction.getName() + ")" : (effectiveState.runningMechanic() ? " (" + effectiveState.currentMechanic.getName() + ")" : "")));
+		if(lastPrintedInfo.isBlank() || !printInfo.equals(lastPrintedInfo)){
+			System.out.println(printPrefix + printInfo);
+			lastPrintedInfo = printInfo;
+		}
+    	
+    	// Return the output from the state.
     	if(activeState == null || fallbackState.hasAction()) return fallback(input);    	
     	try{
     		renderer.drawString2d(activeState.getName(), Color.GREEN, new Point(0, 0), 2, 2);
     		
-    		//Return the action's output since it would override the state
+    		// Return the mechanics's output since it would override the state
+    		if(activeState.runningMechanic() && !activeState.hasAction()){
+    			ControlsOutput mechanicOutput = activeState.currentMechanic.getOutput(input);
+    			if(mechanicOutput != null){
+		    		renderer.drawString2d(activeState.currentMechanic.getName(), Color.GRAY, new Point(0, 20), 2, 2);
+		    		return mechanicOutput;
+    			}
+    		}
+    		
+    		// Return the action's output since it would override the state
     		if(activeState.hasAction()){
     			ControlsOutput actionOutput = activeState.currentAction.getOutput(input);
 	    		renderer.drawString2d(activeState.currentAction.getName(), Color.GRAY, new Point(0, 20), 2, 2);
 	    		return actionOutput;
     		}
     		
-    		//Return the state's regular output
+    		// Return the state's regular output.
     		return activeState.getOutput(input);
     	}catch(Exception e){
-    		//Errors occurred when trying to run the current state!
+    		// Errors occurred when trying to run the current state!.
     		e.printStackTrace();
+    		
     		if(activeState.hasAction()) activeState.currentAction = null;
     		activeState = null;
     		return fallback(input);
@@ -240,7 +262,7 @@ public class Wildfire implements Bot {
         return this.playerIndex;
     }
 
-	/*
+	/**
 	 * Intended so that the bot doesn't spam... too much
 	 */
 	public boolean sendQuickChat(boolean teamOnly, byte... quickChatSelection){

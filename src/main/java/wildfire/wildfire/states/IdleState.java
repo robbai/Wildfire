@@ -36,9 +36,10 @@ public class IdleState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+			currentAction = null;
 		}
 		
 		// ATBA

@@ -25,6 +25,8 @@ public class CarData {
     public final int index;
     
 	public final String name;
+	
+	public final double forwardVelocity;
 
     public CarData(rlbot.flat.PlayerInfo playerInfo, float elapsedSeconds, int index){
         this.position = Vector3.fromFlatbuffer(playerInfo.physics().location());
@@ -46,22 +48,12 @@ public class CarData {
         this.index = index;
         
         this.name = playerInfo.name();
+        
+        this.forwardVelocity = this.velocity.dotProduct(this.orientation.noseVector);
     }
     
-    public double forwardMagnitude(){
-    	double forwardComponent = Math.cos(orientation.noseVector.flatten().correctionAngle(velocity.flatten()));
-    	return velocity.magnitude() * forwardComponent;
-    }
-    
-    public double magnitudeInDirection(Vector2 direction){
-    	double component = Math.cos(direction.correctionAngle(velocity.flatten()));
-    	return velocity.magnitude() * component;
-    }
-    
-    public boolean isDrifting(){
-    	Vector2 horizontal = this.orientation.rightVector.flatten();
-    	double v = Math.cos(this.velocity.flatten().correctionAngle(horizontal)) * this.velocity.magnitude();
-    	return Math.abs(v) > 250;
+    public double velocityDir(Vector2 direction){
+    	return this.velocity.dotProduct(direction.normalized().withZ(0));
     }
     
 }

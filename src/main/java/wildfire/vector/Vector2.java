@@ -156,5 +156,14 @@ public class Vector2 {
 	public Vector2 cross(){
 		return new Vector2(-this.y, this.x);
 	}
+
+	public Vector2 lerp(Vector2 other, double t){
+		return this.plus(other.minus(this).scaled(t));
+	}
+
+	public static Vector2 fromFlatbuffer(rlbot.flat.Vector3 vec){
+		// Invert the X value so that the axes make more sense.
+		return new Vector2(-vec.x(), vec.y());
+	}
     
 }

@@ -41,7 +41,7 @@ public class HopAction extends Action {
 //		if(throttleTime != 0) state.wildfire.renderer.drawString2d("Throttle: " + throttleTime + "ms", Color.WHITE, new Point(0, 40), 2, 2);
 		
 		if(timeDifference <= throttleTime){
-			controller.withThrottle((float)-Math.signum(input.car.forwardMagnitude()));
+			controller.withThrottle((float)-Math.signum(input.car.forwardVelocity));
 		}else if(timeDifference < throttleTime + 0.0167){
 			controller.withJump(true);
 		}else{

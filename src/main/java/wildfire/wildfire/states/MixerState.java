@@ -64,16 +64,15 @@ public class MixerState extends State {
 				teamSign * (Constants.PITCHLENGTH - 700));
 		double aimImpact = Handling.aim(input.car, impactLocation.flatten());
 		
-		if(!hasAction()){
-			if((impactDistance < 300 || (impactDistance > 3500 && !input.car.isSupersonic)) && Math.abs(aimImpact) < 0.25){
-				if(input.car.forwardMagnitude() > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
-				currentAction = new DodgeAction(this, aimImpact, input);
-			}
-			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
-			currentAction = null;
+		// Dodge.
+		if((impactDistance < 300 || (impactDistance > 3500 && !input.car.isSupersonic)) && Math.abs(aimImpact) < 0.25){
+			if(input.car.forwardVelocity > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
+			currentAction = new DodgeAction(this, aimImpact, input);
 		}
+		if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+		currentAction = null;
 		
-		double offsetMagnitude = 110;
+		double offsetMagnitude = 100;
 		Vector2 offset = impactLocation.flatten().minus(corner).scaledToMagnitude(offsetMagnitude);
 		Vector3 destination = impactLocation.plus(offset.withZ(0));
 		

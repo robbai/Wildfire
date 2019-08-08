@@ -21,7 +21,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class DemoState extends State {
 	
-	private final double step = (1D / 60), predictionSeconds = 5D;
+	private final static double step = (1D / 60), predictionSeconds = 5D;
 	
 	private CarData target = null;
 
@@ -54,7 +54,7 @@ public class DemoState extends State {
 			if(target.velocity.magnitude() > 1200 && Utils.teamSign(input.car) * target.velocity.y > -800) return false;
 			
 			//Face them
-			if(Handling.aim(input.car, target.position.flatten()) > 1.5) return false;
+			if(Math.abs(Handling.aim(input.car, target.position.flatten())) > Math.toRadians(85)) return false;
 		}
 		
 		return target != null && isValidTarget(input, target);
@@ -77,7 +77,7 @@ public class DemoState extends State {
 		}
 		
 		//Recovery
-		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			if(!currentAction.failed) return currentAction.getOutput(input);
 		}
@@ -98,7 +98,6 @@ public class DemoState extends State {
 		//Infer info
 		double time = (target.elapsedSeconds - lastTargetElapsed);
 		Vector3 acceleration = target.velocity.minus(lastTargetVelocity).scaled(1D / time); //a = (v - u) / t
-//		if(acceleration.magnitude() > 1000) acceleration = acceleration.scaledToMagnitude(1000);
 		wildfire.renderer.drawString2d("Target Velocity: " + (int)input.car.velocity.magnitude() + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
 		wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration.magnitude() + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
 		
@@ -158,7 +157,7 @@ public class DemoState extends State {
 		//Controls
 		double steer = Handling.aim(input.car, target);
         return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle(1)
-        		.withBoost((Math.abs(steer) < 0.3F || input.car.forwardMagnitude() > 1300) && !input.car.isSupersonic && input.car.hasWheelContact).withSlide(Math.abs(steer) > 1.5F && input.car.forwardMagnitude() > 0 && impactDistance > 500);
+        		.withBoost((Math.abs(steer) < 0.3F || input.car.forwardVelocity > 1300) && !input.car.isSupersonic && input.car.hasWheelContact).withSlide(Math.abs(steer) > 1.5F && input.car.forwardVelocity > 0 && impactDistance > 500);
 	}
 	
 	private CarData getTarget(DataPacket input){
@@ -194,8 +193,8 @@ public class DemoState extends State {
 		for(int i = 0; i < prediction.size(); i++){
 			Vector3 location = prediction.get(i);
 			
-			double displacement = carPosition.distanceFlat(location) - 100;
-			double timeLeft = (double)i / 60D;
+			double displacement = carPosition.distanceFlat(location) - 80;
+			double timeLeft = (double)i * step;
 			double acceleration = 2 * (displacement - initialVelocity * timeLeft) / Math.pow(timeLeft, 2);
 			
 			if(initialVelocity + acceleration * timeLeft < Math.max(initialVelocity, maxVelocity)){

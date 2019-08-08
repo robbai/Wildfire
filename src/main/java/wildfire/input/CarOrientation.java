@@ -52,7 +52,7 @@ public class CarOrientation {
     public static CarOrientation fromVector(Vector3 nose){
     	nose = nose.normalized();
     	double pitch = Math.asin(nose.z);
-		double yaw = -Math.atan2(nose.y, nose.x);
+		double yaw = Math.atan2(nose.y, nose.x) + Math.PI / 2;
     	
 		return convert(pitch, yaw, 0);
     }

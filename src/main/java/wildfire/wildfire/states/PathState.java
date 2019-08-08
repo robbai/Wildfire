@@ -64,7 +64,7 @@ public class PathState extends State {
 		path.renderPath(wildfire.renderer);
 		wildfire.renderer.drawTurningRadius(Color.WHITE, input.car);
 		
-		if(!hasAction() && Behaviour.isCarAirborne(input.car)){
+		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;
@@ -83,12 +83,12 @@ public class PathState extends State {
 		wildfire.renderer.drawCircle(input.car.team == 0 ? Color.CYAN : Color.RED, target, 10);
 		
 		// Controller.
-		double steer = Handling.aimLocally(input.car, target);
+		double steer = Handling.aim(input.car, target);
 		double boostedVelocity = (input.car.velocity.flatten().magnitude() + Constants.BOOSTACC * (10D / 120));
 		Path boostPath = (input.car.boost == 0 || input.car.isSupersonic || Math.abs(steer) > 0.5 ? null : Path.fromBallPrediction(wildfire, input.car, Constants.enemyGoal(input.car.team), boostedVelocity, false));
 		boolean boost = false;
 		if(boostPath != null && path.getTime() >= boostPath.getTime() + 0.035){
-			steer = Handling.aimLocally(input.car, boostPath.getPly(getTargetPly(input.car, boostedVelocity)));
+			steer = Handling.aim(input.car, boostPath.getPly(getTargetPly(input.car, boostedVelocity)));
 			wildfire.renderer.drawString2d("Boost Time: " + Utils.round(boostPath.getTime()) + "s", Color.WHITE, new Point(0, 60), 2, 2);
 			boost = true;
 		}
@@ -97,13 +97,13 @@ public class PathState extends State {
 	
 	private double getTargetPly(CarData car, double velocity){
 		if(path.isBadPath()) return 0; // Only when forcing is enabled.
-		double targetUnits = 340;
+		double targetUnits = 330;
 		return (targetUnits / (velocity * Path.scale));
 	}
 	
 	private boolean requirements(DataPacket input){
 		if(Behaviour.isBallAirborne(input.ball) || Behaviour.isKickoff(input) || input.ball.velocity.flatten().magnitude() > 3200
-				|| Utils.distanceToWall(input.car.position) < 400 || input.car.magnitudeInDirection(input.ball.position.minus(input.car.position).flatten()) < -1000) return false;
+				|| Utils.distanceToWall(input.car.position) < 400 || input.car.velocityDir(input.ball.position.minus(input.car.position).flatten()) < -1000) return false;
 		
 		boolean opponentBehind = Behaviour.isOpponentBehindBall(input);
 		
@@ -144,7 +144,7 @@ public class PathState extends State {
 		}
 		
 		//Slight shot correction
-		if(trace != null && Math.abs(trace.x) < 1630 && Math.abs(trace.x) > 560){
+		if(trace != null && Math.abs(trace.x) < 1630 && Math.abs(trace.x) > 500){
 			return true;
 		}	
 		
