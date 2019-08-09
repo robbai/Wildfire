@@ -12,10 +12,10 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
@@ -83,7 +83,7 @@ public class ReturnState extends State {
 			if(Math.abs(aimImpact) < 0.75 * Math.PI){
 				currentAction = new DodgeAction(this, aimImpact, input);
 			}else{
-				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+				currentAction = new HalfFlipAction(this, input.car);
 			}
 			if(!currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;

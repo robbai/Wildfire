@@ -10,10 +10,10 @@ import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class ShootState extends State {
@@ -60,7 +60,7 @@ public class ShootState extends State {
 			double ballVelocityTowards = input.ball.velocity.normalized().dotProduct(input.car.position.minus(input.ball.position).normalized());
 			boolean dodgeBallDist = (ballDistance < Utils.lerp(270, 350, Math.abs(input.car.forwardVelocity) / Constants.MAXCARSPEED) + 150 * ballVelocityTowards);
 			if(Math.abs(impactRadians) > Math.PI * 0.7 && ballDistance < 560){
-				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+				currentAction = new HalfFlipAction(this, input.car);
 			}else if(Math.abs(impactRadians) > Math.PI * 0.6 && ballDistance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
 			}else if((dodgeBallDist && Math.abs(impactRadians) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(impactRadians) < 0.25 && input.car.velocity.magnitude() > 1800)){

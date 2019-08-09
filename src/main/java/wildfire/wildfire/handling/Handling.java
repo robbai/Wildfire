@@ -1,4 +1,4 @@
-package wildfire.wildfire.utils;
+package wildfire.wildfire.handling;
 
 import java.awt.Color;
 import java.awt.Point;
@@ -11,6 +11,10 @@ import wildfire.vector.Vector3;
 import wildfire.wildfire.actions.SmartDodgeAction;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.WRenderer;
+import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Physics;
+import wildfire.wildfire.utils.Utils;
 
 public class Handling {
 

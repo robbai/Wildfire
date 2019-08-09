@@ -15,10 +15,10 @@ import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class WallHitState extends State {
@@ -127,7 +127,7 @@ public class WallHitState extends State {
 					}else if(Math.abs(steer) > 2.6){
 						reverse = true;
 						if(carVelocity.flatten().magnitudeInDirection(car.orientation.noseVector.flatten()) < -400){
-							currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+							currentAction = new HalfFlipAction(this, input.car);
 						}
 					}
 					if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);

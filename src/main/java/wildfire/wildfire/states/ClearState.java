@@ -13,11 +13,11 @@ import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.SmartDodgeAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
@@ -104,7 +104,7 @@ public class ClearState extends State {
 //				if(!chip) currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 2 : 1), input);
 				currentAction = new DodgeAction(this, angleImpact * (forwardVelocity > 1200 && !likelyBackflip ? 1.75 : 1), input);
 			}else if(impactDistance > (onTarget ? 3500 : 2200) && forwardVelocity < -900){
-				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+				currentAction = new HalfFlipAction(this, input.car);
 			}else if(wildfire.impactPoint.getTime() > 1.8 && !input.car.isSupersonic 
 					&& input.car.forwardVelocity > (input.car.boost == 0 ? 1200 : 1500) && Math.abs(angleImpact) < 0.25){
 				//Front flip for speed

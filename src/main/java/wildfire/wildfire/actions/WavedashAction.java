@@ -5,8 +5,10 @@ import java.awt.Point;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.vector.Vector2;
+import wildfire.vector.Vector3;
+import wildfire.wildfire.handling.AirControl;
 import wildfire.wildfire.obj.Action;
-import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
@@ -17,9 +19,6 @@ public class WavedashAction extends Action {
 	 * Starts a wavedash from the ground
 	 */
 	
-	private static final boolean yawRollControl = false;
-	
-	private PID pitchPID, rollPID, yawPID;
 	private boolean jumped;
 
 	public WavedashAction(State state, DataPacket input){
@@ -28,12 +27,6 @@ public class WavedashAction extends Action {
 		this.failed = !input.car.hasWheelContact && input.car.position.z < 200 && wildfire.lastDodgeTime(input.elapsedSeconds) > 1;
 		
 		if(!this.failed){
-			this.pitchPID = new PID(7.5, 0, 1.05);	
-			if(yawRollControl){
-				this.rollPID = new PID(3, 0, 0.4);
-				this.yawPID = new PID(0.2, 0, 0.05);
-			}
-			
 			this.jumped = false;
 			
 			wildfire.resetDodgeTime(input.elapsedSeconds);
@@ -46,14 +39,6 @@ public class WavedashAction extends Action {
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeDifference), Color.WHITE, new Point(0, 40), 2, 2);
 		
 		ControlsOutput controls = new ControlsOutput();
-		
-		double roll = 0, yaw = 0;
-		if(yawRollControl){
-			roll = rollPID.getOutput(input.elapsedSeconds, input.car.orientation.eularRoll, 0);
-			yaw = yawPID.getOutput(input.elapsedSeconds, 0, input.car.orientation.noseVector.flatten().correctionAngle(input.car.velocity.flatten()));
-		}
-		
-		controls.withRoll((float)roll).withYaw((float)yaw);
 		
 		double targetPitch = 0;
 		
@@ -70,12 +55,17 @@ public class WavedashAction extends Action {
 			}
 		}
 		
-		double pitch = pitchPID.getOutput(input.elapsedSeconds, input.car.orientation.eularPitch, targetPitch);
+		Vector2 flatNose = input.car.orientation.noseVector.flatten();
+		Vector3 desiredNose = new Vector3(flatNose.x, flatNose.y, Math.tan(targetPitch) * flatNose.magnitude());
+		
+		double[] angles = AirControl.getPitchYawRoll(input.car, desiredNose);
+		controls.withPitchYawRoll(angles);
 		if(controls.holdJump()){
 			controls.withRoll(0);
 			controls.withYaw(0);
 		}
-		return controls.withPitch((float)(input.car.doubleJumped ? 0 : pitch)).withBoost(input.car.orientation.noseVector.z < 0).withThrottle(1);
+		
+		return controls.withBoost(input.car.orientation.noseVector.z < 0).withThrottle(1);
 	}
 
 	@Override

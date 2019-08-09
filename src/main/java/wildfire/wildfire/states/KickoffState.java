@@ -15,12 +15,12 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.WavedashAction;
 import wildfire.wildfire.curve.BezierCurve;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.KickoffSpawn;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class KickoffState extends State {

@@ -10,10 +10,10 @@ import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class MixerState extends State {

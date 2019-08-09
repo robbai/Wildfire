@@ -10,10 +10,10 @@ import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.curve.Path;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class PathState extends State {

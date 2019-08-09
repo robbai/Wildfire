@@ -5,9 +5,9 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
-import wildfire.wildfire.utils.Handling;
 
 public class IdleState extends State {
 	

@@ -14,10 +14,10 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class ShadowState extends State {
@@ -125,7 +125,7 @@ public class ShadowState extends State {
 			}else if(Math.abs(steerRadians) > Math.PI * 2.7){
 				double forwardVelocity = input.car.forwardVelocity;
 				reverse = (forwardVelocity < 0);
-				if(reverse && forwardVelocity < -1000) currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+				if(reverse && forwardVelocity < -1000) currentAction = new HalfFlipAction(this, input.car);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;

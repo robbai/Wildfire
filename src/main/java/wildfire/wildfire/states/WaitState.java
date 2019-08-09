@@ -13,11 +13,11 @@ import wildfire.wildfire.actions.AerialAction;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.actions.SmartDodgeAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 

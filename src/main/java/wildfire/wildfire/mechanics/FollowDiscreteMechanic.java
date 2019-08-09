@@ -9,9 +9,9 @@ import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.curve.DiscreteCurve;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.Mechanic;
 import wildfire.wildfire.obj.State;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class FollowDiscreteMechanic extends Mechanic {

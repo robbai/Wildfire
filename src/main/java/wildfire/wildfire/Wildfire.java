@@ -111,7 +111,7 @@ public class Wildfire implements Bot {
 //    	stateSetting.shoot(input, false);
 //    	stateSetting.airRoll(input);
 //    	stateSetting.wallHit(input);
-//    	stateSetting.driveDownWall(input);
+//    	stateSetting.recovery(input);
     	
     	// Get the ball prediction.
     	try{

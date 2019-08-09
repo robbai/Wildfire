@@ -15,10 +15,10 @@ import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.curve.BezierCurve;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class BoostState extends State {
@@ -83,7 +83,7 @@ public class BoostState extends State {
 			}else if(Math.abs(steer) < 0.12 && forwardVelocity > 1100){
 				currentAction = new DodgeAction(this, steer, input);
 			}else if(Math.abs(steer) > 0.95 * Math.PI && forwardVelocity < -850){
-				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
+				currentAction = new HalfFlipAction(this, input.car);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;

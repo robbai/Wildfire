@@ -8,29 +8,28 @@ import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
+import wildfire.wildfire.handling.AirControl;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.Action;
-import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
 
 public class SmartDodgeAction extends Action {
 	
 	/*
-	 * Constants
+	 * Constants.
 	 */
 	public final static double jumpVelocity = 547.7225575, tick = 1D / 60, carHeight = 17D, maxJumpHeight = 230.76923076923077D;
 	
 	/*
-	 * Tweaky things
+	 * Tweaky things.
 	 */
 	public final static double dodgeDistance = 60, peakThreshold = 0.15; 
 	
 	public PredictionSlice target = null;
-	private PID rollPID, pitchPID;
 
 	public SmartDodgeAction(State state, DataPacket input, boolean coneRequired){
 		super("Smart Dodge", state, input.elapsedSeconds);
@@ -52,7 +51,7 @@ public class SmartDodgeAction extends Action {
 			Vector3 displace = ballLocation.minus(carLocation);
 			double distance = displace.magnitude();
 			
-			//Cone
+			// Cone.
 			if(coneRequired){
 				if(Utils.teamSign(input.car) * carLocation.y > Constants.PITCHLENGTH) continue; //Inside enemy goal
 				Vector2 trace = Utils.traceToY(carLocation.flatten(), ballLocation.minus(carLocation).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH);
@@ -66,13 +65,6 @@ public class SmartDodgeAction extends Action {
 		}
 		
 		this.failed = (target == null);
-		if(!failed){
-//			this.pitchPID = new PID(6.5, 0, 0.5);
-//			this.rollPID  = new PID(3.0, 0, 0.2);
-			
-			this.pitchPID = new PID(3.65, 0, 0.75);
-			this.rollPID  = new PID(3.80, 0, 0.60);
-		}
 	}
 	
 	public static PredictionSlice getCandidateLocation(BallPrediction ballPrediction, CarData car, Vector2 enemyGoal){
@@ -96,7 +88,7 @@ public class SmartDodgeAction extends Action {
 		Vector3 position = car.position;		
 		Vector3 velocity = car.velocity;
 		
-		//Jump
+		// Jump.
 		velocity = velocity.plus(car.orientation.roofVector.scaled(jumpVelocity)).capMagnitude(2300); 
 		
 		double t = 0;
@@ -104,61 +96,60 @@ public class SmartDodgeAction extends Action {
 			lastPosition = position;
 			position = position.plus(velocity.scaled(tick));
 			
-			//Gravity
+			// Gravity.
 			velocity = velocity.plus(new Vector3(0, 0, -Constants.GRAVITY * tick)).capMagnitude(2300); 
 			if(velocity.z < 0) break;
 			
 			t += tick;
 		}
 		
-		//Interpolate
+		// Interpolate.
 		double overflow = (t - time) / tick;
 		return lastPosition.plus(position.minus(lastPosition).scaled(overflow));
 	}
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		ControlsOutput controller = new ControlsOutput().withNone().withThrottle(timeDifference(input.elapsedSeconds) > this.target.getTime() ? 1 : 0);
 		double timeDifference = timeDifference(input.elapsedSeconds);
+		
+		ControlsOutput controls = new ControlsOutput().withNone().withThrottle(timeDifference > this.target.getTime() ? 1 : 0);
 		
 		wildfire.renderer.drawCrosshair(input.car, this.target.getPosition(), Color.ORANGE, 60);
 		if(timeDifference < this.target.getTime()) wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.YELLOW, 0, this.target.getFrame() - (int)(timeDifference * 60));
 		
 		if(timeDifference < Math.min(0.2, this.target.getTime() - tick * 3)){
-			return controller.withJump(true);
+			return controls.withJump(true);
 		}else if(timeDifference >= this.target.getTime() - tick){
 //			if(input.car.doubleJumped){
 			if(input.car.doubleJumped && timeDifference(input.elapsedSeconds) > this.target.getTime() + 1){
-				Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds).bangBang(input.car.position.z < 500));
+				Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 			}
 			
 			if(!input.car.doubleJumped){
-				//Dodge
-				controller.withJump(true);
+				// Dodge
+				controls.withJump(true);
 				double angle = Handling.aim(input.car, (Behaviour.isOnPrediction(wildfire.ballPrediction, this.target.getPosition()) ? this.target.getPosition() : input.ball.position));
-				controller.withPitch(-Math.cos(angle));
-		        controller.withRoll(-Math.sin(angle) * 1.5);
+				controls.withPitch(-Math.cos(angle));
+		        controls.withRoll(-Math.sin(angle) * 1.5);
 		        wildfire.resetDodgeTime(input.elapsedSeconds); //No spamming!
 			}else{
-				controller.withPitch(0);
-		        controller.withRoll(0);
+				controls.withPitch(0);
+		        controls.withRoll(0);
 			}
 		}else if(input.car.velocity.z > 50){
-			//Point the car
-			Vector3 direction = target.getPosition().minus(input.car.position).normalized();
-			direction = new Vector3(-direction.x, -direction.y, 2.5).normalized();
-			wildfire.renderer.drawLine3d(Color.RED, input.car.position.toFramework(), input.car.position.plus(direction.scaledToMagnitude(120)).toFramework());
+			// Point the car
+			Vector3 desiredRoof = target.getPosition().minus(input.car.position).normalized();
+			desiredRoof = new Vector3(-desiredRoof.x, -desiredRoof.y, 2.5).normalized();
 			
-			Vector2 angles = Handling.getAnglesRoof(Utils.toLocalFromRelative(input.car, direction));
+			wildfire.renderer.drawLine3d(Color.RED, input.car.position.toFramework(), input.car.position.plus(desiredRoof.scaledToMagnitude(120)).toFramework());
 			
-			double pitch = this.pitchPID.getOutput(input.elapsedSeconds, 0, angles.y);;
-			double roll = this.rollPID.getOutput(input.elapsedSeconds, 0, angles.x);
+			double[] angles = AirControl.getPitchYawRoll(input.car, input.car.velocity.flatten(), desiredRoof);
+//			double[1] = 0;
 			
-			controller.withPitch(pitch);
-			controller.withRoll(roll);
+			controls.withPitchYawRoll(angles);
 		}
 		
-		return controller;
+		return controls;
 	}
 
 	@Override

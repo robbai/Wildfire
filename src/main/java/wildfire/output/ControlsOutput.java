@@ -150,4 +150,15 @@ public class ControlsOutput implements ControllerState {
     	return this;
     }
     
+    public ControlsOutput withPitchYawRoll(double pitch, double yaw, double roll){
+        this.pitch = clamp(pitch);
+        this.yaw = clamp(yaw);
+        this.roll = clamp(roll);
+        return this;
+    }
+    
+    public ControlsOutput withPitchYawRoll(double[] angles){
+    	return this.withPitchYawRoll(angles[0], angles[1], angles[2]);
+    }
+    
 }
