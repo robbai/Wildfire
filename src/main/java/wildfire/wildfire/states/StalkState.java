@@ -80,7 +80,7 @@ public class StalkState extends State {
 		wildfire.renderer.drawCircle(Color.RED, enemyGoal, dangerZoneSize);
 		
 		// Controller
-		ControlsOutput controller = Handling.drivePoint(input, destination, false);
+		ControlsOutput controller = Handling.arriveDestination(input, destination, false);
 		double throttleCap = (destinationDistance / 2000);
 		controller = controller.withThrottle(Utils.clamp(controller.getThrottle(), -throttleCap, throttleCap));
 		return controller;

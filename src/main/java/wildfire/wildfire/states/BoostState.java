@@ -50,8 +50,8 @@ public class BoostState extends State {
 	@Override
 	public boolean expire(DataPacket input){
 		if(Behaviour.isKickoff(input) || boost == null || !boost.isActive() || input.car.boost > maxBoostMega) return true;
-		if(boost.getLocation().distanceFlat(input.car.position) < 1800) return false;
-		return input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1800 || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (Math.abs(wildfire.impactPoint.getPosition().x) < 1200 ? 3300 : 2400);
+		if(boost.getLocation().distanceFlat(input.car.position) < 2000) return false;
+		return input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 1600 || wildfire.impactPoint.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (Math.abs(wildfire.impactPoint.getPosition().x) < 1200 ? 3000 : 2100);
 //		return false;
 	}
 
@@ -106,16 +106,17 @@ public class BoostState extends State {
 			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -700, 700), Utils.clamp(boostLocation.y, -Constants.PITCHLENGTH + 500, Constants.PITCHLENGTH - 500));
 		}
 		
-		boolean reverse = (forwardVelocity < -200 && !stuckInGoal);
+		boolean reverse = (forwardVelocity < -200 && !stuckInGoal && distance < 2500);
 		
 		double throttle = (Handling.insideTurningRadius(input.car, boostLocation) ? 0 : (reverse ? -1 : 1));
 		
 		if(reverse){
 			return new ControlsOutput().withSteer(Utils.invertAim(steer) * 3).withThrottle(throttle).withBoost(false);
 		}else{
-			return new ControlsOutput().withSteer(steer * -3).withThrottle(throttle)
-					.withBoost(Math.abs(steer) < 0.1 && (distance > 1200 || forwardVelocity < 800))
-					.withSlide(Math.abs(steer) > 1.2 && distance < 1200 && Handling.canHandbrake(input.car));
+//			return new ControlsOutput().withSteer(steer * -3).withThrottle(throttle)
+//					.withBoost(Math.abs(steer) < 0.1 && (distance > 1200 || forwardVelocity < 800))
+//					.withSlide(Math.abs(steer) > 1.2 && distance < 1200 && Handling.canHandbrake(input.car));
+			return Handling.driveDestination(input.car, boostLocation);
 		}
 	}
 

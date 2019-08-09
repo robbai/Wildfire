@@ -30,16 +30,10 @@ public class Handling {
 
 	public static ControlsOutput driveDownWall(DataPacket input){
 		double radians = aim(input.car, input.car.position.plus(input.car.orientation.roofVector.scaledToMagnitude(70)).flatten());
-		return new ControlsOutput().withThrottle(1).withBoost(false)
+		return new ControlsOutput().withThrottle(input.car.forwardVelocity > 800 && input.car.orientation.noseVector.z > 0.9 ? -1 : 1)
+				.withBoost(input.car.forwardVelocity < 1600 && Math.abs(radians) < Math.toRadians(40) && input.car.position.z > 300)
 				.withSteer(-3 * radians)
-				.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > Math.toDegrees(60)); // && input.car.velocity.magnitude() > 500
-	}
-
-	/**
-	 * ATBA controller (no wiggle)
-	 */
-	public static ControlsOutput driveBall(DataPacket input){
-		return new ControlsOutput().withSteer(aim(input.car, input.ball.position.flatten()) * -3).withBoost(false).withSlide(false).withThrottle(1);
+				.withSlide(input.car.velocity.magnitude() > 300 && Math.abs(radians) > Math.toRadians(60)); // && 
 	}
 
 	public static ControlsOutput atba(DataPacket input, Vector3 target){
@@ -61,19 +55,19 @@ public class Handling {
     	return Math.min(localPoint.distance(right), localPoint.distance(left)) < turningRadius;
 	}
 	
-	public static ControlsOutput drivePoint(DataPacket input, Vector2 point, boolean rush){
+	public static ControlsOutput arriveDestination(DataPacket input, Vector2 point, boolean rush){
 		double steer = Handling.aim(input.car, point);
 		
 		double throttle = (rush ? 1 : Math.signum(Math.cos(steer)));
 		
 		boolean reverse = (throttle < 0);
-		if(reverse) steer = (float)-Utils.invertAim(steer);
+		if(reverse) steer = -Utils.invertAim(steer);
 		
 		double distance = input.car.position.distanceFlat(point);
 		double velocity = input.car.velocity.magnitude();
 		
 		return new ControlsOutput().withThrottle(throttle)
-				.withBoost(!reverse && Math.abs(steer) < 0.325 && !input.car.isSupersonic && distance > (rush ? 1200 : 2000))
+				.withBoost(!reverse && Math.abs(steer) < 0.2 && !input.car.isSupersonic && distance > (rush ? 1200 : 2000))
 				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.3 && Handling.canHandbrake(input.car) && velocity > 600);
 	}
 	
@@ -82,9 +76,13 @@ public class Handling {
 		double steer = aim(car, destination);
 		
 		return new ControlsOutput().withThrottle(1)
-				.withBoost(Math.abs(steer) < 0.25 && !car.isSupersonic)
+				.withBoost(Math.abs(steer) < 0.2 && !car.isSupersonic)
 				.withSteer(-steer * 3F)
-				.withSlide(Math.abs(steer) > 1.1 && velocityForward > 400 && Handling.canHandbrake(car));
+				.withSlide(Math.abs(steer) > 1.1 && Handling.canHandbrake(car) && Math.abs(velocityForward) < 900);
+	}
+	
+	public static ControlsOutput driveDestination(CarData car, Vector2 destination){
+		return driveDestination(car, destination.withZ(Constants.CARHEIGHT));
 	}
 	
 	public static ControlsOutput stayStill(CarData car){

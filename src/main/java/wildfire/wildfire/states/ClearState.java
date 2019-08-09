@@ -63,8 +63,9 @@ public class ClearState extends State {
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
 		// Drive down the wall.
-		boolean onWall = Behaviour.isOnWall(input.car);
-		if(onWall){
+		boolean wall = Behaviour.isOnWall(input.car);
+		// Drive down the wall.
+		if(wall && wildfire.impactPoint.getTime() > 0.8){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
 		}

@@ -81,7 +81,7 @@ public class MixerState extends State {
 		wildfire.renderer.drawCircle(Color.CYAN, corner, 700);
 		wildfire.renderer.drawCircle(Color.BLUE, Constants.homeGoal(1 - input.car.team), maxGoalArea);
 		
-		return Handling.drivePoint(input, destination.flatten(), true);
+		return Handling.arriveDestination(input, destination.flatten(), true);
 	}
 
 }

@@ -50,23 +50,24 @@ public class ShootState extends State {
 
 	@Override
 	public ControlsOutput getOutput(DataPacket input){
-		double aimImpact = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
-		double distance = input.ball.position.distance(input.car.position);
+		double impactRadians = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+		double ballDistance = input.ball.position.distance(input.car.position);
 				
 		/*
 		 * Actions.
 		 */
 		if(input.car.hasWheelContact){
-			boolean dodgeBallDist = (distance < Utils.lerp(420, 500, input.car.velocity.magnitude() / 2300));
-			if(Math.abs(aimImpact) > Math.PI * 0.7 && distance < 560){
+			double ballVelocityTowards = input.ball.velocity.normalized().dotProduct(input.car.position.minus(input.ball.position).normalized());
+			boolean dodgeBallDist = (ballDistance < Utils.lerp(270, 350, Math.abs(input.car.forwardVelocity) / Constants.MAXCARSPEED) + 150 * ballVelocityTowards);
+			if(Math.abs(impactRadians) > Math.PI * 0.7 && ballDistance < 560){
 				currentAction = new HalfFlipAction(this, input.elapsedSeconds);
-			}else if(Math.abs(aimImpact) > Math.PI * 0.6 && distance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
+			}else if(Math.abs(impactRadians) > Math.PI * 0.6 && ballDistance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
-			}else if((dodgeBallDist && Math.abs(aimImpact) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(aimImpact) < 0.25 && input.car.velocity.magnitude() > 1800)){
+			}else if((dodgeBallDist && Math.abs(impactRadians) < 0.3) || (wildfire.impactPoint.getTime() > 2 && Math.abs(impactRadians) < 0.25 && input.car.velocity.magnitude() > 1800)){
 				if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 
 				double forwardVelocity = input.car.forwardVelocity;
-				if(forwardVelocity > 1300) currentAction = new DodgeAction(this, (dodgeBallDist ? 2 : 1) * aimImpact, input);
+				if(forwardVelocity > 1300) currentAction = new DodgeAction(this, (dodgeBallDist ? 2 : 1) * impactRadians, input);
 			}
 		}else if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
@@ -74,15 +75,15 @@ public class ShootState extends State {
 		if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		currentAction = null;
 		
-		float throttle = (float)(Math.abs(Math.cos(aimImpact)) * (1D - minThrottle) + minThrottle);
+		double throttle = (Math.abs(Math.cos(impactRadians)) * (1D - minThrottle) + minThrottle);
 		
 		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.BLACK, 0, wildfire.impactPoint.getFrame());
 		wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), Utils.traceToY(input.car.position.flatten(), wildfire.impactPoint.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH).toFramework());
 		wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.LIGHT_GRAY, 125);
 		
-        return new ControlsOutput().withSteer((float)-aimImpact * 3F).withThrottle(throttle)
-        		.withBoost(Math.abs(aimImpact) < 0.14F && (!input.car.isSupersonic || !Behaviour.isOpponentBehindBall(input)))
-        		.withSlide(Math.abs(aimImpact) > 1.4F);
+        return new ControlsOutput().withSteer((float)-impactRadians * 3F).withThrottle(throttle)
+        		.withBoost(Math.abs(impactRadians) < 0.14F && (!input.car.isSupersonic || !Behaviour.isOpponentBehindBall(input)))
+        		.withSlide(Math.abs(impactRadians) > 1.4F);
 	}
 
 }

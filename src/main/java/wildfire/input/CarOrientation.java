@@ -25,6 +25,19 @@ public class CarOrientation {
         this.roofVector = roofVector;
         this.rightVector = noseVector.crossProduct(roofVector);
     }
+    
+    /**
+     * https://discordapp.com/channels/348658686962696195/535605770436345857/588542425568641055
+     */
+    public CarOrientation(Vector3 noseVector, Vector3 rightVector, Vector3 roofVector){
+    	this.eularYaw = Math.atan2(noseVector.y, noseVector.x);
+		this.eularPitch = Math.atan2(noseVector.z, Math.sqrt(rightVector.z * rightVector.z + roofVector.z * roofVector.z));
+		this.eularRoll = Math.atan2(rightVector.z, roofVector.z);
+    	
+        this.noseVector = noseVector;
+        this.roofVector = roofVector;
+        this.rightVector = rightVector;
+    }
 
     public static CarOrientation fromFlatbuffer(Rotator rotator){
         return convert(rotator.pitch(), rotator.yaw(), rotator.roll());

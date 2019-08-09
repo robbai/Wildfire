@@ -17,7 +17,6 @@ import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Handling;
-import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class FallbackState extends State {
@@ -25,7 +24,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.152, scope = 0.4;
+	private static final double dropoff = 0.152, scope = 0.374;
 	
 	/*
 	 * Yeah this one too, I guess
@@ -52,7 +51,7 @@ public class FallbackState extends State {
 		wildfire.renderer.drawCrosshair(car, goal.withZ(Constants.BALLRADIUS), Color.WHITE, 125);
 		
 		// Drive down the wall.
-		if(wall && wildfire.impactPoint.getTime() > 1){
+		if(wall && wildfire.impactPoint.getTime() > 0.5){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
 		}
@@ -67,7 +66,7 @@ public class FallbackState extends State {
 //		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 900);
 		boolean avoidOwnGoal = !Behaviour.correctSideOfTarget(car, input.ball.position) && trace != null;
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.9, 85, 800), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 3.95, 80, 500), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(car, impactPoint, Color.PINK, 125);
 		}
 
@@ -121,17 +120,18 @@ public class FallbackState extends State {
 		 */
 		double radians = Handling.aim(car, target);
 		
-		boolean movingFast = (Math.abs(forwardVelocity) > 1600), movingSlow = (forwardVelocity < 900 && forwardVelocity > -900);
+		boolean movingFast = (Math.abs(forwardVelocity) > 1600);
+		boolean movingSlow = (forwardVelocity < 900 && forwardVelocity > -900);
 		boolean insideTurningRadius = (Handling.insideTurningRadius(car, target) && Math.abs(radians) > 0.24);
 		if(insideTurningRadius) wildfire.renderer.drawTurningRadius(Color.WHITE, car);
 
-		double maxVelocity = (insideTurningRadius && movingFast ? Math.min(Physics.maxVelForTurn(car, target), Constants.SUPERSONIC) : Constants.SUPERSONIC);
-		double acceleration = (maxVelocity - car.forwardVelocity) / 0.025;
-		double throttle = Handling.produceAcceleration(car, acceleration);
-//		double throttle = (insideTurningRadius && movingFast ? -1 : 10);
+//		double maxVelocity = (insideTurningRadius && movingFast ? Math.min(Physics.maxVelForTurn(car, target), Constants.SUPERSONIC) : Constants.SUPERSONIC);
+//		double acceleration = (maxVelocity - car.forwardVelocity) / 0.005;
+//		double throttle = Handling.produceAcceleration(car, acceleration);
+		double throttle = (insideTurningRadius && movingFast ? -1 : 10);
 
         return new ControlsOutput().withSteer(-radians * 3).withThrottle(throttle).withBoost(Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 1)
-        		.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > 1.2); // && movingSlow
+        		.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > 1.2 && movingSlow);
 	}
 	
 	private Vector3 getLocalPosition(CarData car, Vector3 startLocal, Vector3 goalLocal, int ply, Vector3 impactPointLocal){

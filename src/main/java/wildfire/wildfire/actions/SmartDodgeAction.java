@@ -12,6 +12,7 @@ import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Handling;
 import wildfire.wildfire.utils.Utils;
@@ -26,7 +27,7 @@ public class SmartDodgeAction extends Action {
 	/*
 	 * Tweaky things
 	 */
-	public final static double dodgeDistance = 52, peakThreshold = 0.15; 
+	public final static double dodgeDistance = 60, peakThreshold = 0.15; 
 	
 	public PredictionSlice target = null;
 	private PID rollPID, pitchPID;
@@ -58,7 +59,7 @@ public class SmartDodgeAction extends Action {
 				if(trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS) continue;
 			}
 
-			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < 0.92){
+			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < 0.75){
 				this.target = new PredictionSlice(ballLocation, i);
 				break;
 			}
@@ -82,8 +83,8 @@ public class SmartDodgeAction extends Action {
 //			double time = ballPrediction.slices(i).gameSeconds() - car.elapsedSeconds;
 //			double jumpHeight = getJumpPosition(car, jumpVelocity, time).z - car.position.z;
 			
-			if(location.z < maxJumpHeight /*jumpHeight*/ + dodgeDistance * 0.8){
-				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.55));
+			if(location.z < maxJumpHeight /*jumpHeight*/ + dodgeDistance * 0.66){
+				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.58));
 				return new PredictionSlice(location, i);
 			}
 		}
@@ -134,9 +135,9 @@ public class SmartDodgeAction extends Action {
 			if(!input.car.doubleJumped){
 				//Dodge
 				controller.withJump(true);
-				double angle = Handling.aim(input.car, this.target.getPosition().flatten());
+				double angle = Handling.aim(input.car, (Behaviour.isOnPrediction(wildfire.ballPrediction, this.target.getPosition()) ? this.target.getPosition() : input.ball.position));
 				controller.withPitch(-Math.cos(angle));
-		        controller.withRoll(-Math.sin(angle) * 1.5F);
+		        controller.withRoll(-Math.sin(angle) * 1.5);
 		        wildfire.resetDodgeTime(input.elapsedSeconds); //No spamming!
 			}else{
 				controller.withPitch(0);

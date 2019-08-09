@@ -108,7 +108,7 @@ public class ReturnState extends State {
 				wildfire.sendQuickChat(QuickChatSelection.Information_Incoming);
 				wildfire.renderer.drawString2d("Rush", Color.WHITE, new Point(0, 40), 2, 2);
 				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
-				return Handling.drivePoint(input, wildfire.impactPoint.getPosition().flatten(), true);
+				return Handling.arriveDestination(input, wildfire.impactPoint.getPosition().flatten(), true);
 			}else{
 				//Get in the way of their predicted shot
 				wildfire.renderer.drawString2d("Align", Color.WHITE, new Point(0, 40), 2, 2);
@@ -136,7 +136,7 @@ public class ReturnState extends State {
 					}
 					
 					//We better get there!
-					return Handling.drivePoint(input, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
+					return Handling.arriveDestination(input, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
 				}
 			}
 		}
@@ -150,7 +150,7 @@ public class ReturnState extends State {
 			}
 			return Handling.stayStill(input.car);
 		}
-		return Handling.drivePoint(input, homeGoal, false);
+		return Handling.arriveDestination(input, homeGoal, false);
 	}
 	
 	private boolean doHop(DataPacket input, double aimImpact){

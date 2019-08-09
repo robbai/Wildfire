@@ -86,7 +86,7 @@ public class DemoState extends State {
 		if(target == null) target = getTarget(input);
 		if(target == null){
 			wildfire.renderer.drawString2d("No Target", Color.WHITE, new Point(0, 20), 2, 2);
-			return Handling.driveBall(input);
+			return new ControlsOutput();
 		}
 				
 		//Update target info

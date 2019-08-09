@@ -30,7 +30,7 @@ public class IdleState extends State {
 		boolean noIntersect = Behaviour.nobodyElseIntersect(input.car.index, input.cars, wildfire.ballPrediction);
 		if(!noIntersect) return false;
 		
-		boolean block = Behaviour.blocksPrediction(input.car, wildfire.ballPrediction);
+		boolean block = Behaviour.blocksPrediction(input.car, wildfire.ballPrediction) && !Behaviour.correctSideOfTarget(input.car, input.ball.position);
 		return !block;
 	}
 

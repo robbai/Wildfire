@@ -97,7 +97,7 @@ public class PathState extends State {
 	
 	private double getTargetPly(CarData car, double velocity){
 		if(path.isBadPath()) return 0; // Only when forcing is enabled.
-		double targetUnits = 330;
+		double targetUnits = 340;
 		return (targetUnits / (velocity * Path.scale));
 	}
 	
@@ -114,7 +114,7 @@ public class PathState extends State {
 		if(!correctSide && opponentClose && Utils.teamSign(input.car) * wildfire.impactPoint.getPosition().y < 4100) return false;
 		if(Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team)) return false;
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < (correctSide ? -1800 : -1200)) return false;
-		if(Utils.teamSign(input.car) * input.ball.position.y < (opponentClose ? -2750 : -3500) && (opponentClose || Math.abs(wildfire.impactPoint.getPosition().x) < 1700)) return false;
+		if(Utils.teamSign(input.car) * input.ball.position.y < (opponentClose ? -2750 : -3500)) return false; // && (opponentClose || Math.abs(wildfire.impactPoint.getPosition().x) < 1700)
 		
 		double impactDistance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position);
 		

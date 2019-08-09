@@ -1,6 +1,7 @@
 package wildfire.wildfire.actions;
 
 import java.awt.Color;
+import java.awt.Point;
 
 import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
@@ -58,9 +59,10 @@ public class RecoveryAction extends Action {
 		Vector3 triangleCentre = (triangle == null ? null : triangle.getCentre());
 //		Vector3 intersectLocation = (intersect == null ? null : intersect.getTwo().getPosition());
 		double intersectTime = (intersect == null ? 10 : intersect.getTwo().getFrame() * fallStep);
+		wildfire.renderer.drawString2d("Est. Time: " + Utils.round(intersectTime) + "s", Color.WHITE, new Point(0, 40), 2, 2);
 		
 		// whatisaphone's Secret Recipe.
-		boostDown = (input.car.boost > 5 && (triangle == null || (intersectTime > 0.8 && triangleCentre.z < Constants.CEILING - 500)));
+		boostDown = (input.car.boost > 5 && (triangle == null || (intersectTime > 1.2 && triangleCentre.z < Constants.CEILING - 500)));
 		
 		// Roll and pitch.
 		boolean correctEnough = true;
@@ -160,7 +162,7 @@ public class RecoveryAction extends Action {
 			// Intersected.
 			if(intersect != null){
 				return new Pair<Triangle, PredictionSlice>(intersect.getOne(),
-						new PredictionSlice(intersect.getTwo(), Utils.lerp(i, j, Utils.pointLineSegmentT(intersect.getTwo(), lineSegment))));
+						new PredictionSlice(intersect.getTwo(), Utils.lerp(i, j, Utils.pointLineSegmentT(intersect.getTwo(), lineSegment)) * fallStep));
 			}
 		}
 		return null;

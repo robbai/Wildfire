@@ -281,7 +281,7 @@ public class Behaviour {
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
 			Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			if(Math.abs(ballPosition.y) > Constants.PITCHLENGTH + Constants.BALLRADIUS + 10) break;
-			if(ballPosition.distance(carPosition) < 800) return true;
+			if(ballPosition.distance(carPosition) < 400) return true;
 		}
 		return false;
 	}
