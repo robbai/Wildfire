@@ -3,13 +3,13 @@ package wildfire.wildfire.actions;
 import java.awt.Color;
 import java.awt.Point;
 
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.handling.AirControl;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.Pair;
-import wildfire.wildfire.obj.PredictionSlice;
+import wildfire.wildfire.obj.Slice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.pitch.Pitch;
 import wildfire.wildfire.pitch.Triangle;
@@ -31,12 +31,12 @@ public class RecoveryAction extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		boolean canBoostDown = (input.car.orientation.noseVector.dotProduct(AirControl.worldUp.scaled(-1)) > zToBoost);
 				
 		Vector3[] fall = simulateFall(boostDown ? (canBoostDown ? Color.RED : Color.YELLOW) : Color.WHITE, input.car.position, input.car.velocity);
 		
-		Pair<Triangle, PredictionSlice> intersect = getIntersect(fall);
+		Pair<Triangle, Slice> intersect = getIntersect(fall);
 		Triangle triangle = (intersect == null ? null : intersect.getOne());
 		Vector3 triangleCentre = (triangle == null ? null : triangle.getCentre());
 		Vector3 intersectLocation = (intersect == null ? null : intersect.getTwo().getPosition());
@@ -70,7 +70,7 @@ public class RecoveryAction extends Action {
 		}else if(input.car.velocity.flatten().magnitude() > 800){
 			desiredNose = input.car.velocity.withZ(0);
 		}else{
-			desiredNose = wildfire.impactPoint.getPosition().minus(input.car.position).withZ(0);
+			desiredNose = input.info.impact.getPosition().minus(input.car.position).withZ(0);
 		}
 			
 		if(planWavedash){
@@ -88,7 +88,7 @@ public class RecoveryAction extends Action {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		return input.car.hasWheelContact;
 	}
 	
@@ -113,7 +113,7 @@ public class RecoveryAction extends Action {
 		return simulateFall(colour, positions, velocity, depth + 1);
 	}
 	
-	private Pair<Triangle, PredictionSlice> getIntersect(Vector3[] fall){
+	private Pair<Triangle, Slice> getIntersect(Vector3[] fall){
 		for(int i = 0; i < fall.length; i += fallStepIndex){
 			int j = Math.min(fall.length - 1, i + fallStepIndex);
 			Pair<Vector3, Vector3> lineSegment = new Pair<Vector3, Vector3>(fall[i], fall[j]);
@@ -121,8 +121,8 @@ public class RecoveryAction extends Action {
 			
 			// Intersected.
 			if(intersect != null){
-				return new Pair<Triangle, PredictionSlice>(intersect.getOne(),
-						new PredictionSlice(intersect.getTwo(), Utils.lerp(i, j, Utils.pointLineSegmentT(intersect.getTwo(), lineSegment)) * fallStep));
+				return new Pair<Triangle, Slice>(intersect.getOne(),
+						new Slice(intersect.getTwo(), Utils.lerp(i, j, Utils.pointLineSegmentT(intersect.getTwo(), lineSegment)) * fallStep));
 			}
 		}
 		return null;

@@ -5,7 +5,6 @@ import java.awt.Point;
 
 import rlbot.flat.QuickChatSelection;
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
@@ -13,10 +12,11 @@ import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.handling.Handling;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class ReturnState extends State {
@@ -34,22 +34,22 @@ public class ReturnState extends State {
 	}
 	
 	@Override
-	public boolean ready(DataPacket input){
+	public boolean ready(InfoPacket input){
 		if(Behaviour.isKickoff(input) || Behaviour.isCarAirborne(input.car)) return false;
 		
 		boolean opponentBehind = Behaviour.isOpponentBehindBall(input);
 
 		//Check if we have a shot opportunity
-		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < 2500){
-			double aimBall = Handling.aim(input.car, wildfire.impactPoint.getPosition().flatten());
+		if(input.info.impact.getPosition().distanceFlat(input.car.position) < 2500){
+			double aimBall = Handling.aim(input.car, input.info.impact.getPosition().flatten());
 			if(Math.abs(aimBall) < Math.PI * 0.4){
-				if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition())) return false;
+				if(Behaviour.isInCone(input.car, input.info.impact.getPosition())) return false;
 			}
 		}		
 		
 		//Just hit it instead
-		if(wildfire.impactPoint.getPosition().distanceFlat(input.car.position) < Math.max(1100, input.car.velocity.magnitude() * 0.75)
-				&& !Behaviour.isTowardsOwnGoal(input.car, wildfire.impactPoint.getPosition())){
+		if(input.info.impact.getPosition().distanceFlat(input.car.position) < Math.max(1100, input.car.velocity.magnitude() * 0.75)
+				&& !Behaviour.isTowardsOwnGoal(input.car, input.info.impact.getPosition())){
 			return false;
 		}
 		
@@ -58,38 +58,38 @@ public class ReturnState extends State {
 			boolean onTarget = Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team);
 			if(!onTarget && !opponentBehind) return false;
 			if(Behaviour.isTeammateCloser(input)){
-				return wildfire.impactPoint.getTime() < (6D - Physics.boostMaxSpeed(input.car.velocity.magnitude(), input.car.boost) / 1400D)
-						&& wildfire.impactPoint.getTime() > 1.5;
+				return input.info.impact.getTime() < (6D - DrivePhysics.maxVelocity(input.car.velocity.magnitude(), input.car.boost) / 1400D)
+						&& input.info.impact.getTime() > 1.5;
 			}
 		}
 		
 		if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
-		return Utils.teamSign(input.car) * input.car.position.y < -2750 && wildfire.impactPoint.getTime() > 1.4;
+		return Utils.teamSign(input.car) * input.car.position.y < -2750 && input.info.impact.getTime() > 1.4;
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
-		//Drive down the wall
+	public ControlsOutput getOutput(InfoPacket input){
+		// Drive down the wall.
 		boolean wall = Behaviour.isOnWall(input.car);
 		if(wall){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
 		}
 		
-		double aimImpact = Handling.aim(input.car, this.wildfire.impactPoint.getPosition().flatten());
+		double aimImpact = Handling.aim(input.car, input.info.impact.getPosition().flatten());
 				
-		//Dodge or half-flip into the ball
+		// Dodge or half-flip into the ball.
 		if(input.car.position.distanceFlat(input.ball.position) < 400){
 			if(Math.abs(aimImpact) < 0.75 * Math.PI){
 				currentAction = new DodgeAction(this, aimImpact, input);
 			}else{
-				currentAction = new HalfFlipAction(this, input.car);
+				currentAction = new HalfFlipAction(this, input);
 			}
 			if(!currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;
 		}
 
-		//Block the attack!
+		// Block the attack!
 		CarData attacker = getAttacker(input);
 
 		if(attacker != null){
@@ -100,64 +100,64 @@ public class ReturnState extends State {
 			target = target.withX(Utils.clamp(target.x, Constants.GOALHALFWIDTH - 250, -Constants.GOALHALFWIDTH + 250));
 
 			wildfire.renderer.drawLine3d(Color.RED, attacker.position.flatten().toFramework(), target.toFramework());
-			wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.RED, 125);
+			wildfire.renderer.drawCrosshair(input.car, input.info.impact.getPosition(), Color.RED, 125);
 
-			//Rush them
-			double impactDistance = wildfire.impactPoint.getPosition().distanceFlat(input.car.position);
+			// Rush them.
+			double impactDistance = input.info.impact.getPosition().distanceFlat(input.car.position);
 			if(impactDistance < 1800 || (impactDistance < 2500 && input.ball.position.minus(attacker.position).flatten().angle(input.car.position.minus(attacker.position).flatten()) < 0.28)){
 				wildfire.sendQuickChat(QuickChatSelection.Information_Incoming);
 				wildfire.renderer.drawString2d("Rush", Color.WHITE, new Point(0, 40), 2, 2);
-				wildfire.renderer.drawCrosshair(input.car, wildfire.impactPoint.getPosition(), Color.MAGENTA, 125);
-				return Handling.arriveDestination(input, wildfire.impactPoint.getPosition().flatten(), true);
+				wildfire.renderer.drawCrosshair(input.car, input.info.impact.getPosition(), Color.MAGENTA, 125);
+				return Handling.arriveDestination(input.car, input.info.impact.getPosition().flatten(), true);
 			}else{
-				//Get in the way of their predicted shot
+				// Get in the way of their predicted shot.
 				wildfire.renderer.drawString2d("Align", Color.WHITE, new Point(0, 40), 2, 2);
 				
 				if(target.distance(input.car.position.flatten()) < 300){
-					//Already there!					
+					// Already there!					
 					if(doHop(input, aimImpact)){
-						currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
+						currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
 						if(!currentAction.failed) return currentAction.getOutput(input);
 					}
 					return Handling.stayStill(input.car); 
 				}else{
 					wildfire.renderer.drawLine3d(Color.RED, input.car.position.flatten().toFramework(), target.toFramework());
 					
-					//Front flip for speed
+					// Front flip or half-flip.
 					if(Constants.homeGoal(input.car.team).distance(input.car.position.flatten()) > 2800 && !input.car.isSupersonic){
-						if(Math.abs(Handling.aim(input.car, Constants.homeGoal(input.car.team))) < 0.3 && input.car.velocity.magnitude() > (input.car.boost == 0 ? 1000 : 1500) ){
+						double radiansGoal = Handling.aim(input.car, Constants.homeGoal(input.car.team));
+						if(Math.abs(radiansGoal) < 0.3 && input.car.forwardVelocity > (input.car.boost < 1 ? 1200 : 1500)){
 							currentAction = new DodgeAction(this, 0, input);
-							if(currentAction == null || currentAction.failed){
-								currentAction = null;
-							}else{
-								return currentAction.getOutput(input);
-							}
+						}else if(Math.abs(radiansGoal) > Math.PI * 0.9 && input.car.forwardVelocity < -900){
+							currentAction = new HalfFlipAction(this, input);
 						}
 					}
+					if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+					currentAction = null;
 					
-					//We better get there!
-					return Handling.arriveDestination(input, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
+					// We better get there!
+					return Handling.arriveDestination(input.car, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
 				}
 			}
 		}
 
-		//Get back to goal
+		// Get back to goal.
 		Vector2 homeGoal = Constants.homeGoal(input.car.team).scaled(goalScale);
-		if(homeGoal.distance(input.car.position.flatten()) < 200 && wildfire.impactPoint.getTime() > 1){
+		if(homeGoal.distance(input.car.position.flatten()) < 200 && input.info.impact.getTime() > 1){
 			if(doHop(input, aimImpact)){
-				currentAction = new HopAction(this, input, wildfire.impactPoint.getPosition().flatten());
+				currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
 				if(!currentAction.failed) return currentAction.getOutput(input);
 			}
 			return Handling.stayStill(input.car);
 		}
-		return Handling.arriveDestination(input, homeGoal, false);
+		return Handling.arriveDestination(input.car, homeGoal, false);
 	}
 	
-	private boolean doHop(DataPacket input, double aimImpact){
-		return input.car.hasWheelContact && Math.abs(aimImpact) > 0.1 * Math.PI && input.car.velocity.magnitude() < 800 && wildfire.impactPoint.getTime() > 1.4;
+	private boolean doHop(InfoPacket input, double aimImpact){
+		return input.car.hasWheelContact && Math.abs(aimImpact) > 0.1 * Math.PI && input.car.velocity.magnitude() < 800 && input.info.impact.getTime() > 1.4;
 	}
 
-	private CarData getAttacker(DataPacket input){
+	private CarData getAttacker(InfoPacket input){
 		double shortestDistance = 4000;
 		CarData attacker = null;
 		for(CarData c : input.cars){

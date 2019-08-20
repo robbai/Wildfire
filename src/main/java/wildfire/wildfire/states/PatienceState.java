@@ -4,17 +4,17 @@ import java.awt.Color;
 import java.awt.Point;
 
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.handling.Handling;
-import wildfire.wildfire.obj.PredictionSlice;
+import wildfire.wildfire.input.InfoPacket;
+import wildfire.wildfire.obj.Slice;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
-import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class PatienceState extends State {
@@ -25,29 +25,29 @@ public class PatienceState extends State {
 	
 	private final double maxWaitingSeconds = 2.6, delaySeconds = 0.14, coneBorder = -130;
 	
-	private PredictionSlice point;
+	private Slice point;
 
 	public PatienceState(Wildfire wildfire){
 		super("Patience", wildfire);
 	}
 	
 	@Override
-	public boolean ready(DataPacket input){
+	public boolean ready(InfoPacket input){
 		point = null;
 		
 		// General check to see if its a good idea
-		if(wildfire.impactPoint.getPosition().y * Utils.teamSign(input.car) < 1000 || input.car.position.z > 200) return false;
-		double impactDistance = input.car.position.distanceFlat(wildfire.impactPoint.getPosition());
+		if(input.info.impact.getPosition().y * Utils.teamSign(input.car) < 1000 || input.car.position.z > 200) return false;
+		double impactDistance = input.car.position.distanceFlat(input.info.impact.getPosition());
 		if(impactDistance > 5000) return false;
 		
 		// Check if we can already shoot
-		if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition(), coneBorder)) return false;
+		if(Behaviour.isInCone(input.car, input.info.impact.getPosition(), coneBorder)) return false;
 		
 		// Check if there's a solid defender who can hit the ball quicker
 		double closestOpponentDistance = Behaviour.closestOpponentDistance(input, input.ball.position);
 		if(closestOpponentDistance < Math.max(2300, impactDistance * 1.4) || Utils.teamSign(input.car.team) * input.ball.velocity.y < -850) return false;
 		
-		int startFrame = wildfire.impactPoint.getFrame();
+		int startFrame = input.info.impact.getFrame();
 		for(int i = (startFrame + (int)(delaySeconds * 60)); i < Math.min(wildfire.ballPrediction.slicesLength(), startFrame + (maxWaitingSeconds * 60)); i++){
 			Vector3 location = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(i).physics().location());
 			
@@ -55,7 +55,7 @@ public class PatienceState extends State {
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.YELLOW, 0, startFrame);
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.GREEN, startFrame, i);
 				wildfire.renderer.drawCrosshair(input.car, location, Color.YELLOW, 50);
-				this.point = new PredictionSlice(location, i);
+				this.point = new Slice(location, i);
 				break;
 			}
 		}
@@ -65,7 +65,7 @@ public class PatienceState extends State {
 		if(this.point != null){
 			Vector2 pointDisplace = this.point.getPosition().minus(input.car.position).flatten();
 			if(pointDisplace.magnitude() > 1500 || input.car.velocity.magnitude() > 1100){
-				Vector2 impactDisplace = wildfire.impactPoint.getPosition().minus(input.car.position).flatten();
+				Vector2 impactDisplace = input.info.impact.getPosition().minus(input.car.position).flatten();
 				double angle = pointDisplace.angle(impactDisplace);
 //				System.out.println((int)Math.toDegrees(angle) + " degrees");
 				if(angle < 0.08) return false;
@@ -76,7 +76,7 @@ public class PatienceState extends State {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		CarData car = input.car;
 		
 		if(Behaviour.isCarAirborne(car)){
@@ -99,7 +99,7 @@ public class PatienceState extends State {
 //	    double steer = radians * -3;
 	    
 	    ControlsOutput controls = Handling.driveDestination(car, point.getPosition());
-		if(Math.abs(radians) > 0.3 || v > Physics.boostMaxSpeed(u, car.boost) - 250){
+		if(Math.abs(radians) > 0.3 || v > DrivePhysics.maxVelocity(u, car.boost) - 250){
 			double throttle = Handling.produceAcceleration(car, a);
 			controls = controls.withThrottle(throttle).withBoost(throttle > 1 && Math.abs(radians) < 0.2);
 		}else{

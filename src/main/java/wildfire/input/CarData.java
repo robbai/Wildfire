@@ -26,7 +26,7 @@ public class CarData {
     
 	public final String name;
 	
-	public final double forwardVelocity;
+	public final double forwardVelocity, forwardVelocityAbs;
 
     public CarData(rlbot.flat.PlayerInfo playerInfo, float elapsedSeconds, int index){
         this.position = Vector3.fromFlatbuffer(playerInfo.physics().location());
@@ -50,10 +50,15 @@ public class CarData {
         this.name = playerInfo.name();
         
         this.forwardVelocity = this.velocity.dotProduct(this.orientation.noseVector);
+        this.forwardVelocityAbs = Math.abs(this.forwardVelocity);
     }
     
     public double velocityDir(Vector2 direction){
     	return this.velocity.dotProduct(direction.normalized().withZ(0));
     }
+
+	public double velocityDir(Vector3 direction){
+		return this.velocity.dotProduct(direction.normalized());
+	}
     
 }

@@ -8,20 +8,32 @@ import java.util.Random;
 import rlbot.Bot;
 import rlbot.ControllerState;
 import rlbot.cppinterop.RLBotDll;
-import rlbot.cppinterop.RLBotInterfaceException;
 import rlbot.flat.BallPrediction;
 import rlbot.flat.GameTickPacket;
 import rlbot.flat.QuickChatSelection;
 import wildfire.WildfireJava;
 import wildfire.boost.BoostManager;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.wildfire.input.Info;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Human;
-import wildfire.wildfire.obj.PredictionSlice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.obj.StateSettingManager;
 import wildfire.wildfire.obj.WRenderer;
-import wildfire.wildfire.states.*;
+import wildfire.wildfire.states.BoostTestState;
+import wildfire.wildfire.states.ClearState;
+import wildfire.wildfire.states.FallbackState;
+import wildfire.wildfire.states.IdleState;
+import wildfire.wildfire.states.KickoffState;
+import wildfire.wildfire.states.MixerState;
+import wildfire.wildfire.states.PathState;
+import wildfire.wildfire.states.PatienceState;
+import wildfire.wildfire.states.ReturnState;
+import wildfire.wildfire.states.ShadowState;
+import wildfire.wildfire.states.ShootState;
+import wildfire.wildfire.states.StalkState;
+import wildfire.wildfire.states.WaitState;
+import wildfire.wildfire.states.WallHitState;
 import wildfire.wildfire.utils.Behaviour;
 
 public class Wildfire implements Bot {
@@ -37,10 +49,8 @@ public class Wildfire implements Bot {
 		return test;
 	}
     
-	public WRenderer renderer;
-	public BallPrediction ballPrediction;
-	public PredictionSlice impactPoint;
 	public StateSettingManager stateSetting;
+	
 	private Human human;
 	
 	// State info.
@@ -48,15 +58,16 @@ public class Wildfire implements Bot {
 	private State fallbackState;
 	private State activeState;
 	private String lastPrintedInfo = "";
-	
-	// Measured in elapsed seconds.
-	private float lastDodge = 0;
 
 	// Measured in milliseconds.
 	private final long quickChatCooldown = 40000L;
 	private long lastQuickChat = 0L;
 	
-	public boolean unlimitedBoost;	
+	public boolean unlimitedBoost;
+	
+	public Info info;
+	public WRenderer renderer;
+	public BallPrediction ballPrediction;	
 
     public Wildfire(int playerIndex, int team, boolean test){
         this.playerIndex = playerIndex;
@@ -64,6 +75,7 @@ public class Wildfire implements Bot {
         this.test = test;
         this.stateSetting = new StateSettingManager(this);
         this.unlimitedBoost = false;
+        this.info = new Info(this);
         
         // Human thread.
         this.human = new Human(this).setEnabled(false);
@@ -75,9 +87,10 @@ public class Wildfire implements Bot {
         states = new ArrayList<State>();
         new IdleState(this);
         new KickoffState(this);
+        new BoostTestState(this);
         new WallHitState(this);
         new PatienceState(this);
-        new BoostState(this);
+//        new BoostState(this);
         new WaitState(this, false);
         new StalkState(this);
         new MixerState(this);        
@@ -103,23 +116,8 @@ public class Wildfire implements Bot {
         WildfireJava.bots.add(this);
     }
 
-    private ControlsOutput processInput(DataPacket input){
-    	// Get a renderer.
-    	renderer = new WRenderer(this, !Behaviour.hasTeammate(input) && isTestVersion(), isTestVersion());
-    	
-//    	stateSetting.path(input, true, true);
-//    	stateSetting.shoot(input, false);
+    private ControlsOutput processInput(InfoPacket input){
 //    	stateSetting.airRoll(input);
-//    	stateSetting.wallHit(input);
-//    	stateSetting.recovery(input);
-    	
-    	// Get the ball prediction.
-    	try{
-    	    ballPrediction = RLBotDll.getBallPrediction();
-    	}catch(RLBotInterfaceException e){
-    		e.printStackTrace();
-    		ballPrediction = null;
-    	}
     	
     	// GG.
     	if(input.gameInfo.isMatchEnded()){
@@ -139,14 +137,6 @@ public class Wildfire implements Bot {
     		lastQuickChat = 0;
     	}
     	
-    	// Impact point.
-    	try{
-    		impactPoint = Behaviour.getEarliestImpactPoint(input, ballPrediction);
-    	}catch(Exception e){
-    		e.printStackTrace();
-    		impactPoint = new PredictionSlice(input.ball.position, 360);
-    	}
-    	
     	// Choose whether to continue with the active state.
     	if(activeState != null){
     		// Expire the state's action.
@@ -161,6 +151,7 @@ public class Wildfire implements Bot {
     		
     		// Expire the state.
     		if(!activeState.hasAction() && activeState.expire(input)){
+    			activeState.currentMechanic = null;
     			activeState = null;
     		}
     	}
@@ -179,7 +170,7 @@ public class Wildfire implements Bot {
     	State effectiveState = (activeState != null ? activeState : this.fallbackState);
     	String printPrefix = "[" + ((int)input.elapsedSeconds % 1000) + "] " + playerIndex + ": ";
     	String printInfo = (effectiveState.getName() + (effectiveState.hasAction() ? " (" + effectiveState.currentAction.getName() + ")" : (effectiveState.runningMechanic() ? " (" + effectiveState.currentMechanic.getName() + ")" : "")));
-		if(lastPrintedInfo.isBlank() || !printInfo.equals(lastPrintedInfo)){
+		if(lastPrintedInfo.isEmpty() || !printInfo.equals(lastPrintedInfo)){
 			System.out.println(printPrefix + printInfo);
 			lastPrintedInfo = printInfo;
 		}
@@ -187,13 +178,13 @@ public class Wildfire implements Bot {
     	// Return the output from the state.
     	if(activeState == null || fallbackState.hasAction()) return fallback(input);    	
     	try{
-    		renderer.drawString2d(activeState.getName(), Color.GREEN, new Point(0, 0), 2, 2);
+    		info.renderer.drawString2d(activeState.getName(), Color.GREEN, new Point(0, 0), 2, 2);
     		
     		// Return the mechanics's output since it would override the state
     		if(activeState.runningMechanic() && !activeState.hasAction()){
     			ControlsOutput mechanicOutput = activeState.currentMechanic.getOutput(input);
     			if(mechanicOutput != null){
-		    		renderer.drawString2d(activeState.currentMechanic.getName(), Color.GRAY, new Point(0, 20), 2, 2);
+    				info.renderer.drawString2d(activeState.currentMechanic.getName(), Color.GRAY, new Point(0, 20), 2, 2);
 		    		return mechanicOutput;
     			}
     		}
@@ -201,7 +192,7 @@ public class Wildfire implements Bot {
     		// Return the action's output since it would override the state
     		if(activeState.hasAction()){
     			ControlsOutput actionOutput = activeState.currentAction.getOutput(input);
-	    		renderer.drawString2d(activeState.currentAction.getName(), Color.GRAY, new Point(0, 20), 2, 2);
+    			info.renderer.drawString2d(activeState.currentAction.getName(), Color.GRAY, new Point(0, 20), 2, 2);
 	    		return actionOutput;
     		}
     		
@@ -211,8 +202,10 @@ public class Wildfire implements Bot {
     		// Errors occurred when trying to run the current state!.
     		e.printStackTrace();
     		
-    		if(activeState.hasAction()) activeState.currentAction = null;
+    		activeState.currentAction = null;
+    		activeState.currentMechanic = null;
     		activeState = null;
+    		
     		return fallback(input);
     	}
     }
@@ -220,12 +213,12 @@ public class Wildfire implements Bot {
     /**
      * Fallback state saves us all!
      */
-	private ControlsOutput fallback(DataPacket input){
-		renderer.drawString2d(fallbackState.getName(), Color.RED, new Point(0, 0), 2, 2);
+	private ControlsOutput fallback(InfoPacket input){
+		info.renderer.drawString2d(fallbackState.getName(), Color.RED, new Point(0, 0), 2, 2);
 		if(fallbackState.hasAction() && fallbackState.currentAction.expire(input)) fallbackState.currentAction = null;
 		if(fallbackState.hasAction()){
 			ControlsOutput actionOutput = fallbackState.currentAction.getOutput(input);
-    		renderer.drawString2d(fallbackState.currentAction.getName(), Color.DARK_GRAY, new Point(0, 20), 2, 2);
+			info.renderer.drawString2d(fallbackState.currentAction.getName(), Color.DARK_GRAY, new Point(0, 20), 2, 2);
     		return actionOutput;
 		}
 		return fallbackState.getOutput(input);
@@ -241,13 +234,18 @@ public class Wildfire implements Bot {
         	System.err.println("Those dang contributors broke the boost pads :(");
         }
         
-        DataPacket dataPacket = new DataPacket(packet, playerIndex);
+        InfoPacket infoPacket = new InfoPacket(packet, playerIndex);
+        this.info.update(infoPacket);
+        infoPacket.info = this.info;
         
-        ControlsOutput wildfireControls = processInput(dataPacket);
+        this.renderer = this.info.renderer;
+        this.ballPrediction = this.info.ballPrediction;
+        
+        ControlsOutput wildfireControls = processInput(infoPacket);
         if(!this.human.isEnabled()){
         	return wildfireControls;
         }else{
-        	renderer.drawString2d("Human", Color.BLUE, new Point(0, 200), 8, 8);
+        	info.renderer.drawString2d("Human", Color.BLUE, new Point(0, 200), 8, 8);
         	ControlsOutput humanControls = this.human.getControls();
         	return humanControls;
         }
@@ -285,15 +283,6 @@ public class Wildfire implements Bot {
 	
 	public boolean sendQuickChat(byte... quickChatSelection){
 		return this.sendQuickChat(false, quickChatSelection);
-	}
-	
-	public float lastDodgeTime(float elapsedSeconds){
-		if(elapsedSeconds < this.lastDodge) resetDodgeTime(elapsedSeconds);
-		return elapsedSeconds - this.lastDodge;
-	}
-
-	public void resetDodgeTime(float elapsedSeconds){
-		this.lastDodge = elapsedSeconds;
 	}
 
 }

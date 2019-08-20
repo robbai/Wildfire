@@ -1,8 +1,8 @@
 package wildfire.wildfire.obj;
 
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.input.InfoPacket;
 
 public abstract class Action {
 	
@@ -18,17 +18,17 @@ public abstract class Action {
 		this.failed = false;
 		this.name = name;
 		this.state = state;
-		this.wildfire = state.wildfire;
-		state.currentAction = this;
+		this.wildfire = (state == null ? null : state.wildfire);
+		if(state != null) state.currentAction = this;
 	}
 	
 	public String getName(){
 		return name;
 	}
 	
-	public abstract ControlsOutput getOutput(DataPacket input);
+	public abstract ControlsOutput getOutput(InfoPacket input);
 	
-	public abstract boolean expire(DataPacket input);
+	public abstract boolean expire(InfoPacket input);
 	
 	public float timeDifference(float elapsedSeconds){
 		return elapsedSeconds - timeStarted;

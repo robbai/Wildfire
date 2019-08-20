@@ -17,42 +17,32 @@ import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.curve.BezierCurve;
 import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.input.InfoPacket;
+import wildfire.wildfire.obj.Impact;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Utils;
 
-public class BoostState extends State {
+public class BoostTestState extends State {
+	
+	/*
+	 * This state is solely for the purpose of testing
+	 */
 
-	private final double maxBoost = 40, maxBoostMega = 72;
+	private final double maxBoost = 60;
 	
 	private BoostPad boost = null;
-	private boolean steal = false, possession = false;
 
-	public BoostState(Wildfire wildfire){
+	public BoostTestState(Wildfire wildfire){
 		super("Boost", wildfire);
 	}
 	
 	@Override
 	public boolean ready(InfoPacket input){
-		Vector2 impactFlat = input.info.impact.getPosition().flatten(); 
-		steal = (Utils.teamSign(input.car) * impactFlat.y > 4000 && Constants.enemyGoal(input.car.team).distance(impactFlat) > 2000 && !Behaviour.isInCone(input.car, impactFlat.withZ(0), 700));
-		possession = (Behaviour.closestOpponentDistance(input, input.ball.position) > Math.max(2600, input.car.position.distanceFlat(impactFlat)));
-		
-		// World's longest line.
-		boolean teammateAtBall = Behaviour.isTeammateCloser(input);
-		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.info.impactDistanceFlat < 2400 && !(steal || possession)) || input.info.impact.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4500) || (Math.abs(input.info.impact.getPosition().x) < 1500 && !possession) || ((Behaviour.isInCone(input.car, input.info.impact.getPosition(), 200) && !(steal || possession)))){
-			return false;
-		}
+		if(input.car.boost > maxBoost) return false;
 		boost = getBoost(input);
 		return boost != null;
-	}
-	
-	@Override
-	public boolean expire(InfoPacket input){
-		if(Behaviour.isKickoff(input) || boost == null || !boost.isActive() || input.car.boost > maxBoostMega) return true;
-		if(boost.getLocation().distanceFlat(input.car.position) < 2000) return false;
-		return input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || input.info.impact.getPosition().distanceFlat(input.car.position) < 1600 || input.info.impact.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (Math.abs(input.info.impact.getPosition().x) < 1200 ? 3000 : 2100);
 	}
 
 	@Override
@@ -64,7 +54,6 @@ public class BoostState extends State {
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
 		}
-		if(this.steal) wildfire.renderer.drawString2d("Steal", Color.WHITE, new Point(0, 20), 2, 2);
 		
 		// Recovery.
 		if(Behaviour.isCarAirborne(car)){
@@ -97,9 +86,9 @@ public class BoostState extends State {
 		Vector2 carPosition = car.position.flatten();
 		Vector2 cross = boostLocation.minus(carPosition).cross();
 		BezierCurve bezier = new BezierCurve(carPosition, 
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(distance / 4)), 
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(distance / 8)), 
 				carPosition.plus(boostLocation).scaled(0.5),
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(distance / -8)),
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(distance / -16)),
 				boostLocation.plus(car.position.flatten().minus(boostLocation).scaledToMagnitude(circleRadius)));
 		bezier.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.blue, boostLocation, circleRadius);
@@ -110,30 +99,40 @@ public class BoostState extends State {
 			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -700, 700), Utils.clamp(boostLocation.y, -Constants.PITCHLENGTH + 500, Constants.PITCHLENGTH - 500));
 		}
 		
-//		boolean reverse = (forwardVelocity < -400 && !stuckInGoal && distance < 2600);
 		return Handling.arriveDestination(car, boostLocation, true);
 	}
 
 	private BoostPad getBoost(InfoPacket input){
-		boolean discardSpeed = (input.car.velocity.magnitude() < 800);
-		boolean teammateAtBall = Behaviour.isTeammateCloser(input);
-		double maxDistance = (input.info.impactDistanceFlat + 800);		
+		Impact impact = input.info.impact;
+		double impactTime = impact.getTime();
+		if(Math.abs(impact.getPosition().y) > (Constants.PITCHLENGTH - 1100)) impactTime *= 1.15;
+		if(Math.abs(impact.getPosition().x) > (Constants.PITCHWIDTH - 950)) impactTime *= 1.2;
+		if(impact.getPosition().z > 260) impactTime *= 1.4;
 		
-		double bestDistance = 0;
+		boolean carCorrectSide = Behaviour.correctSideOfTarget(input.car, impact.getBallPosition());
+		
 		BoostPad bestBoost = null;
+		double bestBoostTime = 0;
 		for(BoostPad boost : BoostManager.getFullBoosts()){
-			double distance = boost.getLocation().distanceFlat(teammateAtBall ? input.car.position : input.info.impact.getPosition());
-			if(distance > maxDistance || !boost.isActive()) continue;
-			if(boost.getLocation().y * Utils.teamSign(input.car) > input.info.impact.getPosition().y * Utils.teamSign(input.car) - 1000) continue;
-			if(steal && boost.getLocation().y * Utils.teamSign(input.car) < 4500) continue; // Steal their boost.
+			if(!boost.isActive()) continue;
 			
-			if(!discardSpeed && input.car.velocityDir(boost.getLocation().minus(input.car.position).flatten()) < -250) continue;
+			boolean boostCorrectSide = ((boost.getLocation().y - impact.getBallPosition().y) * Utils.teamSign(input.car) > 0);
 			
-			if(bestBoost == null || distance < bestDistance){
+			double distance = boost.getLocation().distance(input.car.position);
+			double maxVel = DrivePhysics.maxVelocityDist(input.car.velocityDir(boost.getLocation().minus(input.car.position)), input.car.boost, distance);
+			double travelTime = DrivePhysics.minTravelTime(input.car, distance);
+			Impact newImpact = Behaviour.getEarliestImpactPoint(boost.getLocation(), 100, boost.getLocation().minus(input.car.position).scaledToMagnitude(maxVel), input.car.elapsedSeconds + travelTime, wildfire.ballPrediction);
+			if(newImpact == null) continue;
+			travelTime += newImpact.getTime();
+			
+			if(!boostCorrectSide) travelTime *= (carCorrectSide ? 1.3 : 1.05);
+			
+			if(travelTime < impactTime && (bestBoost == null || travelTime < bestBoostTime - 0.05)){
 				bestBoost = boost;
-				bestDistance = distance;
+				bestBoostTime = travelTime;
 			}
 		}
+		
 		return bestBoost;
 	}
 

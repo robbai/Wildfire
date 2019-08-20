@@ -6,37 +6,40 @@ import wildfire.input.CarData;
 import wildfire.input.DataPacket;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.obj.PredictionSlice;
+import wildfire.wildfire.obj.Impact;
+import wildfire.wildfire.physics.DrivePhysics;
 
 public class Behaviour {
 
-	/**
-	 * Acceleration = 2(Displacement - Initial Velocity * Time) / Time^2
-	 */
-	public static PredictionSlice getEarliestImpactPoint(DataPacket input, BallPrediction ballPrediction){
-		//"NullPointerException - Lookin' good!"
+	public static Impact getEarliestImpactPoint(Vector3 carPosition, double carBoost, Vector3 carVelocity, double elapsedSeconds, BallPrediction ballPrediction){
+		// "NullPointerException - Lookin' good!"
 		if(ballPrediction == null){
 			System.err.println("NullPointerException - Lookin' good!");
-			return new PredictionSlice(input.ball.position, 0);
+			return null;
 		}
 		
-		Vector2 carPosition = input.car.position.flatten(); 
-		double initialVelocity = input.car.velocity.flatten().magnitude();
-		
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
+			boolean finalSlice = (i == ballPrediction.slicesLength() - 1);
 			
-			double displacement = location.flatten().distance(carPosition) - Constants.BALLRADIUS;
-			double timeLeft = (double)i / 60D;
-			double acceleration = 2 * (displacement - initialVelocity * timeLeft) / Math.pow(timeLeft, 2);
+			Vector3 slicePosition = Vector3.fromFlatbuffer(rawSlice.physics().location());
 			
-			if(initialVelocity + acceleration * timeLeft < Math.max(initialVelocity, Physics.boostMaxSpeed(initialVelocity, input.car.boost))){
-				return new PredictionSlice(location.plus(carPosition.minus(location.flatten()).scaledToMagnitude(Constants.BALLRADIUS).withZ(0)), i);
+			double time = (rawSlice.gameSeconds() - elapsedSeconds);
+			if(time < 0) continue;
+			double distance = slicePosition.distance(carPosition) - Constants.BALLRADIUS;
+			double initialVelocity = carVelocity.dotProduct(slicePosition.minus(carPosition).normalized());
+			
+			if(finalSlice || DrivePhysics.maxDistance(time, initialVelocity, carBoost) > distance){
+				Vector3 impactPosition = slicePosition.plus(carPosition.minus(slicePosition).scaledToMagnitude(Constants.BALLRADIUS));
+				return new Impact(impactPosition, rawSlice, time);
 			}
 		}
 		
-		//Return final position as fallback
-		return new PredictionSlice(Vector3.fromFlatbuffer(ballPrediction.slices(ballPrediction.slicesLength() - 1).physics().location()), ballPrediction.slicesLength() - 1);
+		return null; // Uh oh.
+	}
+	
+	public static Impact getEarliestImpactPoint(CarData car, BallPrediction ballPrediction){
+		return getEarliestImpactPoint(car.position, car.boost, car.velocity, car.elapsedSeconds, ballPrediction);
 	}
 
 	public static boolean isTeammateCloser(DataPacket input, Vector3 target){
@@ -94,12 +97,14 @@ public class Behaviour {
 	 * Returns a 2D vector of a point inside of the enemy's goal,
 	 * it should be a good place to shoot relative to this car
 	 */
-	public static Vector2 getTarget(CarData car, Vector2 ballPosition){
-		final double goalSafeZone = 700D;
+	public static Vector2 getTarget(CarData car, Vector2 ballPosition, double threshold){
+		final double goalSafeZone = (700 + threshold);
 		
 		Vector2 target = null;
+		
 		Vector2 ballDifference = ballPosition.minus(car.position.flatten());
 		ballDifference = ballDifference.scaled(1D / Math.abs(ballDifference.y)); //Make the Y-value 1
+		
 		if(car.team == 0 && ballDifference.y > 0){
 			double distanceFromGoal = Constants.PITCHLENGTH - ballPosition.y;
 			ballDifference = ballDifference.scaled(distanceFromGoal);
@@ -109,15 +114,24 @@ public class Behaviour {
 			ballDifference = ballDifference.scaled(distanceFromGoal);
 			target = ballPosition.plus(ballDifference);
 		}
+		
 		if(target != null){
-			target = new Vector2(Math.max(-goalSafeZone, Math.min(goalSafeZone, target.x)), target.y);
+			target = new Vector2(Utils.clamp(target.x, -goalSafeZone, goalSafeZone), target.y);
 			return target;
 		}
 		return Constants.enemyGoal(car.team);
 	}
 	
+	public static Vector2 getTarget(CarData car, Vector2 ballPosition){
+		return getTarget(car, ballPosition, 0);
+	}
+	
+	public static Vector2 getTarget(CarData car, BallData ball, double threshold){
+		return getTarget(car, ball.position.flatten(), threshold);
+	}
+	
 	public static Vector2 getTarget(CarData car, BallData ball){
-		return getTarget(car, ball.position.flatten());
+		return getTarget(car, ball.position.flatten(), 0);
 	}
 
 	/*
@@ -178,6 +192,10 @@ public class Behaviour {
 	public static boolean isBallAirborne(BallData ball){
 		return ball.position.z > 290 || Math.abs(ball.velocity.z) > 250;
 	}
+	
+	public static boolean isBallAirborne(rlbot.flat.PredictionSlice rawSlice){
+		return rawSlice.physics().location().z() > 290 || Math.abs(rawSlice.physics().velocity().z()) > 250;
+	}
 
 	public static Vector3 getBounce(BallPrediction ballPrediction){
 		if(ballPrediction == null){
@@ -196,15 +214,16 @@ public class Behaviour {
 	 * Time from now for the time to touch the floor, 
 	 * measured in seconds
 	 */
-	public static double getBounceTime(BallPrediction ballPrediction){
+	public static double getBounceTime(double time, BallPrediction ballPrediction){
 		if(ballPrediction == null){
 			System.err.println("NullPointerException - Lookin' good!");
-			return 360;
+			return 6;
 		}
 		
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
-	    	if(Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location()).z <= Constants.BALLRADIUS + 15){
-	    		return (double)i / 60D;
+	    	rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
+	    	if(rawSlice.physics().location().z() <= Constants.BALLRADIUS + 15){
+	    		return rawSlice.gameSeconds() - time;
 	    	}
 	    }
 	    return -1;

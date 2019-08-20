@@ -2,6 +2,7 @@ package wildfire.vector;
 
 import rlbot.gamestate.DesiredVector3;
 import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Utils;
 
 public class Vector2 {
 
@@ -18,7 +19,12 @@ public class Vector2 {
         this.y = y;
     }
 
-    public Vector2 plus(Vector2 other){
+    public Vector2(Vector2 other){
+    	this.x = other.x;
+        this.y = other.y;
+	}
+
+	public Vector2 plus(Vector2 other){
         return new Vector2(x + other.x, y + other.y);
     }
 
@@ -131,7 +137,8 @@ public class Vector2 {
 	
 	@Override
 	public String toString(){
-		return "[x=" + Math.round(x * 100) / 100F + ", y=" + Math.round(y * 100) / 100F + "]";
+		boolean little = (this.magnitude() < 1);
+		return "[x=" + (little ? this.x : Utils.round(this.x)) + ", y=" + (little ? this.y : Utils.round(this.y)) + "]";
 	}
 	
 	public DesiredVector3 toDesired(){

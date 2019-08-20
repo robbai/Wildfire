@@ -32,6 +32,9 @@ dependencies {
 	
     // javagl's Obj
     compile group: 'de.javagl', name: 'obj', version: '0.3.0'
+	
+	// Apache Commons CSV
+	compile "org.apache.commons:commons-csv:1.5"
 }
 
 task checkPipUpgradeSafety {
@@ -86,6 +89,7 @@ distZip {
         from fileTree('src/main/python') {
             exclude '__pycache__'
             exclude 'wildfireTest.cfg'
+			exclude 'grabby.cfg'
         }
     }
 }
@@ -96,6 +100,7 @@ installDist {
         from fileTree('src/main/python') {
             exclude '__pycache__'
 			exclude 'wildfireTest.cfg'
+			exclude 'grabby.cfg'
         }
     }
 }

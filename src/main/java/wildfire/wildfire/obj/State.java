@@ -1,8 +1,8 @@
 package wildfire.wildfire.obj;
 
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.input.InfoPacket;
 
 public abstract class State {
 	
@@ -19,11 +19,11 @@ public abstract class State {
 		wildfire.states.add(this);
 	}
 	
-	public abstract ControlsOutput getOutput(DataPacket input);
+	public abstract ControlsOutput getOutput(InfoPacket input);
 	
-	public abstract boolean ready(DataPacket input);
+	public abstract boolean ready(InfoPacket input);
 	
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		return !ready(input);
 	}
 	
@@ -39,9 +39,14 @@ public abstract class State {
 		return name;
 	}
 	
-	protected ControlsOutput startMechanic(Mechanic mechanic, DataPacket input){
+	protected ControlsOutput startMechanic(Mechanic mechanic, InfoPacket input){
 		this.currentMechanic = mechanic;
 		return this.currentMechanic.getOutput(input);
+	}
+	
+	protected ControlsOutput startAction(Action action, InfoPacket input){
+		this.currentAction = action;
+		return action.getOutput(input);
 	}
 
 }

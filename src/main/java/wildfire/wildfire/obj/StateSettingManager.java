@@ -48,10 +48,10 @@ public class StateSettingManager {
 	public void aerial(DataPacket input, boolean close){
 		if(((!Behaviour.isBallAirborne(input.ball) || Utils.teamSign(input.car) * input.car.position.y > 0) && input.car.hasWheelContact && input.car.position.z < 500) || getCooldown(input) > 18 || Math.abs(input.ball.position.y) > 4900){
     		GameState gameState = new GameState();
-    		Vector3 carPosition = new Vector3((close ? 0.5 : 1) * Utils.random(-3500, 3500), (close ? 0.5 : 1) * Utils.random(3000, 5000) * -Utils.teamSign(input.car), 18);
-    		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withVelocity(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(new DesiredRotation(0F, (float)carPosition.flatten().correctionAngle(new Vector2()), 0F))));
+    		Vector3 carPosition = new Vector3((close ? 0.5 : 1) * random(-3500, 3500), (close ? 0.5 : 1) * random(3000, 5000) * -Utils.teamSign(input.car), 18);
+    		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withVelocity(new Vector3(random(-500, 500), random(-500, 500), 0).toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(new DesiredRotation(0F, (float)carPosition.flatten().correctionAngle(new Vector2()), 0F))));
     		
-    		Vector3 ballVelocity = new Vector3(Utils.random(-2000, 2000), Utils.random(-1500, 1500), Utils.random(1200, 2000));
+    		Vector3 ballVelocity = new Vector3(random(-2000, 2000), random(-1500, 1500), random(1200, 2000));
     		gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(ballVelocity.scaled(-2).confine().toDesired()).withVelocity(ballVelocity.toDesired())));
     		
     		RLBotDll.setGameState(gameState.buildPacket());
@@ -59,19 +59,47 @@ public class StateSettingManager {
     	}
 	}
 
-	public void catchTest(DataPacket input, boolean dribble){
+	public void catchBall(DataPacket input, boolean dribble){
 		int teamSign = Utils.teamSign(input.car);
 		if((dribble && input.ball.position.z < 99) || input.ball.position.magnitude() > 3000){
 			GameState gameState = new GameState();
-			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(Utils.random(-2500, 2500), Utils.random(500, 4900) * -teamSign, 10).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, teamSign * Math.PI / 2, 0).toDesired())));
-			Vector2 ballLocation = new Vector2(Utils.random(-1500, 1500), Utils.random(-1500, 1500));
-			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(ballLocation.x, ballLocation.y, 200).toDesired()).withVelocity(new Vector3(-ballLocation.x / 2, -ballLocation.y / 2, Utils.random(1000, 1400)).toDesired())));
+			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(new Vector3(random(-2500, 2500), random(500, 4900) * -teamSign, 10).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, teamSign * Math.PI / 2, 0).toDesired())));
+			Vector2 ballLocation = new Vector2(random(-1500, 1500), random(-1500, 1500));
+			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(ballLocation.x, ballLocation.y, 200).toDesired()).withVelocity(new Vector3(-ballLocation.x / 2, -ballLocation.y / 2, random(1000, 1400)).toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
 		}
 	}
 	
 	public void airRoll(DataPacket input){
-		catchTest(input, false);
+		if(input.ball.position.z > 100 && Math.abs(input.ball.position.y) < Constants.PITCHLENGTH - 150 && this.getCooldown(input) < 10) return;
+		
+		GameState gameState = new GameState();
+		
+		double teamSign = Utils.teamSign(input.car);
+		
+		double ballSignX = Math.signum(this.random.nextDouble() - 0.5);
+		Vector3 ballPosition = new Vector3((Constants.PITCHWIDTH - random(700, 1200)) * ballSignX, (Constants.PITCHLENGTH - random(800, 1200)) * teamSign, Constants.BALLRADIUS);
+		Vector3 ballVelocity = new Vector3(random(800, 1600) * -ballSignX, random(0, 500) * -teamSign, random(1000, 1700));
+		Vector3 ballAngVelocity = Vector3.random(100);
+		gameState.withBallState(new BallState().withPhysics(new PhysicsState()
+				.withLocation(ballPosition.toDesired())
+				.withVelocity(ballVelocity.toDesired())
+				.withAngularVelocity(ballAngVelocity.toDesired())));
+		
+		Vector3 carPosition = new Vector3(random(-1, 1) * (Constants.PITCHWIDTH - 1000), random(0, 3500) * teamSign, Constants.CARHEIGHT);
+		Vector3 carVelocity = new Vector3(0, 0, -100);
+		Vector3 carAngVelocity = new Vector3();
+		CarOrientation carOrientation = CarOrientation.fromVector(new Vector2(0, teamSign));
+		float boost = 100;
+		gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(boost).withPhysics(new PhysicsState()
+				.withLocation(carPosition.toDesired())
+				.withVelocity(carVelocity.toDesired())
+				.withRotation(carOrientation.toDesired())
+				.withAngularVelocity(carAngVelocity.toDesired())));
+		
+		RLBotDll.setGameState(gameState.buildPacket());
+		
+		resetCooldown(input.elapsedSeconds);
 	}
 
 	public void hop(DataPacket input){
@@ -79,8 +107,8 @@ public class StateSettingManager {
 		double distance = 2000;
 		if(input.car.hasWheelContact && getCooldown(input) > 1){
 			GameState gameState = new GameState();
-			double angle = Utils.randomRotation();
-			gameState.withCarState(wildfire.playerIndex, new CarState().withPhysics(new PhysicsState().withLocation(new Vector3(Math.sin(angle) * distance, Math.cos(angle) * distance, 10).toDesired()).withVelocity(velocity ? new Vector3(Utils.random(-1500, 1500), Utils.random(-1500, 1500), 0).toDesired() : new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, Utils.randomRotation(), 0).toDesired())));
+			double angle = randomRotation();
+			gameState.withCarState(wildfire.playerIndex, new CarState().withPhysics(new PhysicsState().withLocation(new Vector3(Math.sin(angle) * distance, Math.cos(angle) * distance, 10).toDesired()).withVelocity(velocity ? new Vector3(random(-1500, 1500), random(-1500, 1500), 0).toDesired() : new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired()).withRotation(CarOrientation.convert(0, randomRotation(), 0).toDesired())));
 			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withLocation(new Vector3(0, 0, Constants.BALLRADIUS).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
 			resetCooldown(input.elapsedSeconds);
@@ -93,16 +121,24 @@ public class StateSettingManager {
 			double horizontalVelocity = 3000;
 			gameState.withCarState(wildfire.playerIndex, new CarState().withBoostAmount(100F).withDoubleJumped(true).withPhysics(new PhysicsState()
 					.withLocation(new Vector3(0, 0, 800).toDesired())
-					.withVelocity(new Vector3(Utils.random(-horizontalVelocity, horizontalVelocity), Utils.random(-horizontalVelocity, horizontalVelocity), Utils.random(300, 1900)).toDesired())
-					.withAngularVelocity(new Vector3(Utils.random(-Math.PI, Math.PI) * 2, Utils.random(-Math.PI, Math.PI) * 2, Utils.random(-Math.PI, Math.PI) * 2).toDesired())
+					.withVelocity(new Vector3(random(-horizontalVelocity, horizontalVelocity), random(-horizontalVelocity, horizontalVelocity), random(300, 1900)).toDesired())
+					.withAngularVelocity(new Vector3(random(-Math.PI, Math.PI) * 2, random(-Math.PI, Math.PI) * 2, random(-Math.PI, Math.PI) * 2).toDesired())
 					.withRotation(CarOrientation.convert(Math.PI * 2, Math.PI * 2, Math.PI * 2).toDesired())));
 			gameState.withBallState(new BallState().withPhysics(new PhysicsState()
-					.withLocation(new Vector3(Utils.random(-500, 500), Utils.random(-500, 500), Constants.BALLRADIUS).toDesired())
+					.withLocation(new Vector3(random(-500, 500), random(-500, 500), Constants.BALLRADIUS).toDesired())
 					.withVelocity(new Vector3().toDesired())
 					.withAngularVelocity(new Vector3().toDesired())));
 			RLBotDll.setGameState(gameState.buildPacket());
 			resetCooldown(input.elapsedSeconds);
 		}
+	}
+	
+	public double randomRotation(){
+    	return random(-Math.PI, Math.PI);
+    }
+	
+	public double random(double min, double max){
+		return (this.random.nextDouble() * Math.abs(max - min) + Math.min(min, max));
 	}
 
 	public void kickoffSpawn(DataPacket input, KickoffSpawn kickoffSpawn){
@@ -149,7 +185,7 @@ public class StateSettingManager {
 		// Every 2.5 seconds.
 		if(getCooldown(input) > 2.5){
 			if(!smoothMove){
-				Vector3 newBallLocation = new Vector3(Utils.random(-1, 1), Utils.random(-1, 1), Utils.random(-1, 1)).scaledToMagnitude(ballDistance);
+				Vector3 newBallLocation = new Vector3(random(-1, 1), random(-1, 1), random(-1, 1)).scaledToMagnitude(ballDistance);
 				ballPhysics.withLocation(newBallLocation.plus(new Vector3(0, 0, z)).toDesired());
 			}
 			resetCooldown(input.elapsedSeconds);
@@ -176,9 +212,9 @@ public class StateSettingManager {
 			final double border = 1000;
 					
 			GameState gameState = new GameState();
-			Vector3 ballLocation = new Vector3(Utils.random(-Constants.PITCHWIDTH + border, Constants.PITCHWIDTH - border), Utils.random(-Constants.PITCHLENGTH + border, Constants.PITCHLENGTH - border), Constants.BALLRADIUS);
+			Vector3 ballLocation = new Vector3(random(-Constants.PITCHWIDTH + border, Constants.PITCHWIDTH - border), random(-Constants.PITCHLENGTH + border, Constants.PITCHLENGTH - border), Constants.BALLRADIUS);
 			gameState.withBallState(new BallState().withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(ballStill ? new Vector3().toDesired() : ballLocation.withZ(0).scaled(-0.5).toDesired()).withLocation(ballLocation.toDesired())));
-			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(boost ? 100F : 0).withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(new Vector3().toDesired()).withLocation(new Vector3(Utils.random(-Constants.PITCHWIDTH + border, Constants.PITCHWIDTH - border), Utils.random(-Constants.PITCHLENGTH + border, Constants.PITCHLENGTH - border), 20).toDesired())));
+			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(boost ? 100F : 0).withPhysics(new PhysicsState().withAngularVelocity(new Vector3().toDesired()).withVelocity(new Vector3().toDesired()).withLocation(new Vector3(random(-Constants.PITCHWIDTH + border, Constants.PITCHWIDTH - border), random(-Constants.PITCHLENGTH + border, Constants.PITCHLENGTH - border), 20).toDesired())));
 			
 			RLBotDll.setGameState(gameState.buildPacket());
 			resetCooldown(input.elapsedSeconds);
@@ -187,20 +223,20 @@ public class StateSettingManager {
 
 	public void shoot(DataPacket input, boolean simpleRoll){
 		if(getCooldown(input) > 6 || Utils.distanceToWall(input.ball.position) < 200 || input.ball.velocity.magnitude() < 10){
-			final double carDistanceGoal = Utils.random(2500, 4800), ballSpeed = Utils.random(500, 2000), secondsToMiddle = Utils.random(1.25, 3.5);
+			final double carDistanceGoal = random(2500, 4800), ballSpeed = random(500, 2000), secondsToMiddle = random(1.25, 3.5);
 			
 			Vector2 enemyGoal = Constants.enemyGoal(input.car);
 			
 			//The position of the car
 			Vector2 carPosition = null;
 			while(!isInsideArena(carPosition)){
-				carPosition = new Vector2(Utils.random(-1, 1), Utils.random(0, -Utils.teamSign(input.car))).scaledToMagnitude(carDistanceGoal);
+				carPosition = new Vector2(random(-1, 1), random(0, -Utils.teamSign(input.car))).scaledToMagnitude(carDistanceGoal);
 				carPosition = enemyGoal.plus(carPosition).confine(500);
 			}
 			
 			//The direction that the car will face
 			Vector2 carDirection = carPosition.minus(enemyGoal).normalized();
-			if(!simpleRoll) carDirection = carDirection.plus(new Vector2(Utils.random(-1, 1), Utils.random(-1, 1)).scaledToMagnitude(2)).normalized();
+			if(!simpleRoll) carDirection = carDirection.plus(new Vector2(random(-1, 1), random(-1, 1)).scaledToMagnitude(2)).normalized();
 			
 			Vector2 ballPosition = null;
 			Vector2 ballDirection = null;
@@ -232,11 +268,11 @@ public class StateSettingManager {
 			
 			Vector3 carPosition = goal.withZ(30);
 //			Vector2 carDirection = carPosition.flatten().scaled(-1).normalized();
-			Vector2 carDirection = new Vector2(Utils.random(-1, 1), Utils.random(-1, 1)).normalized();
+			Vector2 carDirection = new Vector2(random(-1, 1), random(-1, 1)).normalized();
 			
-			double ballDistance = Utils.random(3600, 6000), ballSpeed = 2500;
-			Vector2 ballPosition = goal.plus(new Vector2(Utils.random(-1, 1), Utils.random(0.5, 1) * Utils.teamSign(input.car)).scaledToMagnitude(ballDistance)).confine(Constants.BALLRADIUS);
-			Vector3 ballVelocity = goal.minus(ballPosition).withZ(Utils.random(0, 1200)).scaledToMagnitude(ballSpeed);
+			double ballDistance = random(3600, 6000), ballSpeed = 2500;
+			Vector2 ballPosition = goal.plus(new Vector2(random(-1, 1), random(0.5, 1) * Utils.teamSign(input.car)).scaledToMagnitude(ballDistance)).confine(Constants.BALLRADIUS);
+			Vector3 ballVelocity = goal.minus(ballPosition).withZ(random(0, 1200)).scaledToMagnitude(ballSpeed);
 			
 			GameState gameState = new GameState();
 			gameState.withCarState(input.playerIndex, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState().withLocation(carPosition.toDesired()).withRotation(CarOrientation.fromVector(carDirection).toDesired()).withVelocity(new Vector3().toDesired()).withAngularVelocity(new Vector3().toDesired())));
@@ -272,14 +308,14 @@ public class StateSettingManager {
 		GameState gameState = new GameState();
 		
 		Vector3 ballPosition = new Vector3(0, 0, Constants.BALLRADIUS);
-		Vector3 ballVelocity = new Vector3(Utils.random(2500, 3000), 0, 0);
+		Vector3 ballVelocity = new Vector3(random(2500, 3000), 0, 0);
 		Vector3 ballAngVelocity = new Vector3();
 		gameState.withBallState(new BallState().withPhysics(new PhysicsState()
 				.withLocation(ballPosition.toDesired())
 				.withVelocity(ballVelocity.toDesired())
 				.withAngularVelocity(ballAngVelocity.toDesired())));
 		
-		Vector3 carPosition = new Vector3(Utils.random(3000, 4000), Utils.random(2000, 3500) * -Utils.teamSign(car), Constants.CARHEIGHT);
+		Vector3 carPosition = new Vector3(random(3000, 4000), random(2000, 3500) * -Utils.teamSign(car), Constants.CARHEIGHT);
 		Vector3 carVelocity = new Vector3(0, 0, 0);
 		Vector3 carAngVelocity = new Vector3();
 		CarOrientation carOrientation = CarOrientation.fromVector(new Vector2(Constants.PITCHWIDTH, 0).minus(carPosition.flatten()));
@@ -301,7 +337,7 @@ public class StateSettingManager {
 		
 		GameState gameState = new GameState();
 		
-		Vector3 ballPosition = new Vector3(Utils.random(-1000, 1000), Utils.random(-1000, 1000), Constants.BALLRADIUS);
+		Vector3 ballPosition = new Vector3(random(-1000, 1000), random(-1000, 1000), Constants.BALLRADIUS);
 		Vector3 ballVelocity = new Vector3(0, 0, 0);
 		Vector3 ballAngVelocity = new Vector3();
 		gameState.withBallState(new BallState().withPhysics(new PhysicsState()
@@ -309,8 +345,8 @@ public class StateSettingManager {
 				.withVelocity(ballVelocity.toDesired())
 				.withAngularVelocity(ballAngVelocity.toDesired())));
 		
-		double carVelZ = Utils.random(-800, 1700);
-		Vector3 carPosition = new Vector3(Constants.PITCHWIDTH - Constants.CARHEIGHT, Utils.random(-2000, 2000), 700 - carVelZ / 4);
+		double carVelZ = random(-800, 1700);
+		Vector3 carPosition = new Vector3(Constants.PITCHWIDTH - Constants.CARHEIGHT, random(-2000, 2000), 700 - carVelZ / 4);
 		Vector3 carVelocity = new Vector3(0, 100, carVelZ);
 		Vector3 carAngVelocity = new Vector3();
 		CarOrientation carOrientation = new CarOrientation(new Vector3(0, 0, 1), new Vector3(0, -1, 0), new Vector3(0, 0, -1));

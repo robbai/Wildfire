@@ -4,6 +4,7 @@ import rlbot.Bot;
 import rlbot.manager.BotManager;
 import rlbot.pyinterop.SocketServer;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.grabby.Grabby;
 
 public class WildfirePythonInterface extends SocketServer {
 
@@ -12,8 +13,9 @@ public class WildfirePythonInterface extends SocketServer {
     }
 
     protected Bot initBot(int index, String botType, int team){
-    	System.out.println("Initialising Wildfire [index = " + index + ", name = '" + botType + "', team = " + team + "]");
-        return new Wildfire(index, team, botType.toLowerCase().contains("test"));
+    	Bot bot = (botType.toLowerCase().contains("grabby") ? new Grabby(index) : new Wildfire(index, team, botType.toLowerCase().contains("test")));
+    	System.out.println("Initialising " + bot.getClass().getSimpleName() + " [index = " + index + ", name = '" + botType + "', team = " + team + "]");
+        return bot;
     }
     
     @Override

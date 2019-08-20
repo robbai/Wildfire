@@ -5,12 +5,13 @@ import java.awt.Point;
 
 import rlbot.flat.BallPrediction;
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.handling.AirControl;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.obj.WRenderer;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Utils;
 
@@ -56,28 +57,28 @@ public class AerialAction extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		ControlsOutput controls = new ControlsOutput().withNone();
 		float timeDifference = timeDifference(input.elapsedSeconds);
 		
 		double timeLeft = this.time - timeDifference;
 		if(timeLeft < 0){
-			AerialAction a = fromBallPrediction(this.state, input.car, this.wildfire.ballPrediction, false);
+			AerialAction a = fromBallPrediction(this.state, input.car, wildfire.ballPrediction, false);
 			Utils.transferAction(this, (a != null && !a.failed ? a : new RecoveryAction(this.state, input.elapsedSeconds)));
 		}
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s, Double Jump: " + this.doubleJump, Color.WHITE, new Point(0, 40), 2, 2);
 		
-		//Draw the crosshair
+		// Draw the crosshair.
 		wildfire.renderer.drawCrosshair(input.car, target, Color.WHITE, 200);		
 		
-		//Jump
+		// Jump.
 		if((timeDifference < jumpTime && input.car.hasWheelContact) || (timeDifference > 0.22 && this.doubleJump && !input.car.doubleJumped)){
 			controls.withJump(true);
 //			return controls;
 		}
 		
-		//Point towards the target, and stop boosting
-		Vector3 connection = renderFall(Color.ORANGE, input.car.position, input.car.velocity, timeDifference);
+		// Point towards the target, and stop boosting.
+		Vector3 connection = renderFall(wildfire.renderer, Color.ORANGE, input.car.position, input.car.velocity, timeDifference);
 		if(connection != null){
 			wildfire.renderer.drawCrosshair(input.car, connection, Color.YELLOW, 150);
 			
@@ -86,7 +87,7 @@ public class AerialAction extends Action {
 			return controls.withJump(true).withPitchYawRoll(angles);
 		}
 		
-		//Calculate the direction
+		// Calculate the direction.
 		Vector3 s = target.minus(input.car.position);
 		Vector3 u = input.car.velocity;
 		Vector3 acc = new Vector3(acceleration(s.x, u.x, timeLeft), acceleration(s.y, u.y, timeLeft), accelerationGravity(s.z, u.z, timeLeft));
@@ -117,7 +118,7 @@ public class AerialAction extends Action {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		return this.failed || input.car.hasWheelContact && timeDifference(input.elapsedSeconds) > 0.75;
 	}
 	
@@ -136,7 +137,7 @@ public class AerialAction extends Action {
 		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalized();
 		double angleDifference = (2 - car.orientation.noseVector.dotProduct(generalDirection)) / 2;
 		double angleTime = (angleDifference * 1.05);
-		System.out.println("Angular time: " + Utils.round(angleTime) + "s [" + Utils.round(car.orientation.noseVector.dotProduct(generalDirection)) + "]");
+//		System.out.println("Angular time: " + Utils.round(angleTime) + "s [" + Utils.round(car.orientation.noseVector.dotProduct(generalDirection)) + "]");
 		t -= angleTime;
 //		t -= 0.4;
 		
@@ -163,7 +164,7 @@ public class AerialAction extends Action {
 	}
 	
 	private final double renderScale = (1D / 50);
-	private Vector3 renderFall(Color colour, Vector3 start, Vector3 velocity, double t){
+	private Vector3 renderFall(WRenderer renderer, Color colour, Vector3 start, Vector3 velocity, double t){
 		if(start.z < 0) return null;
 		if(start.distance(target) < 40 && Math.abs(t - time) < renderScale * 2) return start;
 		
@@ -171,8 +172,8 @@ public class AerialAction extends Action {
 		velocity = velocity.capMagnitude(2300);
 		
 		Vector3 next = start.plus(velocity.scaled(renderScale));
-		wildfire.renderer.drawLine3d(colour, start.toFramework(), next.toFramework());
-		return renderFall(colour, next, velocity, t + renderScale);
+		renderer.drawLine3d(colour, start.toFramework(), next.toFramework());
+		return renderFall(renderer, colour, next, velocity, t + renderScale);
 	}
 
 }

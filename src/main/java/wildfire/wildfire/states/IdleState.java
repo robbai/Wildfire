@@ -1,11 +1,11 @@
 package wildfire.wildfire.states;
 
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.handling.Handling;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 
@@ -20,7 +20,7 @@ public class IdleState extends State {
 	}
 	
 	@Override
-	public boolean ready(DataPacket input){
+	public boolean ready(InfoPacket input){
 		if(Behaviour.isKickoff(input)) return false;
 		if(!input.gameInfo.isRoundActive()) return true;
 		
@@ -35,7 +35,7 @@ public class IdleState extends State {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);

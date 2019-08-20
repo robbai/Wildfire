@@ -1,10 +1,10 @@
 package wildfire.wildfire.actions;
 
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.handling.AirControl;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.State;
 
@@ -14,20 +14,20 @@ public class HalfFlipAction extends Action {
 
 	private Vector3 direction;
 
-	public HalfFlipAction(State state, CarData car){
-		super("Half-Flip", state, car.elapsedSeconds);
+	public HalfFlipAction(State state, InfoPacket input){
+		super("Half-Flip", state, input.elapsedSeconds);
 		
-		// No spamming!
-		if(wildfire.lastDodgeTime(car.elapsedSeconds) < 1){
+		CarData car = input.car;
+		
+		if(input.info.timeOnGround < 0.3){
 			failed = true; 
 		}else{
-			wildfire.resetDodgeTime(car.elapsedSeconds);
 			this.direction = car.orientation.noseVector.scaled(-1);
 		}
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		double timeDifference = timeDifference(input.elapsedSeconds) * 1000;
 		
 		ControlsOutput controls = new ControlsOutput().withThrottle(-1).withBoost(false);
@@ -44,7 +44,7 @@ public class HalfFlipAction extends Action {
 				controls.withPitch(1);
 			}else if(timeDifference <= 1250){
 				controls.withJump(false);
-				controls.withBoost(timeDifference >= 900);
+				controls.withBoost(timeDifference >= 800);
 				
 				// Stabilise.
 				double[] angles = AirControl.getPitchYawRoll(input.car, direction.flatten());
@@ -56,7 +56,7 @@ public class HalfFlipAction extends Action {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		return failed || (input.car.hasWheelContact && timeDifference(input.elapsedSeconds) > 0.4 + throttleTime / 1000);
 	}
 

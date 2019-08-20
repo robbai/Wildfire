@@ -4,6 +4,8 @@ import wildfire.input.CarData;
 import wildfire.vector.Vector2;
 
 public class Constants {
+	
+	// TODO: Refactor all of these to use underscores
 
 	public static final double BALLRADIUS = 92.75F;
 	public static final double BOOSTACC = (911F + (2F / 3));
@@ -18,6 +20,8 @@ public class Constants {
 	public static final double PITCHLENGTH = 5120F;
 	public static final double PITCHWIDTH = 4096F;
 	public static final double CARHEIGHT = 17.049999237060547D;
+	public static final double MAXCARTHROTTLE = 1410;
+	public static final double BOOSTRATE = 33.3;
 	
 	public static Vector2 homeGoal(int team){
 		return new Vector2(0, Utils.teamSign(team) * -PITCHLENGTH);

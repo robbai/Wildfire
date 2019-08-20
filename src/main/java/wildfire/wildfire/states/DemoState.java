@@ -6,17 +6,17 @@ import java.util.ArrayList;
 
 import rlbot.flat.QuickChatSelection;
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.handling.Handling;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class DemoState extends State {
@@ -30,14 +30,14 @@ public class DemoState extends State {
 	}
 	
 	@Override
-	public boolean ready(DataPacket input){
+	public boolean ready(InfoPacket input){
 		if(Math.abs(input.ball.position.x) < 1200) return false;
 		if(Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team)) return false;
 		if(!isFastEnough(input.car)) return false;
 		if(Behaviour.hasTeammate(input) ? Math.abs(input.ball.position.y) < 2000 : Utils.teamSign(input.car) * input.ball.position.y < 1000) return false;
 		
 		if(Behaviour.isTeammateCloser(input)){
-			if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition())) return false;
+			if(Behaviour.isInCone(input.car, input.info.impact.getPosition())) return false;
 		}else if(Behaviour.correctSideOfTarget(input.car, input.ball.position) && Utils.teamSign(input.car) * input.ball.position.y < 4000){
 			return false;
 		}
@@ -61,7 +61,7 @@ public class DemoState extends State {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		if(target != null && target.isDemolished) wildfire.sendQuickChat(QuickChatSelection.Apologies_Oops, QuickChatSelection.Apologies_Whoops);
 		boolean expire = target == null || !isValidTarget(input, target) || !isFastEnough(input.car);
 		if(expire) target = null;
@@ -69,7 +69,7 @@ public class DemoState extends State {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		//Drive down the wall
 		if(Behaviour.isOnWall(input.car)){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
@@ -160,7 +160,7 @@ public class DemoState extends State {
         		.withBoost((Math.abs(steer) < 0.3F || input.car.forwardVelocity > 1300) && !input.car.isSupersonic && input.car.hasWheelContact).withSlide(Math.abs(steer) > 1.5F && input.car.forwardVelocity > 0 && impactDistance > 500);
 	}
 	
-	private CarData getTarget(DataPacket input){
+	private CarData getTarget(InfoPacket input){
 		CarData closestCar = null;
 		double closestCarDistance = 0;
 		for(CarData car : input.cars){
@@ -178,7 +178,7 @@ public class DemoState extends State {
 		return car.boost > 18 || car.isSupersonic;
 	}
 	
-	private boolean isValidTarget(DataPacket input, CarData enemy){
+	private boolean isValidTarget(InfoPacket input, CarData enemy){
 		Vector2 carEnemy = enemy.position.minus(input.car.position).flatten();
 		Vector2 carBall = input.ball.position.minus(input.car.position).flatten();
 		Vector2 enemyBall = input.ball.position.minus(enemy.position).flatten();
@@ -188,7 +188,7 @@ public class DemoState extends State {
 	public static Vector3 getImpact(CarData car, ArrayList<Vector3> prediction){
 		Vector3 carPosition = car.position; 
 		double initialVelocity = car.velocity.flatten().magnitude();
-		double maxVelocity = Physics.boostMaxSpeed(initialVelocity, car.boost);
+		double maxVelocity = DrivePhysics.maxVelocity(initialVelocity, car.boost);
 		
 		for(int i = 0; i < prediction.size(); i++){
 			Vector3 location = prediction.get(i);

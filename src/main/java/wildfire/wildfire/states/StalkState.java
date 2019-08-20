@@ -5,11 +5,11 @@ import java.awt.Point;
 
 import wildfire.input.BallData;
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.handling.Handling;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
@@ -34,12 +34,12 @@ public class StalkState extends State {
 	}
 	
 	@Override
-	public boolean ready(DataPacket input){
+	public boolean ready(InfoPacket input){
 		if(!input.car.hasWheelContact || Behaviour.isOnWall(input.car) 
-				|| !Behaviour.correctSideOfTarget(input.car, wildfire.impactPoint.getPosition())) return false;
+				|| !Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition())) return false;
 		
 		// We want to hit it!
-		if(wildfire.impactPoint.getTime() < 0.6) return false;
+		if(input.info.impact.getTime() < 0.6) return false;
 		
 		// It's not in their danger zone.
 		enemyGoal = Constants.enemyGoal(input.car);
@@ -57,7 +57,7 @@ public class StalkState extends State {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		Vector2 defenderPosition = defender.position.flatten();
 		
 		// How far should we be?
@@ -80,14 +80,13 @@ public class StalkState extends State {
 		wildfire.renderer.drawCircle(Color.RED, enemyGoal, dangerZoneSize);
 		
 		// Controller
-		ControlsOutput controller = Handling.arriveDestination(input, destination, false);
+		ControlsOutput controller = Handling.arriveDestination(input.car, destination, false);
 		double throttleCap = (destinationDistance / 2000);
-		controller = controller.withThrottle(Utils.clamp(controller.getThrottle(), -throttleCap, throttleCap));
-		return controller;
+		return controller.withThrottle(Utils.clamp(controller.getThrottle(), -throttleCap, throttleCap));
 	}
 	
 	private double getSitbackDistance(){
-		return 2000 + (Math.max(this.defenderVelocity / 1.5, 1100) + this.defenderDistance / 1.75) * 1.25;
+		return 2400 + (Math.max(this.defenderVelocity / 1.2, 1200) + this.defenderDistance / 1.6) * 1.25;
 	}
 
 	private Pair<CarData, Pair<Double, Double>> getDefender(CarData[] cars, BallData ball){

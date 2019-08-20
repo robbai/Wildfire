@@ -7,7 +7,6 @@ import java.util.Random;
 import rlbot.flat.QuickChatSelection;
 import wildfire.boost.BoostManager;
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -16,6 +15,7 @@ import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.WavedashAction;
 import wildfire.wildfire.curve.BezierCurve;
 import wildfire.wildfire.handling.Handling;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.KickoffSpawn;
 import wildfire.wildfire.obj.PID;
 import wildfire.wildfire.obj.State;
@@ -48,7 +48,7 @@ public class KickoffState extends State {
 	}
 
 	@Override
-	public boolean ready(DataPacket input){
+	public boolean ready(InfoPacket input){
 		if(!Behaviour.isKickoff(input)) return false;
 		
 		wildfire.unlimitedBoost = (input.car.boost > 99);
@@ -83,13 +83,13 @@ public class KickoffState extends State {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		if(!fake) return !Behaviour.isKickoff(input);
 		return input.ball.position.magnitude() > 650; //Distance from origin
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		wildfire.renderer.drawString2d(spawn.toString(), Color.WHITE, new Point(0, 20), 2, 2);
 		
 		//Time-out the fake kickoff if the opponent has taken too long
@@ -180,7 +180,7 @@ public class KickoffState extends State {
 		}
 	}
 	
-	private boolean isUnfairKickoff(DataPacket input){
+	private boolean isUnfairKickoff(InfoPacket input){
 		double distanceBlue = Double.MAX_VALUE, distanceOrange = Double.MAX_VALUE;
 		for(byte i = 0; i < input.cars.length; i++){
 			CarData car = input.cars[i];

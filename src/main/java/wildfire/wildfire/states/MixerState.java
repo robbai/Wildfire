@@ -4,13 +4,13 @@ import java.awt.Color;
 
 import rlbot.flat.QuickChatSelection;
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.handling.Handling;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
@@ -30,8 +30,8 @@ public class MixerState extends State {
 	}
 
 	@Override
-	public boolean ready(DataPacket input){
-		Vector3 impactLocation = wildfire.impactPoint.getPosition();
+	public boolean ready(InfoPacket input){
+		Vector3 impactLocation = input.info.impact.getPosition();
 		double teamSign = Utils.teamSign(input.car);
 		Vector2 teamSignVec = new Vector2(0, teamSign);
 		
@@ -41,14 +41,14 @@ public class MixerState extends State {
 		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 900) return false;
 		
 		// We must be solidly behind the ball.
-		if(wildfire.impactPoint.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
+		if(input.info.impact.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
 		if(Behaviour.isCarAirborne(input.car) || Behaviour.isBallAirborne(input.ball)) return false;
 		double yAngle = teamSignVec.angle(impactLocation.minus(input.car.position).flatten());
 		if(yAngle > Math.toRadians(50)) return false;
 		
 		// We must not have a (good) shot.
-		if(Behaviour.isInCone(input.car, wildfire.impactPoint.getPosition()) 
-				&& Math.abs(wildfire.impactPoint.getPosition().y) < 2600) return false;
+		if(Behaviour.isInCone(input.car, input.info.impact.getPosition()) 
+				&& Math.abs(input.info.impact.getPosition().y) < 2600) return false;
 		
 		// There must be a goalkeeper.
 		CarData goalkeeper = Behaviour.getGoalkeeper(input.cars, 1 - input.car.team, maxGoalArea);
@@ -56,8 +56,8 @@ public class MixerState extends State {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
-		Vector3 impactLocation = wildfire.impactPoint.getPosition();
+	public ControlsOutput getOutput(InfoPacket input){
+		Vector3 impactLocation = input.info.impact.getPosition();
 		double impactDistance = impactLocation.distance(input.car.position);
 		double teamSign = Utils.teamSign(input.car);
 		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCHWIDTH - Constants.BALLRADIUS),
@@ -81,7 +81,7 @@ public class MixerState extends State {
 		wildfire.renderer.drawCircle(Color.CYAN, corner, 700);
 		wildfire.renderer.drawCircle(Color.BLUE, Constants.homeGoal(1 - input.car.team), maxGoalArea);
 		
-		return Handling.arriveDestination(input, destination.flatten(), true);
+		return Handling.driveDestination(input.car, destination.flatten());
 	}
 
 }

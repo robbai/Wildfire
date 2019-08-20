@@ -1,7 +1,5 @@
 package wildfire.wildfire.utils;
 
-import java.util.Random;
-
 import wildfire.input.CarData;
 import wildfire.input.CarOrientation;
 import wildfire.vector.Vector2;
@@ -40,16 +38,6 @@ public class Utils {
 	public static boolean isPointWithinRange(Vector2 point, Vector2 target, double minRange, double maxRange){
 		double range = point.distance(target);
 		return range < maxRange && range > minRange;
-	}
-	
-	public static float randomRotation(){
-    	Random r = new Random();
-    	return (float)(r.nextFloat() * Math.PI * 2 - Math.PI);
-    }
-	
-	public static float random(double min, double max){
-		Random r = new Random();
-		return (float)(r.nextFloat() * Math.abs(max - min) + Math.min(min, max));
 	}
 
 	public static double wrapAngle(double d){

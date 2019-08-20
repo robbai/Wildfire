@@ -2,28 +2,28 @@ package wildfire.wildfire.obj;
 
 import wildfire.vector.Vector3;
 
-public class PredictionSlice {
+public class Slice {
 	
 	private Vector3 position;
-	private int frame;
 	private double time;
+	private int frame;
 
-	public PredictionSlice(Vector3 position, int frame){
+	public Slice(Vector3 position, int frame){
 		this.position = position;
 		this.frame = frame;
 		this.time = (double)frame / 60;
 	}
 	
-	public PredictionSlice(Vector3 position, double time){
+	public Slice(Vector3 position, double time){
 		this.position = position;
 		this.time = time;
 		this.frame = (int)(time * 60);
 	}
 	
-	public PredictionSlice(rlbot.flat.PredictionSlice predictionSlice, int frame){
+	public Slice(rlbot.flat.PredictionSlice predictionSlice, double secondsElapsed){
 		this.position = Vector3.fromFlatbuffer(predictionSlice.physics().location());
-		this.frame = frame;
-		this.time = (double)frame / 60;
+		this.time = (predictionSlice.gameSeconds() - secondsElapsed);
+		this.frame = (int)(this.time * 60);
 	}
 	
 	public Vector3 getPosition(){

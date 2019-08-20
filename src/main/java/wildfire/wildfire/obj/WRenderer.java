@@ -10,8 +10,8 @@ import wildfire.input.CarData;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.pitch.Triangle;
-import wildfire.wildfire.utils.Physics;
 
 public class WRenderer extends Renderer {
 	
@@ -100,7 +100,7 @@ public class WRenderer extends Renderer {
 	 */
 	public void drawTurningRadius(Color colour, CarData car){
 		if(!threeD) return;
-    	double turningRadius = Physics.getTurnRadius(car.velocity.flatten().magnitude());
+    	double turningRadius = DrivePhysics.getTurnRadius(car.velocity.flatten().magnitude());
     	drawCircle(colour, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(turningRadius)).flatten(), turningRadius);
     	drawCircle(colour, car.position.plus(car.orientation.rightVector.withZ(0).scaledToMagnitude(-turningRadius)).flatten(), turningRadius);
 	}
@@ -133,7 +133,7 @@ public class WRenderer extends Renderer {
 	public void drawTriangle(Color color, Triangle t){
     	if(!threeD) return;
     	
-    	double floor = 0; // Occlusion.
+    	double floor = minZ; // Occlusion.
     	
     	Vector3[] vectors = new Vector3[] {t.getVector(0).withZ(Math.max(floor, t.getVector(0).z)),
     			t.getVector(1).withZ(Math.max(floor, t.getVector(1).z)),
@@ -146,6 +146,20 @@ public class WRenderer extends Renderer {
 
 	public void drawLine3d(Color colour, Vector3 start, Vector3 end){
 		this.drawLine3d(colour, start.toFramework(), end.toFramework());
+	}
+
+	public void drawPolyline3d(Color colour, Vector2[] points){
+		if(!threeD || points.length < 2);
+		for(int i = 0; i < points.length - 1; i++){
+			r.drawLine3d(colour, points[i].withZ(minZ).toFramework(), points[i + 1].withZ(minZ).toFramework());
+		}
+	}
+	
+	public void drawPolyline3d(Color colour, Vector3[] points){
+		if(!threeD || points.length < 2);
+		for(int i = 0; i < points.length - 1; i++){
+			r.drawLine3d(colour, points[i].toFramework(), points[i + 1].toFramework());
+		}
 	}
 
 }

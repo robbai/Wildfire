@@ -3,8 +3,8 @@ package wildfire.wildfire.actions;
 import java.awt.Color;
 import java.awt.Point;
 
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Utils;
@@ -26,7 +26,7 @@ public class JumpAction extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		float timeDifference = timeDifference(input.elapsedSeconds);
 		
 		if(timeDifference > jumpTime + tick && !input.car.hasWheelContact){
@@ -41,7 +41,7 @@ public class JumpAction extends Action {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		float timeDifference = timeDifference(input.elapsedSeconds);
 		return (input.car.hasWheelContact && timeDifference > jumpTime + tick);
 	}

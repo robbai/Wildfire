@@ -1,10 +1,10 @@
 package wildfire.wildfire.actions;
 
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.handling.AirControl;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Utils;
@@ -14,14 +14,14 @@ public class HopAction extends Action {
 	private Vector2 target;
 	private double throttleTime;
 
-	public HopAction(State state, DataPacket input, Vector2 target){
+	public HopAction(State state, InfoPacket input, Vector2 target){
 		super("Hop", state, input.elapsedSeconds);
 		this.target = target;
 		this.throttleTime = Math.min(3, input.car.velocity.flatten().magnitude() / 6000);
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		ControlsOutput controls = new ControlsOutput().withThrottle(0).withBoost(false);
 		
 		float timeDifference = timeDifference(input.elapsedSeconds);
@@ -49,7 +49,7 @@ public class HopAction extends Action {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		return timeDifference(input.elapsedSeconds) > 0.16 + throttleTime && input.car.hasWheelContact;
 	}
 	

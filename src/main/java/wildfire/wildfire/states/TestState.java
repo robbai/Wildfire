@@ -2,11 +2,13 @@ package wildfire.wildfire.states;
 
 import rlbot.flat.BallPrediction;
 import wildfire.input.CarData;
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
-import wildfire.wildfire.curve.*;
+import wildfire.wildfire.curve.Biarc;
+import wildfire.wildfire.curve.Curve;
+import wildfire.wildfire.curve.DiscreteCurve;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.mechanics.FollowDiscreteMechanic;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
@@ -23,18 +25,18 @@ public class TestState extends State {
 	}
 
 	@Override
-	public boolean ready(DataPacket input){
+	public boolean ready(InfoPacket input){
 		return !Behaviour.isKickoff(input);
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		CarData car = input.car;
 		Vector2 enemyGoal = Constants.enemyGoal(car);
 		
 		DiscreteCurve discrete = null;
 		BallPrediction ballPrediction = wildfire.ballPrediction;
-		for(int i = Math.max(0, wildfire.impactPoint.getFrame() - 1); i < ballPrediction.slicesLength(); i++){
+		for(int i = Math.max(0, input.info.impact.getFrame() - 1); i < ballPrediction.slicesLength(); i++){
 			Vector2 ballPosition = Vector2.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			double time = (ballPrediction.slices(i).gameSeconds() - car.elapsedSeconds);
 			

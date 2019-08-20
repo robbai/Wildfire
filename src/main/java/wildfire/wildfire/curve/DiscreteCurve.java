@@ -6,8 +6,8 @@ import java.util.OptionalDouble;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.obj.WRenderer;
+import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Physics;
 import wildfire.wildfire.utils.Utils;
 
 /**
@@ -16,7 +16,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class DiscreteCurve {
 	
-	private static final int analysePoints = 80, polyRender = 1;
+	public static final int analysePoints = 80, polyRender = 1;
 	public static final double curveStep = (1D / 45);
 	private static final double[] brakeCurve = formAccCurve(false);
 	
@@ -50,8 +50,8 @@ public class DiscreteCurve {
 		this(initialVelocity, boost, curve.discretise(analysePoints), OptionalDouble.empty());
 	}
 	
-	public DiscreteCurve(double initialVelocity, double boost, Curve curve, OptionalDouble timeRestriction){
-		this(initialVelocity, boost, curve.discretise(analysePoints), timeRestriction);
+	public DiscreteCurve(double initialVelocity, double boost, Curve curve, double timeRestriction){
+		this(initialVelocity, boost, curve.discretise(analysePoints), OptionalDouble.of(timeRestriction));
 	}
 
 	private Pair<double[][], Double> calculateSpeed(){
@@ -61,7 +61,7 @@ public class DiscreteCurve {
 		double[] optimalSpeeds = new double[this.turningRadii.length];
 		for(int i = 0; i < optimalSpeeds.length; i++){
 			double radius = this.turningRadii[i];
-			optimalSpeeds[i] = Physics.getSpeedFromRadius(radius);
+			optimalSpeeds[i] = DrivePhysics.getSpeedFromRadius(radius);
 		}
 
 		// Apply acceleration limits.
@@ -93,12 +93,12 @@ public class DiscreteCurve {
 			double a;
 			if(brake){
 				// Brake.
-				a = Physics.determineAcceleration(v, -1, false);
+				a = DrivePhysics.determineAcceleration(v, -1, false);
 			}else{
 				// Throttle and/or boost.
 				double optimalSpeed = Utils.lerp(optimalSpeeds[(int)Math.floor(index)], optimalSpeeds[(int)Math.ceil(index)], index - Math.floor(index));
 				boolean useBoost = ((this.unlimitedBoost || boost >= 1) && (optimalSpeed - v) > Constants.BOOSTACC * Math.pow(curveStep, 2));
-				a = Physics.determineAcceleration(v, 1, useBoost);
+				a = DrivePhysics.determineAcceleration(v, 1, useBoost);
 				if(useBoost) boost -= (100D / 3) * curveStep; // Consume boost.
 				if(!useBoost && v + a * curveStep > optimalSpeed) a = (optimalSpeed - v);
 			}
@@ -128,9 +128,18 @@ public class DiscreteCurve {
 			double a = A.distance(B), b = B.distance(C), c = C.distance(A);
 			
 			double p = (a + b + c) / 2D;
-			double area = Math.sqrt(p * (p - a) * (p - b) * (p - c));
+			double areaSquared = (p * (p - a) * (p - b) * (p - c));
+			
+			if(areaSquared < 0){
+				k[i] = DrivePhysics.getTurnRadius(Constants.MAXCARSPEED);
+				continue;
+			}
+			
+			double area = Math.sqrt(areaSquared);
 			double radius = (a * b * c) / (4D * area);
 			k[i] = radius;
+			
+//			if(DrivePhysics.getSpeedFromRadius(radius) < 1) System.out.println(i + ": " + (int)radius + " (" + area + ")");
 		}
 		k[0] = k[1];
 		k[k.length - 1] = k[k.length - 2];
@@ -223,7 +232,7 @@ public class DiscreteCurve {
 		
 		double[] curve = new double[(int)Constants.MAXCARSPEED + 1];
 		while(true){
-			double a = Physics.determineAcceleration(v, boostNotBrake ? 1 : -1, boostNotBrake);
+			double a = DrivePhysics.determineAcceleration(v, boostNotBrake ? 1 : -1, boostNotBrake);
 			double step = (1D / Math.abs(a));
 			v = Utils.clamp(v + a * step, 0, Constants.MAXCARSPEED);
 			s += v * step;
@@ -247,6 +256,10 @@ public class DiscreteCurve {
 		return Utils.lerp(this.speeds[(int)Math.floor(speedIndex)], 
 				this.speeds[(int)Math.ceil(speedIndex)], 
 				speedIndex - Math.floor(speedIndex));
+	}
+	
+	public double getSpeedS(double s){
+		return getSpeed(s / this.getDistance());
 	}
 	
 	public double getAcceleration(double t){
@@ -295,6 +308,10 @@ public class DiscreteCurve {
 		}
 		
 		return (returnDistance ? closestDistance : closestS);
+	}
+	
+	public Vector2 getDestination(){
+		return this.points[this.points.length - 1];
 	}
 
 }

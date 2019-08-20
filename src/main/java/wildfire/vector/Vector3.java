@@ -1,5 +1,7 @@
 package wildfire.vector;
 
+import java.util.Random;
+
 import rlbot.gamestate.DesiredVector3;
 import wildfire.wildfire.utils.Constants;
 
@@ -138,6 +140,15 @@ public class Vector3 {
 	public Vector3 capMagnitude(double max){
 		double mag = this.magnitude();
 		return (mag > max ? this.scaledToMagnitude(max) : new Vector3(this));
+	}
+
+	public Vector3 lerp(Vector3 other, double t){
+		return this.plus(other.minus(this).scaled(t));
+	}
+
+	public static Vector3 random(double mag){
+		Random random = new Random();
+		return new Vector3(random.nextDouble() - 0.5, random.nextDouble() - 0.5, random.nextDouble() - 0.5).scaledToMagnitude(mag);
 	}
     
 }

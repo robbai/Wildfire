@@ -3,14 +3,14 @@ package wildfire.wildfire.actions;
 import java.awt.Color;
 import java.awt.Point;
 
-import wildfire.input.DataPacket;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.handling.AirControl;
+import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.State;
-import wildfire.wildfire.utils.Physics;
+import wildfire.wildfire.physics.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class WavedashAction extends Action {
@@ -21,20 +21,19 @@ public class WavedashAction extends Action {
 	
 	private boolean jumped;
 
-	public WavedashAction(State state, DataPacket input){
+	public WavedashAction(State state, InfoPacket input){
 		super("Wavedash", state, input.elapsedSeconds);
 		
-		this.failed = !input.car.hasWheelContact && input.car.position.z < 200 && wildfire.lastDodgeTime(input.elapsedSeconds) > 1;
+		this.failed = (!input.car.hasWheelContact && input.car.position.z < 200 && input.info.timeOnGround > 1);
+//		this.failed = (!input.car.hasWheelContact || input.car.position.z > 100 || input.info.timeOnGround < 0.3);
 		
 		if(!this.failed){
 			this.jumped = false;
-			
-			wildfire.resetDodgeTime(input.elapsedSeconds);
 		}
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket input){
+	public ControlsOutput getOutput(InfoPacket input){
 		double timeDifference = this.timeDifference(input.elapsedSeconds);
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeDifference), Color.WHITE, new Point(0, 40), 2, 2);
 		
@@ -69,7 +68,7 @@ public class WavedashAction extends Action {
 	}
 
 	@Override
-	public boolean expire(DataPacket input){
+	public boolean expire(InfoPacket input){
 		return this.failed || this.timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact || input.car.doubleJumped ? 0.6 : 1.3);
 	}
 
