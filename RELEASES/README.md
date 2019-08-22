@@ -1,5 +1,5 @@
 # Wildfire Releases (DD/MM/YYYY)
-League Play Week 1 - 9/3/2019 (First appearance in League Play)
+League Play Week 2 - 9/8/2019 (Actually played the 3rd week of League Play)
 
 Winteride v0.25 - 9/3/2019 (Wintertide version)
 
