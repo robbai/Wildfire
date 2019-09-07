@@ -2,9 +2,11 @@ package wildfire.wildfire.actions;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.util.OptionalDouble;
 
 import rlbot.flat.BallPrediction;
 import wildfire.input.CarData;
+import wildfire.input.CarOrientation;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -30,14 +32,14 @@ public class SmartDodgeAction extends Action {
 	/*
 	 * Tweaky things.
 	 */
-	public final static double dodgeDistance = 70, zRatio = 0.85; 
+	public final static double dodgeDistance = 40, zRatio = 0.75; 
 	
 	public Slice target = null;
 
 	private boolean angleSet = false;
 	private double angle;
 
-	private double pressTime = JumpPhysics.maxPressTime;
+	private double pressTime;
 
 	public SmartDodgeAction(State state, InfoPacket input, boolean coneRequired){
 		super("Smart-Dodge", state, input.elapsedSeconds);
@@ -49,18 +51,18 @@ public class SmartDodgeAction extends Action {
 			return;
 		}
 		
-		double maxPeakTime = (JumpPhysics.maxJumpVelocity / Constants.GRAVITY);
-		for(int i = 0; i < Math.min(ballPrediction.slicesLength(), maxPeakTime / tick); i++){
+		for(int i = 0; i < Math.min(ballPrediction.slicesLength(), JumpPhysics.maxPeakTime * 60); i++){
 			Vector3 ballLocation = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			
 			double time = (ballPrediction.slices(i).gameSeconds() - input.elapsedSeconds);
-
-//			Vector3 carLocation = getJumpPosition(input.car, jumpVelocity, time);
-			double pressTime = JumpPhysics.getPressTime(input.car, ballLocation.withZ(ballLocation.z + 50));
-			double peakTime = JumpPhysics.getPeakTime(pressTime);
-			double jumpVelocity = JumpPhysics.getJumpVelocity(pressTime);
-			Vector3 carLocation = input.car.position.plus(input.car.velocity.scaled(time)).plus(input.car.orientation.roofVector.scaledToMagnitude(jumpVelocity * time - 0.5 * Constants.GRAVITY * Math.pow(time, 2)));
+			double jumpHeight = ballLocation.minus(input.car.position).dotProduct(input.car.orientation.roofVector);
 			
+			OptionalDouble pressOptional = JumpPhysics.getPressForTimeToZ(jumpHeight, time);
+//			if(!pressOptional.isPresent()) continue;
+//			double press = pressOptional.getAsDouble();
+			double press = (pressOptional.isPresent() ? pressOptional.getAsDouble() : JumpPhysics.maxPressTime);
+			
+			Vector3 carLocation = JumpPhysics.simCar(input.car, press, time);
 			Vector3 displace = ballLocation.minus(carLocation);
 			double distance = displace.magnitude();
 			
@@ -71,11 +73,15 @@ public class SmartDodgeAction extends Action {
 				if(trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS) continue;
 			}
 
-			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < zRatio){
-				this.target = new Slice(ballLocation, time - 0.02);
-				this.pressTime = pressTime;
+//			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < zRatio){
+			if(distance < Constants.BALLRADIUS + dodgeDistance){
+//			if(distance < Constants.BALLRADIUS){
+				this.target = new Slice(ballLocation, time);
+				this.pressTime = press;
 				break;
 			}
+			
+			if(pressOptional.isPresent()) break;
 		}
 		
 		this.failed = (target == null);
@@ -83,24 +89,6 @@ public class SmartDodgeAction extends Action {
 	
 	public SmartDodgeAction(State state, InfoPacket input){
 		this(state, input, false);
-	}
-	
-	public static Slice getCandidateLocation(BallPrediction ballPrediction, CarData car, Vector2 enemyGoal){
-		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-			if(location.z < 120) break;
-//			if(location.z < 140) continue;
-			
-//			double time = ballPrediction.slices(i).gameSeconds() - car.elapsedSeconds;
-//			double jumpHeight = getJumpPosition(car, jumpVelocity, time).z - car.position.z;
-			
-			if(location.z - car.position.z < JumpPhysics.maxJumpHeight + dodgeDistance * 0.8){
-//				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.58));
-				location = location.plus(location.minus(enemyGoal.withZ(location.z)).scaledToMagnitude(Constants.BALLRADIUS + dodgeDistance * 0.4));
-				return new Slice(location, i);
-			}
-		}
-		return null;
 	}
 
 	@Override
@@ -117,22 +105,22 @@ public class SmartDodgeAction extends Action {
 		
 		boolean onPrediction = Behaviour.isOnPrediction(wildfire.ballPrediction, this.target.getPosition());
 		
-		if(timeDifference < Math.min(this.pressTime, this.target.getTime() - tick * 2)){
+//		if(timeDifference < Math.min(this.pressTime, this.target.getTime() - tick * 2)){
+		if(timeDifference < this.pressTime){
 			return controls.withJump(true);
-		}else{ 
-			if(car.doubleJumped){
-				if(timeDifference(input.elapsedSeconds) > this.target.getTime() + 0.7){
-					Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
-				}
+		}else{
+			if(timeDifference(input.elapsedSeconds) > this.target.getTime() + (car.doubleJumped ? 0.7 : 0.4)){
+				Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+			}
 
-				if(this.angleSet){
-					controls.withPitch(-Math.cos(angle));
-					controls.withRoll(-Math.sin(angle));
-					return controls;
-				}
+			if(this.angleSet && car.doubleJumped){
+				controls.withPitch(-Math.cos(angle));
+				controls.withRoll(-Math.sin(angle));
+				return controls;
 			}
 			
-			if(timeDifference >= this.target.getTime() - tick){
+//			if(timeDifference >= this.target.getTime() - tick){
+			if(willIntersectNextTick(car, wildfire.ballPrediction, 1)){
 				// Dodge
 				controls.withJump(true);
 				this.angle = Handling.aim(car, (onPrediction ? this.target.getPosition() : input.ball.position));
@@ -142,11 +130,11 @@ public class SmartDodgeAction extends Action {
 				this.angleSet = true;
 			}else if(car.velocity.z > 40){
 				// Point the car.
-				Vector3 forward = this.target.getPosition().lerp(input.ball.position, 0.15).withZ(input.ball.position.z - 60).minus(car.position).normalized();
-//				Vector3 forward = this.target.getPosition().withZ(input.ball.position.z + 110).minus(car.position).normalized();
+//				Vector3 forward = this.target.getPosition().lerp(input.ball.position, 0.15).withZ(input.ball.position.z + 80).minus(car.position).normalized();
+				Vector3 forward = this.target.getPosition().withZ(input.ball.position.z + 120).minus(car.position).normalized();
 				Vector3 roof = forward.scaled(-1).withZ(1 - forward.z);
 
-				double[] angles = AirControl.getPitchYawRoll(car, forward, roof);
+				double[] angles = AirControl.getPitchYawRoll(car, forward);
 
 				wildfire.renderer.drawLine3d(Color.RED, car.position, car.position.plus(forward.scaledToMagnitude(200)));
 				wildfire.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(roof.scaledToMagnitude(200)));
@@ -161,6 +149,32 @@ public class SmartDodgeAction extends Action {
 	@Override
 	public boolean expire(InfoPacket input){
 		return this.failed || (timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact ? 0.5 : 2.5));
+	}
+	
+	private boolean willIntersectNextTick(CarData car, BallPrediction ballPrediction, int ticks){
+		Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(ticks).physics().location());
+		
+		Vector3 carPosition = car.position, carVelocity = car.velocity;
+		double pitchVel = car.angularVelocity.dotProduct(car.orientation.rightVector);
+	    double yawVel = -car.angularVelocity.dotProduct(car.orientation.roofVector);
+	    double rollVel = car.angularVelocity.dotProduct(car.orientation.noseVector);
+	    
+	    for(int i = 0; i < ticks; i++){
+			carVelocity = carVelocity.plus(AirControl.worldUp.scaled(-Constants.GRAVITY * tick)).capMagnitude(Constants.MAXCARSPEED);
+			carPosition = carPosition.plus(carVelocity.scaled(tick));
+	    }
+	    CarOrientation carOrientation = CarOrientation.convert(car.orientation.eularPitch + pitchVel * tick * ticks, car.orientation.eularYaw + yawVel * tick * ticks, car.orientation.eularRoll + rollVel * tick * ticks);
+		
+		ballPosition = ballPosition.plus(carPosition.minus(ballPosition).scaledToMagnitude(Constants.BALLRADIUS));
+		
+		Vector3 local = Utils.toLocal(carPosition, carOrientation, ballPosition);
+		
+		// https://discordapp.com/channels/348658686962696195/348661571297214465/617774276879056919
+	    return Math.abs(local.y) - 9 < 127.93 && Math.abs(local.x) < 83.28 && Math.abs(local.z) - 15.75 < 31.30;
+	}
+	
+	private boolean willIntersectNextTick(CarData car, BallPrediction ballPrediction){
+		return willIntersectNextTick(car, ballPrediction, 1);
 	}
 
 }

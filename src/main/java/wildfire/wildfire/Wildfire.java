@@ -20,20 +20,7 @@ import wildfire.wildfire.obj.Human;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.obj.StateSettingManager;
 import wildfire.wildfire.obj.WRenderer;
-import wildfire.wildfire.states.BoostTestState;
-import wildfire.wildfire.states.ClearState;
-import wildfire.wildfire.states.FallbackState;
-import wildfire.wildfire.states.IdleState;
-import wildfire.wildfire.states.KickoffState;
-import wildfire.wildfire.states.MixerState;
-import wildfire.wildfire.states.PathState;
-import wildfire.wildfire.states.PatienceState;
-import wildfire.wildfire.states.ReturnState;
-import wildfire.wildfire.states.ShadowState;
-import wildfire.wildfire.states.ShootState;
-import wildfire.wildfire.states.StalkState;
-import wildfire.wildfire.states.WaitState;
-import wildfire.wildfire.states.WallHitState;
+import wildfire.wildfire.states.*;
 import wildfire.wildfire.utils.Behaviour;
 
 public class Wildfire implements Bot {
@@ -90,7 +77,7 @@ public class Wildfire implements Bot {
         new BoostTestState(this);
         new WallHitState(this);
         new PatienceState(this);
-//        new BoostState(this);
+        new BoostState(this);
         new WaitState(this, false);
         new StalkState(this);
         new MixerState(this);        
@@ -100,6 +87,7 @@ public class Wildfire implements Bot {
         new PathState(this, false);
 //        new DemoState(this);
         new ShadowState(this);
+//        new ShadowTestState(this);
         fallbackState = new FallbackState(this);
         
         /*
@@ -118,6 +106,7 @@ public class Wildfire implements Bot {
 
     private ControlsOutput processInput(InfoPacket input){
 //    	stateSetting.airRoll(input);
+//    	stateSetting.shoot(input, true);
     	
     	// GG.
     	if(input.gameInfo.isMatchEnded()){

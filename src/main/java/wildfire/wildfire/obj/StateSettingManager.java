@@ -71,7 +71,7 @@ public class StateSettingManager {
 	}
 	
 	public void airRoll(DataPacket input){
-		if(input.ball.position.z > 100 && Math.abs(input.ball.position.y) < Constants.PITCHLENGTH - 150 && this.getCooldown(input) < 10) return;
+		if(Math.abs(input.ball.position.y) < Constants.PITCHLENGTH - 150 && this.getCooldown(input) < 8) return; //input.ball.position.z > 100 && 
 		
 		GameState gameState = new GameState();
 		

@@ -34,7 +34,7 @@ public class WildfireJava {
 	 */
 	private final static boolean testGui = false;
 	
-	private static final Integer DEFAULT_PORT = 25964;
+	private static final Integer DEFAULT_PORT = 25965;
 	
 	public static ArrayList<Wildfire> bots = new ArrayList<Wildfire>();
 

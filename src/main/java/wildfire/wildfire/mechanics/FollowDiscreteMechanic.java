@@ -17,18 +17,19 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowDiscreteMechanic extends Mechanic {
 
-	public final static double steerLookahead = 0.313, speedLookahead = (1D / 60);
+	public final static double steerLookahead = 0.312, speedLookahead = (1D / 60);
 	private final static boolean verboseRender = true;
 
 	private DiscreteCurve curve;
 	private boolean dodge;
 	private OptionalDouble targetTime;
+	public boolean linearTargetTime;
 
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge, OptionalDouble targetTime){
 		super("Follow Discrete", state, timeStarted);
 		this.curve = curve;
 		this.dodge = dodge;
-		this.targetTime = (!targetTime.isPresent() || targetTime.getAsDouble() < curve.getTime() ? OptionalDouble.empty() : targetTime);
+		this.targetTime = (!targetTime.isPresent()/** || targetTime.getAsDouble() < curve.getTime()*/ ? OptionalDouble.empty() : targetTime);
 	}
 
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, OptionalDouble targetTime){
@@ -45,6 +46,10 @@ public class FollowDiscreteMechanic extends Mechanic {
 	
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, double targetTime){
 		this(state, curve, timeStarted, false, OptionalDouble.of(targetTime));
+	}
+	
+	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge, double targetTime){
+		this(state, curve, timeStarted, dodge, OptionalDouble.of(targetTime));
 	}
 
 	@Override
@@ -63,12 +68,12 @@ public class FollowDiscreteMechanic extends Mechanic {
 		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
 		if(this.targetTime.isPresent()){
 			double targetTimeLeft = (this.targetTime.getAsDouble() - timeElapsed);
-			double arrivalAcceleration = ((2 * (curve.getDistance() - carS - targetTimeLeft * initialVelocity)) / Math.pow(targetTimeLeft, 2));
-			
-			// Hack to not drive like a snail.
-			if(initialVelocity < 1000) arrivalAcceleration = Math.max(500, arrivalAcceleration);
-			
-			targetAcceleration = Math.min(targetAcceleration, arrivalAcceleration);
+			if(this.linearTargetTime){
+				targetAcceleration = (((curve.getDistance() - carS) / targetTimeLeft) - initialVelocity) / 0.05;
+			}else{	
+				double arrivalAcceleration = ((2 * (curve.getDistance() - carS - targetTimeLeft * initialVelocity)) / Math.pow(targetTimeLeft, 2));		
+				targetAcceleration = Math.min(targetAcceleration, arrivalAcceleration);
+			}
 		}
 
 		// Render.
@@ -94,7 +99,7 @@ public class FollowDiscreteMechanic extends Mechanic {
 		
 		if(Math.abs(radians) < 0.4 && dodge){
 			// Low time results in a chip shot, high time results in a low shot
-			boolean dodgeNow = (updatedTimeLeft < 0.18);
+			boolean dodgeNow = (updatedTimeLeft < 0.32);
 			if(dodgeNow){
 				double endRadians = Handling.aim(input.car, curve.T(1));
 				return this.startAction(new DodgeAction(this.state, endRadians, input), input);
@@ -117,7 +122,7 @@ public class FollowDiscreteMechanic extends Mechanic {
 		if(distance > 70) return true;
 		
 		double carS = curve.findClosestS(car.position.flatten(), false);
-		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 4) / curve.getDistance() >= 1;
+		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / (dodge ? 8 : 4)) / curve.getDistance() >= 1;
 	}
 
 }

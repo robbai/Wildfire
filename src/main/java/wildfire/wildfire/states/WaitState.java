@@ -30,7 +30,6 @@ import wildfire.wildfire.utils.Utils;
 
 public class WaitState extends State {
 
-	private final boolean renderJump = true;
 	private boolean alwaysSmartDodge;
 	
 	/*
@@ -69,7 +68,8 @@ public class WaitState extends State {
 		towardsOwnGoal = Behaviour.isTowardsOwnGoal(input.car, bounce.withZ(0), 240);
 		enemyGoal = Behaviour.getTarget(input.car, bounce);
 		smartDodgeConditions(input, bounce, enemyGoal, input.info.impact.getPosition(), towardsOwnGoal);
-		smartDodgeCandidate = (planSmartDodge ? SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, input.car, enemyGoal) : null);
+//		smartDodgeCandidate = (planSmartDodge ? SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, input.car, enemyGoal) : null);
+		smartDodgeCandidate = (planSmartDodge ? input.info.jumpImpact : null);
 		this.planSmartDodge &= (smartDodgeCandidate != null);
 //		this.planSmartDodgeCone &= (smartDodgeCandidate != null);
 		if(planSmartDodge && (this.runningMechanic() && !(this.currentMechanic instanceof FollowSmartDodgeMechanic))) this.currentMechanic = null;
@@ -254,29 +254,18 @@ public class WaitState extends State {
 	
 	private DiscreteCurve findSmartDodgeCurve(CarData car, Slice candidate){
 		Vector2 carPosition = car.position.flatten();
-//		Vector2 carNose = car.orientation.noseVector.flatten();
 		Vector2 flatCandidate = candidate.getPosition().flatten();
 		Vector2 candidateGoalDir = enemyGoal.minus(flatCandidate).normalized();
 		Vector2 carBounceDir = flatCandidate.minus(car.position.flatten()).normalized();
 		
 		// Arrival constants.
-		double peakTime = JumpPhysics.getPeakTime(car, candidate);
+		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(car.position).dotProduct(car.orientation.roofVector));
 		double driveTime = (candidate.getTime() - peakTime);
-//		double lineup = Utils.clamp(candidate.getPosition().distanceFlat(car.position) / 2.9, 150, 800);
-		double lineup = Utils.clamp(DrivePhysics.maxVelocity(Math.max(0, car.forwardVelocity), car.boost, driveTime) * peakTime + 500, 150, flatCandidate.distance(carPosition) / 3.1);
+		double lineup = Utils.clamp(DrivePhysics.maxVelocity(Math.max(0, car.forwardVelocity), car.boost, driveTime) * peakTime, 650, flatCandidate.distance(carPosition) / 3.1);
 		
 		for(double offset = 1; offset >= 0; offset -= 0.125){
 			Vector2 targetDirection = candidateGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
 			if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
-			
-//			Biarc biarc = new Biarc(carPosition, carNose, candidate.getPosition().flatten().minus(targetDirection.scaled(lineup)), targetDirection);
-//			Vector2[] providedPoints = biarc.discretise(DiscreteCurve.analysePoints);
-//			Vector2[] points = new Vector2[providedPoints.length + 1];
-//			for(int i = 0; i < providedPoints.length; i++) points[i] = providedPoints[i];
-//			points[points.length - 1] = candidate.getPosition().flatten();
-			
-//			Biarc biarc = new Biarc(carPosition, carNose, candidate.getPosition().flatten(), targetDirection);
-//			Vector2[] points = biarc.discretise(DiscreteCurve.analysePoints);
 			
 			CompositeArc compArc = CompositeArc.create(car, flatCandidate, Utils.traceToWall(flatCandidate, targetDirection), lineup);
 			Vector2[] points = compArc.discretise((int)(DiscreteCurve.analysePoints * 0.5));

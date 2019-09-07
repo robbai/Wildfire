@@ -1,65 +1,134 @@
 package wildfire.wildfire.physics;
 
+import java.util.OptionalDouble;
+
 import wildfire.input.CarData;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.obj.Slice;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Utils;
 
 public class JumpPhysics {
 	
-	private static final double tick = (1D / 60);
-	
-	public static final double maxPressTime = 0.2, maxJumpVelocity = getJumpVelocity(maxPressTime), maxJumpHeight = getJumpHeight(maxPressTime);
+	public static final double tick = (1D / 60), maxPressTime = 0.2, maxJumpHeight = getMaxHeight(maxPressTime), maxPeakTime = getPeakTime(maxPressTime);
 	
 //	public static void main(String[] args){
-//		for(int h = 0; h < 300; h++){
-//			System.out.println(h + "uu: " + Utils.round(getPressTime(h)) + "s");
-//		}
-//		for(double t = 0; t <= maxPressTime; t += 0.005){
-//			System.out.println(Utils.round(t) + "s: " + Utils.round(getJumpVelocity(t)) + "uu/s, " + Utils.round(getPeakTime(t)) + "s");
+//		double t = (new Random()).nextDouble();
+//		for(int z = 0; z < 250; z++){
+//			System.out.println("To reach " + z + "uu in " + t + "s, hold for " + getPressForTimeToZ(z, t) + "s");
 //		}
 //	}
-
-	public static double getJumpVelocity(double pressTime){
-		pressTime = clampPressTime(pressTime);
-		return Math.sqrt(Math.pow(1400D * pressTime + 300D, 2) - (Constants.GRAVITY * 1400D * Math.pow(pressTime, 2)));
+	
+	public static OptionalDouble getTimeToZ(double z, double press){
+		double velocity = Constants.JUMPVEL, acceleration = (Constants.JUMPACC - Constants.GRAVITY);
+		
+		double displacement = (velocity * press + 0.5 * acceleration * Math.pow(press, 2));
+		if(displacement > z){
+			double time = ((Math.sqrt(2 * acceleration * z + Math.pow(velocity, 2)) - velocity) / acceleration);
+			if(time < 0) return OptionalDouble.empty();
+			return OptionalDouble.of(time);
+		}
+		
+		velocity += (acceleration * press);
+		acceleration = -Constants.GRAVITY;
+		
+		double square = (2 * acceleration * (z - displacement) + Math.pow(velocity, 2));
+		if(square < 0) return OptionalDouble.empty();
+		double time = press + 
+				((Math.sqrt(square) - velocity) / acceleration);
+		return OptionalDouble.of(time);
 	}
 	
-	/** This uses hard-coded gravity (-650uu/s^2),
-	 *  since WolframAlpha convinced me it's not worth it rearranging to have gravity on the other side
-	 */
-	public static double getPressTime(double height){
-		double t = 0.1D * Math.sqrt(13D / 105D) * Math.sqrt(height + 60D) - 0.4D;
-//		double t = 0.03518657752D * Math.sqrt(height + 60D) - 0.4D;
-		return clampPressTime(t);
-	}
+//	private static double clampPressTime(double pressTime){
+//		return Utils.clamp(pressTime, tick, maxPressTime);
+//	}
 	
-	private static double clampPressTime(double time){
-		return Utils.clamp(time, tick, maxPressTime);
+	public static double getMaxHeight(double press){
+		double velocity = Constants.JUMPVEL, acceleration = (Constants.JUMPACC - Constants.GRAVITY);
+		
+		double displacement = (velocity * press + 0.5 * acceleration * Math.pow(press, 2));
+		
+		velocity += (acceleration * press);
+		acceleration = -Constants.GRAVITY;
+		
+		displacement += -(Math.pow(velocity, 2) / (2 * acceleration));
+		return displacement;
 	}
 
-	public static double getPressTime(CarData car, Vector3 vec){
-		return getPressTime(Utils.toLocal(car, vec).z);
+	public static OptionalDouble getPressForPeak(double z){
+		double g = -Constants.GRAVITY;
+		double a = (Constants.JUMPACC + g);
+		double u = Constants.JUMPVEL;
+		
+		double pressTime = ((Math.sqrt(g * (g - a) * (2 * a * z + Math.pow(u, 2))) - a * u + g * u) / (a * (a - g)));
+		
+		if(pressTime < 0 || pressTime > maxPressTime) return OptionalDouble.empty();
+		return OptionalDouble.of(pressTime);
 	}
 	
-	public static double getPeakTime(double pressTime){
-		double jumpVelocity = getJumpVelocity(clampPressTime(pressTime));
-		double timeTaken = -(jumpVelocity / -Constants.GRAVITY);		
-		return timeTaken;
+	public static OptionalDouble getPressForTimeToZ(double z, double time){
+		if(z < 0) return OptionalDouble.empty();
+			
+		final double epsilon = 0.001;
+		
+		double low = tick, high = maxPressTime;
+		
+		OptionalDouble highTime = getTimeToZ(z, high);
+		if(!highTime.isPresent()) return OptionalDouble.empty();
+		if(Math.abs(highTime.getAsDouble() - time) < epsilon) return OptionalDouble.of(low);
+		
+//		OptionalDouble lowTime = getTimeToZ(z, low);
+//		if(lowTime.isPresent() && Math.abs(lowTime.getAsDouble() - time) < epsilon) return OptionalDouble.of(low);
+
+		while(low + epsilon < high){
+			double mid = ((low + high) / 2);
+			
+			OptionalDouble midTime = getTimeToZ(z, mid);
+			
+			if(!midTime.isPresent() || midTime.getAsDouble() > time){
+				low = mid;
+			}else if(midTime.getAsDouble() < time){
+				high = mid;
+			}
+		}
+		
+		return OptionalDouble.of((low + high) / 2);
 	}
 
-	public static double getJumpHeight(double pressTime){
-		double jumpVelocity = getJumpVelocity(pressTime);
-		return -(Math.pow(jumpVelocity, 2) / (2 * -Constants.GRAVITY));
+	public static double getPeakTimeZ(double z){
+		OptionalDouble press = getPressForPeak(z);
+		if(!press.isPresent()) press = OptionalDouble.of(z > 0 ? maxPressTime : 0);
+		return getPeakTime(press.getAsDouble());
 	}
 	
-	public static double getPeakTime(CarData car, Vector3 vec){
-		return getPeakTime(getPressTime(Utils.toLocal(car, vec).z));
+	public static double getFastestTimeZ(double z){
+		return getPeakTime(maxPressTime);
+	}
+	
+	public static double getPeakTime(double press){
+		return press + (Constants.JUMPVEL + (Constants.JUMPACC - Constants.GRAVITY) * press) / Constants.GRAVITY;
 	}
 
-	public static double getPeakTime(CarData car, Slice slice){
-		return getPeakTime(car, slice.getPosition());
+	public static Vector3 simCar(CarData car, double press, double time){
+		final double step = (1D / 120);
+		
+		final Vector3 gravity = new Vector3(0, 0, -Constants.GRAVITY * step);
+		final Vector3 jumpAcc = car.orientation.roofVector.scaled(Constants.JUMPACC * step);
+		
+		Vector3 position = car.position;
+		Vector3 velocity = car.velocity.plus(car.orientation.roofVector.scaled(Constants.JUMPVEL));
+		
+		double t = 0;
+		while(t < time){
+			if(t <= press) velocity = velocity.plus(jumpAcc);
+			velocity = velocity.plus(gravity);
+			
+//			if(velocity.z < 0) break;
+			
+			position = position.plus(velocity.scaled(step));
+			
+			t += step;
+		}
+		
+		return position;
 	}
 
 }

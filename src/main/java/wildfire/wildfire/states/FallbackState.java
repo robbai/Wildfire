@@ -11,6 +11,7 @@ import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.actions.SmartDodgeAction;
 import wildfire.wildfire.actions.WavedashAction;
 import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.input.InfoPacket;
@@ -25,14 +26,12 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.14, scope = 0.4;
-//	private static final double dropoff = 0.15, scope = 0.374;
+	private static final double dropoff = 0.2, scope = 0.36;
 	
 	/*
 	 * Yeah this one too, I guess
 	 */
 	private final int targetPly = 7;
-//	private final int targetPly = 7;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);
@@ -50,7 +49,7 @@ public class FallbackState extends State {
 		double distance = input.info.impact.getPosition().distance(car.position);
 		
 		// Goal.
-		Vector2 goal = Behaviour.getTarget(car, input.ball);
+		Vector2 goal = Behaviour.getTarget(car, input.ball, -140);
 		wildfire.renderer.drawCrosshair(car, goal.withZ(Constants.BALLRADIUS), Color.WHITE, 125);
 		
 		// Drive down the wall.
@@ -66,11 +65,22 @@ public class FallbackState extends State {
 
 		// Avoid own-goaling.
 		Vector2 trace = Utils.traceToY(car.position.flatten(), impactPoint.minus(car.position).flatten(), Utils.teamSign(car) * -Constants.PITCHLENGTH);
-//		boolean avoidOwnGoal = (trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + 900);
 		boolean avoidOwnGoal = !Behaviour.correctSideOfTarget(car, input.ball.position) && trace != null;
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 4.5, 50, 400), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 4.6, 50, 400), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(car, impactPoint, Color.PINK, 125);
+		}
+		
+		// Smart-dodge.
+		if(impactPoint.minus(car.position).dotProduct(car.orientation.roofVector) > 160){
+			if(isOkayToSmartDodge(input)){
+				SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
+				if(!smartDodge.failed){
+					return this.startAction(smartDodge, input);
+				}
+				
+				return Handling.arriveAtSmartDodgeCandidate(car, input.info.jumpImpact, wildfire.renderer);
+			}
 		}
 
 		// Target.
@@ -137,6 +147,22 @@ public class FallbackState extends State {
         		.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > 1.2 && car.forwardVelocityAbs > 500);
 	}
 	
+	private boolean isOkayToSmartDodge(InfoPacket input){
+		if(input.info.jumpImpact == null) return false;
+		
+		Vector3 jumpImpact = input.info.jumpImpact.getBallPosition();
+		CarData car = input.car;
+		Vector3 carPosition = car.position;
+		Vector2 trace = Utils.traceToWall(carPosition.flatten(), jumpImpact.flatten());
+		Vector2 carToTrace = trace.minus(carPosition.flatten());
+		
+		if(carToTrace.y * Utils.teamSign(car) < 0){
+			return Math.abs(trace.x) > (trace.x * jumpImpact.x < 0 ? Constants.GOALHALFWIDTH + 250 : Constants.PITCHWIDTH - 1200);
+		}else{
+			return Math.abs(trace.x) < Constants.GOALHALFWIDTH + 50 || Math.abs(trace.x) > Constants.PITCHWIDTH - 1300;
+		}
+	}
+
 	private Vector3 getLocalPosition(CarData car, Vector3 startLocal, Vector3 goalLocal, int ply, Vector3 impactPointLocal){
 		if(ply >= 30) return null;
 		
@@ -145,7 +171,7 @@ public class FallbackState extends State {
 		Vector3 endLocal = impactPointLocal.plus(impactPointLocal.minus(goalLocal).withZ(0).scaledToMagnitude(distance * scope)).withZ(0);
 		endLocal = startLocal.plus(endLocal.minus(startLocal).scaled(dropoff));//.confine(35, 50);
 		
-		wildfire.renderer.drawLine3d(Color.RED, Utils.toGlobal(car, startLocal).toFramework(), Utils.toGlobal(car, endLocal).toFramework());
+		if(car.hasWheelContact) wildfire.renderer.drawLine3d(Color.RED, Utils.toGlobal(car, startLocal).toFramework(), Utils.toGlobal(car, endLocal).toFramework());
 		Vector3 next = getLocalPosition(car, endLocal, goalLocal, ply + 1, impactPointLocal);
 		return ply < targetPly ? (ply == targetPly ? startLocal : next) : endLocal;
 	}

@@ -9,6 +9,7 @@ import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
+import wildfire.wildfire.actions.SmartDodgeAction;
 import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.State;
@@ -52,18 +53,26 @@ public class ShootState extends State {
 	public ControlsOutput getOutput(InfoPacket input){
 		double impactRadians = Handling.aim(input.car, input.info.impact.getPosition().flatten());
 		double ballDistance = input.ball.position.distance(input.car.position);
+		
+		// Smart-dodge.
+		if(input.info.impact.getPosition().z > 150){
+			SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
+			if(!smartDodge.failed){
+				return this.startAction(smartDodge, input);
+			}
+			return Handling.arriveAtSmartDodgeCandidate(input.car, input.info.impact, wildfire.renderer);
+		}
 				
 		/*
 		 * Actions.
 		 */
 		if(input.car.hasWheelContact){
-			double ballVelocityTowards = input.ball.velocity.normalized().dotProduct(input.car.position.minus(input.ball.position).normalized());
-			boolean dodgeBallDist = (ballDistance < Utils.lerp(270, 350, Math.abs(input.car.forwardVelocity) / Constants.MAXCARSPEED) + 150 * ballVelocityTowards);
+//			double ballVelocityTowards = input.ball.velocity.normalized().dotProduct(input.car.position.minus(input.ball.position).normalized());
 			if(Math.abs(impactRadians) > Math.PI * 0.7 && ballDistance < 560){
 				currentAction = new HalfFlipAction(this, input);
 			}else if(Math.abs(impactRadians) > Math.PI * 0.6 && ballDistance > 500 && input.car.velocity.magnitude() < 600 && input.ball.velocity.magnitude() < 1200){
 				currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
-			}else if((dodgeBallDist && Math.abs(impactRadians) < 0.3) || (input.info.impact.getTime() > 2 && Math.abs(impactRadians) < 0.25 && input.car.velocity.magnitude() > 1800)){
+			}else if((input.info.impact.getTime() < 0.3 && Math.abs(impactRadians) < 0.3) || (input.info.impact.getTime() > 2 && Math.abs(impactRadians) < 0.25 && input.car.velocity.magnitude() > 1800)){
 				if(!input.ball.velocity.isZero()) wildfire.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Reactions_Whew);
 
 				double forwardVelocity = input.car.forwardVelocity;

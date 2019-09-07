@@ -40,9 +40,9 @@ public class AirControl {
 	    	pitch *= Math.pow(10, 10);
 	    }
 
-	    if(orient.noseVector.dotProduct(forward) < 0){
-	    	pitchVel *= -1;
-	    }
+//	    if(orient.noseVector.dotProduct(forward) < 0){
+//	    	pitchVel *= -1;
+//	    }
 
 	    // PID control to stop overshooting.
 	    roll = 3 * roll + 0.30 * rollVel;
@@ -59,7 +59,7 @@ public class AirControl {
 	
 	public static double[] getPitchYawRoll(CarData car, Vector2 forward, Vector3 up){
 		double upZ = up.normalized().z;
-		return getPitchYawRoll(car, forward.withZ(Math.max(1 - upZ, -1 + upZ)), up);
+		return getPitchYawRoll(car, forward.normalized().withZ(Math.max(1 - upZ, -1 + upZ)), up);
 	}
 	
 	public static double[] getPitchYawRoll(CarData car, Vector2 forward){

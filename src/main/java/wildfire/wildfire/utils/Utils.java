@@ -104,9 +104,7 @@ public class Utils {
 		return Math.abs(point.x * (lineB.y - lineA.y) - point.y * (lineB.x - lineA.x) + lineB.x * lineA.y - lineB.y * lineA.x) / Math.sqrt(Math.pow(lineB.y - lineA.y, 2) + Math.pow(lineB.x - lineA.x, 2));
 	}
 	
-	public static Vector3 toLocalFromRelative(CarData car, Vector3 relative){
-		CarOrientation carOrientation = car.orientation;
-		
+	public static Vector3 toLocalFromRelative(CarOrientation carOrientation, Vector3 relative){
 		double localRight = carOrientation.rightVector.x * relative.x + carOrientation.rightVector.y * relative.y + carOrientation.rightVector.z * relative.z;
 		double localNose = carOrientation.noseVector.x * relative.x + carOrientation.noseVector.y * relative.y + carOrientation.noseVector.z * relative.z;
 		double localRoof = carOrientation.roofVector.x * relative.x + carOrientation.roofVector.y * relative.y + carOrientation.roofVector.z * relative.z;
@@ -114,8 +112,16 @@ public class Utils {
 		return new Vector3(localRight, localNose, localRoof);
 	}
 	
+	public static Vector3 toLocalFromRelative(CarData car, Vector3 relative){
+		return toLocalFromRelative(car.orientation, relative);
+	}
+	
 	public static Vector3 toLocal(CarData car, Vector3 vec){
-		return toLocalFromRelative(car, vec.minus(car.position));
+		return toLocal(car.position, car.orientation, vec);
+	}
+	
+	public static Vector3 toLocal(Vector3 carPosition, CarOrientation carOrientation, Vector3 vec){
+		return toLocalFromRelative(carOrientation, vec.minus(carPosition));
 	}
 	
 	public static double lerp(double a, double b, double f){

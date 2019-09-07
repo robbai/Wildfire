@@ -19,7 +19,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowSmartDodgeMechanic extends Mechanic {
 	
-	public static final double earlyTime = 0.01;
+	public static final double earlyTime = 0.001;
 
 	private DiscreteCurve curve;
 
@@ -43,7 +43,7 @@ public class FollowSmartDodgeMechanic extends Mechanic {
 		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
 				
 		// Jump calculations.
-		double peakTime = JumpPhysics.getPeakTime(input.car, candidate);
+		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(input.car.position).dotProduct(input.car.orientation.roofVector));
 		double driveTime = Math.max(0.00001, candidate.getTime() - peakTime - timeElapsed - earlyTime);
 		double jumpVelocity = (2 * (curve.getDistance() - carS) - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 //		double jumpDistance = (jumpVelocity * peakTime);

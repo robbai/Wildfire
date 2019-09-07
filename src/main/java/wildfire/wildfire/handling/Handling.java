@@ -35,10 +35,10 @@ public class Handling {
 
 	public static ControlsOutput driveDownWall(DataPacket input){
 		double radians = aim(input.car, input.car.position.plus(input.car.orientation.roofVector.scaledToMagnitude(70)).flatten());
-		return new ControlsOutput().withThrottle(input.car.forwardVelocity > 800 && input.car.orientation.noseVector.z > 0.9 ? -1 : 1)
+		return new ControlsOutput().withThrottle(input.car.forwardVelocity > 500 && input.car.orientation.noseVector.z > 0.7 ? -1 : 1)
 				.withBoost(input.car.forwardVelocity < 1600 && Math.abs(radians) < Math.toRadians(40) && input.car.position.z > 300)
 				.withSteer(-3 * radians)
-				.withSlide(input.car.velocity.magnitude() > 300 && Math.abs(radians) > Math.toRadians(60)); // && 
+				.withSlide(input.car.velocity.magnitude() > 300 && Math.abs(radians) > Math.toRadians(70) && canHandbrake(input.car)); 
 	}
 
 	public static ControlsOutput atba(DataPacket input, Vector3 target){
@@ -149,7 +149,8 @@ public class Handling {
 		
 		ControlsOutput controls = driveDestination(car, ballPosition);
 		
-		double peakTime = JumpPhysics.getPeakTime(car, candidate);
+		double jumpHeight = candidate.getPosition().minus(car.position).dotProduct(car.orientation.roofVector);
+		double peakTime = JumpPhysics.getFastestTimeZ(jumpHeight);
 		
 		// Drive calculations.
 		double driveTime = Math.max(0.00001, candidate.getTime() - peakTime - FollowSmartDodgeMechanic.earlyTime);
@@ -160,6 +161,7 @@ public class Handling {
 		
 		if(renderer != null){
 			renderer.drawCrosshair(car, ballPosition, Color.RED, 70);
+//			renderer.drawString2d("Value: " + Utils.round(jumpHeight) + ", " + Utils.round(peakTime), Color.WHITE, new Point(0, 40), 2, 2);
 			renderer.drawString2d("Initial Vel.: " + (int)initialVelocity + "uu/s", Color.WHITE, new Point(0, 60), 2, 2);
 			renderer.drawString2d("Final Vel.: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 80), 2, 2);
 			renderer.drawString2d("Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 100), 2, 2);
@@ -174,6 +176,10 @@ public class Handling {
 		}
 		double throttle = produceAcceleration(car, acceleration); 
 		return controls.withThrottle(throttle).withBoost(throttle > 1);
+	}
+	
+	public static ControlsOutput arriveAtSmartDodgeCandidate(CarData car, Slice candidate){
+		return arriveAtSmartDodgeCandidate(car, candidate, null);
 	}
 
 	public static ControlsOutput turnOnSpot(CarData car, Vector3 destination){

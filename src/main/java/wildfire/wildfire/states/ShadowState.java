@@ -22,11 +22,15 @@ import wildfire.wildfire.utils.Utils;
 
 public class ShadowState extends State {
 
-	Vector2 homeGoal;
+	protected Vector2 homeGoal;
+
+	public ShadowState(String name, Wildfire wildfire){
+		super(name, wildfire);
+		this.updateHomeGoal(wildfire.team);
+	}
 
 	public ShadowState(Wildfire wildfire){
-		super("Shadow", wildfire);
-		updateHomeGoal(wildfire.team);
+		this("Shadow (Old)", wildfire);
 	}
 
 	@Override
@@ -120,7 +124,8 @@ public class ShadowState extends State {
 		// Actions.
 		if(input.car.hasWheelContact && distance > 2350 && !input.car.isSupersonic && input.car.position.z < 100){
 			if(input.car.velocity.magnitude() > (input.car.boost == 0 ? 1250 : 1500) && Math.abs(steerRadians) < 0.4){
-				double dodgeRadians = (input.info.impact.getPosition().distance(input.car.position) > 500 ? steerRadians : Handling.aim(input.car, input.ball.position.flatten()));
+				double componentTowardsBall = input.car.velocity.normalized().dotProduct(input.info.impact.getPosition().minus(input.car.position).normalized());
+				double dodgeRadians = (input.info.impact.getPosition().distance(input.car.position) > (componentTowardsBall > 0.9 ? 500 : 250) ? steerRadians : Handling.aim(input.car, input.ball.position.flatten()));
 				currentAction = new DodgeAction(this, dodgeRadians, input);
 			}else if(Math.abs(steerRadians) > Math.PI * 2.7){
 				double forwardVelocity = input.car.forwardVelocity;
@@ -146,9 +151,9 @@ public class ShadowState extends State {
 			steerRadians = -steerRadians;
 		}
 		
-        return new ControlsOutput().withSteer((float)steerRadians * 3F).withThrottle(throttle)
-        		.withBoost(distance > 1500 && Math.abs(steerRadians) < 0.2F && !Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition()))
-        		.withSlide(input.car.velocity.magnitude() < 1600 && Math.abs(steerRadians) > 1.3F);
+        return new ControlsOutput().withSteer(steerRadians * 3).withThrottle(throttle)
+        		.withBoost(distance > 1300 && Math.abs(steerRadians) < 0.2 && !Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition()))
+        		.withSlide(input.car.velocity.magnitude() < 1600 && Math.abs(steerRadians) > 1.3);
 	}
 
 	/**

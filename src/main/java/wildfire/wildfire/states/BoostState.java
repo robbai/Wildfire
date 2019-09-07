@@ -26,13 +26,17 @@ public class BoostState extends State {
 
 	private final double maxBoost = 40, maxBoostMega = 72;
 	
-	private BoostPad boost = null;
+	protected BoostPad boost = null;
 	private boolean steal = false, possession = false;
+	
+	public BoostState(String name, Wildfire wildfire){
+		super(name, wildfire);
+	}
 
 	public BoostState(Wildfire wildfire){
-		super("Boost", wildfire);
+		this("Boost (Old)", wildfire);
 	}
-	
+
 	@Override
 	public boolean ready(InfoPacket input){
 		Vector2 impactFlat = input.info.impact.getPosition().flatten(); 
@@ -80,7 +84,7 @@ public class BoostState extends State {
 		
 		// Actions.
 		double forwardVelocity = car.forwardVelocity;
-		if(car.hasWheelContact && distance > 1900 && !car.isSupersonic){	
+		if(car.hasWheelContact && distance > 2000 && !car.isSupersonic){	
 			if(Behaviour.isOnWall(car)){
 				currentAction = new HopAction(this, input, boostLocation);
 			}else if(Math.abs(radians) < 0.12 && forwardVelocity > 1100){
@@ -97,9 +101,9 @@ public class BoostState extends State {
 		Vector2 carPosition = car.position.flatten();
 		Vector2 cross = boostLocation.minus(carPosition).cross();
 		BezierCurve bezier = new BezierCurve(carPosition, 
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(distance / 4)), 
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(distance / 8)), 
 				carPosition.plus(boostLocation).scaled(0.5),
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(distance / -8)),
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(distance / -16)),
 				boostLocation.plus(car.position.flatten().minus(boostLocation).scaledToMagnitude(circleRadius)));
 		bezier.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.blue, boostLocation, circleRadius);

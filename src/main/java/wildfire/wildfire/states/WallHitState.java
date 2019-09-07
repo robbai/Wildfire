@@ -77,7 +77,7 @@ public class WallHitState extends State {
 				// Dodge.
 				Vector3 localTarget = Utils.toLocal(car, input.info.impact.getPosition());
 				boolean highCar = (car.position.z > 1000);
-				if((localTarget.z > 85 || highCar) && input.info.impact.getPosition().distance(car.position) < (car.velocity.magnitude() > 950 ? 460 : 320) && Math.abs(radians) < Math.toRadians(60)){
+				if((localTarget.z > 85 || highCar) && localTarget.flatten().magnitude() < (car.velocity.magnitude() > 950 ? 430 : 310) && Math.abs(radians) < Math.toRadians(60)){
 					currentAction = new DodgeAction(this, radians, input);
 					if(!currentAction.failed){
 						if(highCar) wildfire.sendQuickChat(QuickChatSelection.Reactions_Calculated);
@@ -100,7 +100,13 @@ public class WallHitState extends State {
 			wildfire.renderer.drawString2d((sideWall ? "Side" : (backWall ? "Back" : "Unknown")) + " Wall", Color.WHITE, new Point(0, 40), 2, 2);
 			
 			Vector2 destination = input.info.impact.getPosition().minus(car.position).scaled(100).plus(car.position).flatten();
-			if(sideWall) destination = destination.withY(car.position.y);
+			if(sideWall){
+				if(Behaviour.correctSideOfTarget(car, input.info.impact.getPosition())){
+					destination = destination.withY(Utils.lerp(car.position.y, input.info.impact.getPosition().y, 0.1));
+				}else{
+					destination = destination.withY(input.info.impact.getPosition().y - Utils.teamSign(car) * 150);
+				}
+			}
 //			if(backWall) destination = destination.withX(Math.max(Math.abs(input.info.impact.getPosition().x), 1200) * Math.signum(input.info.impact.getPosition().x));
 			destination = destination.withX(Math.max(Math.abs(input.info.impact.getPosition().x), 1200) * Math.signum(input.info.impact.getPosition().x));
 			

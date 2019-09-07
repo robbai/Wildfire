@@ -5,10 +5,17 @@ import rlbot.cppinterop.RLBotInterfaceException;
 import rlbot.flat.BallPrediction;
 import wildfire.input.CarData;
 import wildfire.input.DataPacket;
+import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.actions.SmartDodgeAction;
+import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.Impact;
 import wildfire.wildfire.obj.WRenderer;
+import wildfire.wildfire.physics.DrivePhysics;
+import wildfire.wildfire.physics.JumpPhysics;
 import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Utils;
 
 public class Info {
 
@@ -26,6 +33,10 @@ public class Info {
 	public double timeOnGround;
 
 	public double impactDistance, impactDistanceFlat;
+
+	public Impact jumpImpact;
+
+	public double impactRadians;
 
 	public Info(Wildfire wildfire){
 		this.wildfire = wildfire;
@@ -69,6 +80,7 @@ public class Info {
 			
 			this.impactDistance = car.position.distance(this.impact.getPosition());
 			this.impactDistanceFlat = car.position.distance(this.impact.getPosition());
+			this.impactRadians = Handling.aim(car, this.impact.getPosition());
 		}catch(Exception e){
 			e.printStackTrace();
 			
@@ -83,6 +95,37 @@ public class Info {
 		}
 		this.onGroundLast = input.car.hasWheelContact;
 		this.timeOnGround = (input.elapsedSeconds - this.timeFirstOnGround);
+		
+		this.jumpImpact = getJumpImpact(car);
+	}
+
+	private Impact getJumpImpact(CarData car){
+		for(int i = 0; i < ballPrediction.slicesLength(); i++){
+			rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
+			
+			Vector3 slicePosition = Vector3.fromFlatbuffer(rawSlice.physics().location());
+			Vector3 localSlice = Utils.toLocal(car, slicePosition);
+			
+			double time = (rawSlice.gameSeconds() - car.elapsedSeconds);
+			double jumpHeight = localSlice.z;
+			if(jumpHeight > JumpPhysics.maxJumpHeight + (Constants.BALLRADIUS + SmartDodgeAction.dodgeDistance) * (SmartDodgeAction.zRatio * 0.72)) continue;
+//			if(jumpHeight > JumpPhysics.maxJumpHeight) continue;
+			double peakTime = JumpPhysics.getFastestTimeZ(jumpHeight);
+			double driveTime = (time - peakTime);
+			double fullDistance = localSlice.flatten().magnitude();
+			double initialVelocity = car.velocityDir(slicePosition.minus(car.position).flatten());
+			double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
+			double acceleration = ((finalVelocity - initialVelocity) / driveTime);
+			
+			if(finalVelocity < DrivePhysics.maxVelocity(initialVelocity, car.boost, time) && acceleration < 1800){
+//				Vector3 impactPosition = slicePosition.plus(car.position.minus(slicePosition).scaledToMagnitude(Constants.BALLRADIUS));
+				Vector3 impactPosition = slicePosition.plus(slicePosition.minus(Constants.enemyGoal(car).withZ(slicePosition.z)).scaledToMagnitude(Constants.BALLRADIUS + SmartDodgeAction.dodgeDistance * 0.405));
+//				Vector3 impactPosition = slicePosition;
+				return new Impact(impactPosition, rawSlice, time);
+			}
+		}
+		
+		return null; // Uh oh.
 	}
 
 }
