@@ -25,16 +25,25 @@ import wildfire.wildfire.utils.Behaviour;
 
 public class Wildfire implements Bot {
 
-    public final int playerIndex;
+    
+	public final int playerIndex;
     public final int team;
     
-    /*
-     * Whether this is a test version
-     * */
+    /**
+     * Flag for whether the agent contains the word "test" in its in-game name
+     */
     private final boolean test;
     public boolean isTestVersion(){
 		return test;
 	}
+    
+    /**
+     * Flag for running the "garbage collector" during replays
+     */
+    private static final boolean runGc = true;
+    private static boolean ranGc;	
+    
+    private static final boolean printMs = false;
     
 	public StateSettingManager stateSetting;
 	
@@ -54,7 +63,7 @@ public class Wildfire implements Bot {
 	
 	public Info info;
 	public WRenderer renderer;
-	public BallPrediction ballPrediction;	
+	public BallPrediction ballPrediction;
 
     public Wildfire(int playerIndex, int team, boolean test){
         this.playerIndex = playerIndex;
@@ -65,8 +74,8 @@ public class Wildfire implements Bot {
         this.info = new Info(this);
         
         // Human thread.
-        this.human = new Human(this).setEnabled(false);
-        this.human.start();
+//        this.human = new Human(this).setEnabled(false);
+//        this.human.start();
         
         /*
          * Initialise all the states.
@@ -93,7 +102,7 @@ public class Wildfire implements Bot {
         /*
          * Test states
          */
-//        if(this.isTestVersion()) fallbackState = new TestState(this);
+//        fallbackState = new TestState(this);
 //        fallbackState = new TestState2(this);
 //        fallbackState = new PathState(this, true);
 //        fallbackState = new DemoState(this);
@@ -105,8 +114,7 @@ public class Wildfire implements Bot {
     }
 
     private ControlsOutput processInput(InfoPacket input){
-//    	stateSetting.airRoll(input);
-//    	stateSetting.shoot(input, true);
+//    	stateSetting.path(input, true);
     	
     	// GG.
     	if(input.gameInfo.isMatchEnded()){
@@ -148,7 +156,7 @@ public class Wildfire implements Bot {
     	// Get a new state if one isn't active.
     	if(activeState == null && !fallbackState.hasAction()){
 		    for(State state : states){
-		    	 if(state.getClass() != fallbackState.getClass() && state.ready(input)){
+		    	 if(!state.getClass().equals(fallbackState.getClass()) && state.ready(input)){
 		    		activeState = state;
 		    		break;
 		    	}
@@ -213,6 +221,7 @@ public class Wildfire implements Bot {
 		return fallbackState.getOutput(input);
 	}
 
+	@SuppressWarnings ("static-access")
 	@Override
     public ControllerState processInput(GameTickPacket packet){
         if(packet.playersLength() <= playerIndex || packet.ball() == null) return new ControlsOutput().withNone();
@@ -230,8 +239,27 @@ public class Wildfire implements Bot {
         this.renderer = this.info.renderer;
         this.ballPrediction = this.info.ballPrediction;
         
-        ControlsOutput wildfireControls = processInput(infoPacket);
-        if(!this.human.isEnabled()){
+        ControlsOutput wildfireControls;
+        if(this.printMs){
+        	long time = System.nanoTime();
+        	wildfireControls = processInput(infoPacket);
+        	System.out.println((System.nanoTime() - time) / Math.pow(10, 6) + "ms");
+        }else{
+        	wildfireControls = processInput(infoPacket);
+        }
+        
+        if(this.runGc){
+	        if(!packet.gameInfo().isRoundActive()){
+	        	if(!this.ranGc){
+	        		System.gc();
+	        		this.ranGc = true;
+	        	}
+	        }else{
+	        	this.ranGc = false;
+	        }
+        }
+        
+        if(this.human == null || !this.human.isEnabled()){
         	return wildfireControls;
         }else{
         	info.renderer.drawString2d("Human", Color.BLUE, new Point(0, 200), 8, 8);

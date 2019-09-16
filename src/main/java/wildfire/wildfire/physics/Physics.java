@@ -25,7 +25,7 @@ public class Physics {
 		double forwardsComponent = Math.acos(direction.y);
 		double sidewaysComponent = Math.asin(direction.x);
 		
-		return Math.abs(forwardsComponent) * (forwardsComponent > 0 ? 500D : 533D) + sidewaysComponent * (500D * (1D + 0.9D * Math.abs(velocityForward / Constants.MAXCARSPEED)));
+		return Math.abs(forwardsComponent) * (forwardsComponent > 0 ? 500D : 533D) + sidewaysComponent * (500D * (1D + 0.9D * Math.abs(velocityForward / Constants.MAX_CAR_VELOCITY)));
 	}
 
 }

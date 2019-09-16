@@ -21,10 +21,10 @@ import wildfire.wildfire.utils.Utils;
 
 public class ReturnState extends State {
 	
-	/*How small the angle between the attacker and the ball has to be*/
+	// How small the angle between the attacker and the ball has to be
 	private final double maxAttackingAngle = 0.55 * Math.PI;
 	
-	/*How small the difference of the angle from the attacker to the ball and the attacker to the goal has to be*/
+	// How small the difference of the angle from the attacker to the ball and the attacker to the goal has to be
 	private final double maxShootingAngle = 0.4 * Math.PI;
 	
 	private final double goalScale = 0.95;
@@ -38,8 +38,10 @@ public class ReturnState extends State {
 		if(Behaviour.isKickoff(input) || Behaviour.isCarAirborne(input.car)) return false;
 		
 		boolean opponentBehind = Behaviour.isOpponentBehindBall(input);
+		
+		if(input.info.impact.getTime() < input.info.enemyImpactTime - (opponentBehind ? 0.15 : 0.45)) return false;
 
-		//Check if we have a shot opportunity
+		// Check if we have a shot opportunity.
 		if(input.info.impact.getPosition().distanceFlat(input.car.position) < 2500){
 			double aimBall = Handling.aim(input.car, input.info.impact.getPosition().flatten());
 			if(Math.abs(aimBall) < Math.PI * 0.4){
@@ -47,7 +49,7 @@ public class ReturnState extends State {
 			}
 		}		
 		
-		//Just hit it instead
+		// Just hit it instead.
 		if(input.info.impact.getPosition().distanceFlat(input.car.position) < Math.max(1100, input.car.velocity.magnitude() * 0.75)
 				&& !Behaviour.isTowardsOwnGoal(input.car, input.info.impact.getPosition())){
 			return false;
@@ -76,18 +78,18 @@ public class ReturnState extends State {
 			return Handling.driveDownWall(input);
 		}
 		
-		double aimImpact = Handling.aim(input.car, input.info.impact.getPosition().flatten());
+		double impactRadians = Handling.aim(input.car, input.info.impact.getPosition().flatten());
 				
-		// Dodge or half-flip into the ball.
-		if(input.car.position.distanceFlat(input.ball.position) < 400){
-			if(Math.abs(aimImpact) < 0.75 * Math.PI){
-				currentAction = new DodgeAction(this, aimImpact, input);
-			}else{
-				currentAction = new HalfFlipAction(this, input);
-			}
-			if(!currentAction.failed) return currentAction.getOutput(input);
-			currentAction = null;
-		}
+//		// Dodge or half-flip into the ball.
+//		if(input.car.position.distanceFlat(input.ball.position) < 400){
+//			if(Math.abs(impactRadians) < 0.75 * Math.PI){
+//				currentAction = new DodgeAction(this, impactRadians, input);
+//			}else{
+//				currentAction = new HalfFlipAction(this, input);
+//			}
+//			if(!currentAction.failed) return currentAction.getOutput(input);
+//			currentAction = null;
+//		}
 
 		// Block the attack!
 		CarData attacker = getAttacker(input);
@@ -96,8 +98,8 @@ public class ReturnState extends State {
 			wildfire.renderer.drawString2d("Attacker: '" + attacker.name + "'", Color.WHITE, new Point(0, 20), 2, 2);
 
 			Vector2 target = Behaviour.getTarget(attacker, input.ball);
-			target = target.withY(Utils.teamSign(input.car) * -Constants.PITCHLENGTH * goalScale);
-			target = target.withX(Utils.clamp(target.x, Constants.GOALHALFWIDTH - 250, -Constants.GOALHALFWIDTH + 250));
+			target = target.withY(Utils.teamSign(input.car) * -Constants.PITCH_LENGTH * goalScale);
+			target = target.withX(Utils.clamp(target.x, Constants.GOAL_WIDTH - 250, -Constants.GOAL_WIDTH + 250));
 
 			wildfire.renderer.drawLine3d(Color.RED, attacker.position.flatten().toFramework(), target.toFramework());
 			wildfire.renderer.drawCrosshair(input.car, input.info.impact.getPosition(), Color.RED, 125);
@@ -108,14 +110,14 @@ public class ReturnState extends State {
 				wildfire.sendQuickChat(QuickChatSelection.Information_Incoming);
 				wildfire.renderer.drawString2d("Rush", Color.WHITE, new Point(0, 40), 2, 2);
 				wildfire.renderer.drawCrosshair(input.car, input.info.impact.getPosition(), Color.MAGENTA, 125);
-				return Handling.arriveDestination(input.car, input.info.impact.getPosition().flatten(), true);
+				return Handling.chaosDrive(input.car, input.info.impact.getPosition().flatten(), true);
 			}else{
 				// Get in the way of their predicted shot.
 				wildfire.renderer.drawString2d("Align", Color.WHITE, new Point(0, 40), 2, 2);
 				
 				if(target.distance(input.car.position.flatten()) < 300){
 					// Already there!					
-					if(doHop(input, aimImpact)){
+					if(doHop(input, impactRadians)){
 						currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
 						if(!currentAction.failed) return currentAction.getOutput(input);
 					}
@@ -136,7 +138,7 @@ public class ReturnState extends State {
 					currentAction = null;
 					
 					// We better get there!
-					return Handling.arriveDestination(input.car, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
+					return Handling.chaosDrive(input.car, target.withX(Math.max(-500, Math.min(500, target.x))), false); 
 				}
 			}
 		}
@@ -144,17 +146,17 @@ public class ReturnState extends State {
 		// Get back to goal.
 		Vector2 homeGoal = Constants.homeGoal(input.car.team).scaled(goalScale);
 		if(homeGoal.distance(input.car.position.flatten()) < 200 && input.info.impact.getTime() > 1){
-			if(doHop(input, aimImpact)){
+			if(doHop(input, impactRadians)){
 				currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
 				if(!currentAction.failed) return currentAction.getOutput(input);
 			}
 			return Handling.stayStill(input.car);
 		}
-		return Handling.arriveDestination(input.car, homeGoal, false);
+		return Handling.chaosDrive(input.car, homeGoal, false);
 	}
 	
-	private boolean doHop(InfoPacket input, double aimImpact){
-		return input.car.hasWheelContact && Math.abs(aimImpact) > 0.1 * Math.PI && input.car.velocity.magnitude() < 800 && input.info.impact.getTime() > 1.4;
+	private boolean doHop(InfoPacket input, double impactRadians){
+		return input.car.hasWheelContact && Math.abs(impactRadians) > Math.toRadians(20) && input.car.velocity.magnitude() < 800 && input.info.impact.getTime() > 1.5;
 	}
 
 	private CarData getAttacker(InfoPacket input){

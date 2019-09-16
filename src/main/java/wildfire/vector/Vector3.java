@@ -118,11 +118,7 @@ public class Vector3 {
 	}
 	
 	public Vector3 confine(){
-		return new Vector3(Math.min(Constants.PITCHWIDTH, Math.max(-Constants.PITCHWIDTH, x)), Math.min(Constants.PITCHLENGTH, Math.max(-Constants.PITCHLENGTH, y)), Math.min(Constants.CEILING, Math.max(0, z)));
-	}
-	
-	public Vector3 withZ(double z){
-		return new Vector3(x, y, z);
+		return new Vector3(Math.min(Constants.PITCH_WIDTH, Math.max(-Constants.PITCH_WIDTH, x)), Math.min(Constants.PITCH_LENGTH, Math.max(-Constants.PITCH_LENGTH, y)), Math.min(Constants.CEILING, Math.max(0, z)));
 	}
 	
 	public Vector3 rotateHorizontal(double angle){
@@ -134,7 +130,7 @@ public class Vector3 {
 	}
 
 	public boolean isOutOfBounds(){
-		 return Math.abs(x) > Constants.PITCHWIDTH || Math.abs(y) > Constants.PITCHLENGTH || z > Constants.CEILING || z < 0;
+		 return Math.abs(x) > Constants.PITCH_WIDTH || Math.abs(y) > Constants.PITCH_LENGTH || z > Constants.CEILING || z < 0;
 	}
 	
 	public Vector3 capMagnitude(double max){
@@ -149,6 +145,18 @@ public class Vector3 {
 	public static Vector3 random(double mag){
 		Random random = new Random();
 		return new Vector3(random.nextDouble() - 0.5, random.nextDouble() - 0.5, random.nextDouble() - 0.5).scaledToMagnitude(mag);
+	}
+	
+	public Vector3 withX(double x){
+		return new Vector3(x, this.y, this.z);
+	}
+	
+	public Vector3 withY(double y){
+		return new Vector3(this.x, y, this.z);
+	}
+	
+	public Vector3 withZ(double z){
+		return new Vector3(this.x, this.y, z);
 	}
     
 }

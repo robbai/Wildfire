@@ -28,7 +28,7 @@ public class ShootState extends State {
 	@Override
 	public boolean ready(InfoPacket input){
 		//Not during kickoff or inside their net
-		if(Behaviour.isKickoff(input) || Utils.teamSign(input.car) * input.car.position.y > Constants.PITCHLENGTH) return false;
+		if(Behaviour.isKickoff(input) || Utils.teamSign(input.car) * input.car.position.y > Constants.PITCH_LENGTH) return false;
 		
 		//Not while in goal
 		if(Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team) && Math.abs(input.car.position.y) > 4500) return false;
@@ -37,7 +37,7 @@ public class ShootState extends State {
 		if(input.info.impact.getPosition().z > 200) return false;
 		
 		//Not during a weird dribble
-		if(input.ball.position.distanceFlat(input.car.position) < Constants.BALLRADIUS && input.ball.position.z > 110){ // && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 6000
+		if(input.ball.position.distanceFlat(input.car.position) < Constants.BALL_RADIUS && input.ball.position.z > 110){ // && input.ball.position.distanceFlat(Utils.enemyGoal(input.car.team)) > 6000
 			return false;
 		}
 		
@@ -51,7 +51,7 @@ public class ShootState extends State {
 
 	@Override
 	public ControlsOutput getOutput(InfoPacket input){
-		double impactRadians = Handling.aim(input.car, input.info.impact.getPosition().flatten());
+		double impactRadians = Handling.aim(input.car, input.info.impact.getPosition());
 		double ballDistance = input.ball.position.distance(input.car.position);
 		
 		// Smart-dodge.
@@ -63,9 +63,7 @@ public class ShootState extends State {
 			return Handling.arriveAtSmartDodgeCandidate(input.car, input.info.impact, wildfire.renderer);
 		}
 				
-		/*
-		 * Actions.
-		 */
+		// Actions.
 		if(input.car.hasWheelContact){
 //			double ballVelocityTowards = input.ball.velocity.normalized().dotProduct(input.car.position.minus(input.ball.position).normalized());
 			if(Math.abs(impactRadians) > Math.PI * 0.7 && ballDistance < 560){
@@ -84,15 +82,17 @@ public class ShootState extends State {
 		if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 		currentAction = null;
 		
-		double throttle = (Math.abs(Math.cos(impactRadians)) * (1D - minThrottle) + minThrottle);
-		
+		// Rendering.
 		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.BLACK, 0, input.info.impact.getFrame());
-		wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), Utils.traceToY(input.car.position.flatten(), input.info.impact.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH).toFramework());
+		wildfire.renderer.drawLine3d(Color.WHITE, input.car.position.flatten().toFramework(), Utils.traceToY(input.car.position.flatten(), input.info.impact.getPosition().minus(input.car.position).flatten(), Utils.teamSign(input.car) * Constants.PITCH_LENGTH).toFramework());
 		wildfire.renderer.drawCrosshair(input.car, input.info.impact.getPosition(), Color.LIGHT_GRAY, 125);
 		
-        return new ControlsOutput().withSteer(-impactRadians * 3).withThrottle(throttle)
-        		.withBoost(Math.abs(impactRadians) < 0.14 && !input.car.isSupersonic) // && (!input.car.isSupersonic || !Behaviour.isOpponentBehindBall(input))
-        		.withSlide(Math.abs(impactRadians) > 1.4);
+		// Controls.
+		double throttle = (Math.abs(Math.cos(impactRadians)) * (1D - minThrottle) + minThrottle);
+		if(input.car.orientation.roofVector.z < 0.7) throttle = Math.signum(throttle);
+        ControlsOutput controls = Handling.forwardDrive(input.car, input.info.impact.getPosition());
+        controls.withThrottle(throttle).withBoost(controls.holdBoost() && throttle > 0.9);
+        return controls;
 	}
 
 }

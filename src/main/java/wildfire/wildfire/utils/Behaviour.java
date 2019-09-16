@@ -26,11 +26,11 @@ public class Behaviour {
 			
 			double time = (rawSlice.gameSeconds() - elapsedSeconds);
 			if(time < 0) continue;
-			double distance = slicePosition.distance(carPosition) - Constants.BALLRADIUS;
+			double distance = slicePosition.distance(carPosition) - Constants.BALL_RADIUS;
 			double initialVelocity = carVelocity.dotProduct(slicePosition.minus(carPosition).normalized());
 			
 			if(finalSlice || DrivePhysics.maxDistance(time, initialVelocity, carBoost) > distance){
-				Vector3 impactPosition = slicePosition.plus(carPosition.minus(slicePosition).scaledToMagnitude(Constants.BALLRADIUS));
+				Vector3 impactPosition = slicePosition.plus(carPosition.minus(slicePosition).scaledToMagnitude(Constants.BALL_RADIUS));
 				return new Impact(impactPosition, rawSlice, time);
 			}
 		}
@@ -106,11 +106,11 @@ public class Behaviour {
 		ballDifference = ballDifference.scaled(1D / Math.abs(ballDifference.y)); //Make the Y-value 1
 		
 		if(car.team == 0 && ballDifference.y > 0){
-			double distanceFromGoal = Constants.PITCHLENGTH - ballPosition.y;
+			double distanceFromGoal = Constants.PITCH_LENGTH - ballPosition.y;
 			ballDifference = ballDifference.scaled(distanceFromGoal);
 			target = ballPosition.plus(ballDifference);
 		}else if(car.team == 1 && ballDifference.y < 0){
-			double distanceFromGoal = Constants.PITCHLENGTH + ballPosition.y;
+			double distanceFromGoal = Constants.PITCH_LENGTH + ballPosition.y;
 			ballDifference = ballDifference.scaled(distanceFromGoal);
 			target = ballPosition.plus(ballDifference);
 		}
@@ -138,26 +138,26 @@ public class Behaviour {
 	 * Returns whether the trace goes into the opponent's goal
 	 */
 	public static boolean isInCone(CarData car, Vector3 target, double threshold){
-		if(Utils.teamSign(car) * car.position.y > Constants.PITCHLENGTH) return false; //Inside enemy goal
-		Vector2 trace = Utils.traceToY(car.position.flatten(), target.minus(car.position).flatten(), Utils.teamSign(car) * Constants.PITCHLENGTH);
-		return trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + threshold;
+		if(Utils.teamSign(car) * car.position.y > Constants.PITCH_LENGTH) return false; //Inside enemy goal
+		Vector2 trace = Utils.traceToY(car.position.flatten(), target.minus(car.position).flatten(), Utils.teamSign(car) * Constants.PITCH_LENGTH);
+		return trace != null && Math.abs(trace.x) < Constants.GOAL_WIDTH + threshold;
 	}
 
 	public static boolean isInCone(CarData car, Vector3 target){
-		return isInCone(car, target, -Constants.BALLRADIUS);
+		return isInCone(car, target, -Constants.BALL_RADIUS);
 	}
 
 	/*
 	 * Returns whether the trace goes into our own goal (inverse cone)
 	 */
 	public static boolean isTowardsOwnGoal(CarData car, Vector3 target, double threshold){
-		if(Utils.teamSign(car) * car.position.y < -Constants.PITCHLENGTH) return false; //Inside own goal
-		Vector2 trace = Utils.traceToY(car.position.flatten(), target.minus(car.position).flatten(), Utils.teamSign(car) * -Constants.PITCHLENGTH);
-		return trace != null && Math.abs(trace.x) < Constants.GOALHALFWIDTH + threshold;
+		if(Utils.teamSign(car) * car.position.y < -Constants.PITCH_LENGTH) return false; //Inside own goal
+		Vector2 trace = Utils.traceToY(car.position.flatten(), target.minus(car.position).flatten(), Utils.teamSign(car) * -Constants.PITCH_LENGTH);
+		return trace != null && Math.abs(trace.x) < Constants.GOAL_WIDTH + threshold;
 	}
 
 	public static boolean isTowardsOwnGoal(CarData car, Vector3 target){
-		return isTowardsOwnGoal(car, target, Constants.BALLRADIUS);
+		return isTowardsOwnGoal(car, target, Constants.BALL_RADIUS);
 	}
 
 	public static boolean isOpponentBehindBall(DataPacket input){
@@ -205,7 +205,7 @@ public class Behaviour {
 		
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
 	    	Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-	    	if(location.z <= Constants.BALLRADIUS + 15) return location;
+	    	if(location.z <= Constants.BALL_RADIUS + 15) return location;
 	    }
 	    return null;
 	}
@@ -222,7 +222,7 @@ public class Behaviour {
 		
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
 	    	rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
-	    	if(rawSlice.physics().location().z() <= Constants.BALLRADIUS + 15){
+	    	if(rawSlice.physics().location().z() <= Constants.BALL_RADIUS + 15){
 	    		return rawSlice.gameSeconds() - time;
 	    	}
 	    }
@@ -240,20 +240,29 @@ public class Behaviour {
 		if(ballPrediction == null) return false;
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
 	    	Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-	    	if(Math.abs(location.y) >= Constants.PITCHLENGTH) return Math.signum(location.y) != Utils.teamSign(team);
+	    	if(Math.abs(location.y) >= Constants.PITCH_LENGTH) return Math.signum(location.y) != Utils.teamSign(team);
 	    }
 	    return false;
 	}
 
-	public static boolean isOnPrediction(BallPrediction ballPrediction, Vector3 vec){
-		for(int i = 0; i < ballPrediction.slicesLength(); i++){
+	public static boolean isOnPrediction(BallPrediction ballPrediction, Vector3 slicePosition, int start, int end){
+		for(int i = Math.max(0, start); i < Math.min(ballPrediction.slicesLength(), end); i++){
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			Vector3 velocity = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().velocity());
 			
-			double distance = vec.distance(location);
+			double distance = slicePosition.distance(location);
 			if(distance < velocity.scaled(1D / 60).magnitude()) return true;
 		}
 		return false;
+	}
+	
+	public static boolean isOnPrediction(BallPrediction ballPrediction, Vector3 slicePosition){
+		return isOnPrediction(ballPrediction, slicePosition, 0, ballPrediction.slicesLength());
+	}
+	
+	public static boolean isOnPredictionAroundGlobalTime(BallPrediction ballPrediction, Vector3 slicePosition, double globalPathTime){
+		double time = (globalPathTime - ballPrediction.slices(0).gameSeconds());
+		return isOnPrediction(ballPrediction, slicePosition, (int)(time * 60 - 10), (int)(time * 60 + 10)); // 20 frame window.
 	}
 	
 	public static CarData getGoalkeeper(CarData[] cars, int team, double maxGoalDistance){
@@ -269,7 +278,7 @@ public class Behaviour {
 
 	public static Vector2 goalStuck(CarData car, Vector2 target){
 		Vector2 carPosition = car.position.flatten();
-		if(Math.max(Math.abs(carPosition.y), Math.abs(target.y)) > Constants.PITCHLENGTH){
+		if(Math.max(Math.abs(carPosition.y), Math.abs(target.y)) > Constants.PITCH_LENGTH){
 			return new Vector2(Utils.clamp(target.x, -600, 600), target.y);
 		}
 		return target;
@@ -282,7 +291,7 @@ public class Behaviour {
 	public static boolean nobodyElseIntersect(int ourIndex, CarData[] cars, BallPrediction ballPrediction){
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
 			Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-			if(Math.abs(ballPosition.y) > Constants.PITCHLENGTH + Constants.BALLRADIUS + 10) break;
+			if(Math.abs(ballPosition.y) > Constants.PITCH_LENGTH + Constants.BALL_RADIUS + 10) break;
 			double time = (ballPrediction.slices(i).gameSeconds() - cars[0].elapsedSeconds);
 			
 			for(CarData car : cars){
@@ -299,7 +308,7 @@ public class Behaviour {
 		Vector3 carPosition = car.position;
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
 			Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-			if(Math.abs(ballPosition.y) > Constants.PITCHLENGTH + Constants.BALLRADIUS + 10) break;
+			if(Math.abs(ballPosition.y) > Constants.PITCH_LENGTH + Constants.BALL_RADIUS + 10) break;
 			if(ballPosition.distance(carPosition) < 400) return true;
 		}
 		return false;

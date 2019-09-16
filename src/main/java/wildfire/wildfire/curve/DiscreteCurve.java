@@ -97,13 +97,13 @@ public class DiscreteCurve {
 			}else{
 				// Throttle and/or boost.
 				double optimalSpeed = Utils.lerp(optimalSpeeds[(int)Math.floor(index)], optimalSpeeds[(int)Math.ceil(index)], index - Math.floor(index));
-				boolean useBoost = ((this.unlimitedBoost || boost >= 1) && (optimalSpeed - v) > Constants.BOOSTACC * Math.pow(curveStep, 2));
+				boolean useBoost = ((this.unlimitedBoost || boost >= 1) && (optimalSpeed - v) > Constants.BOOST_GROUND_ACCELERATION * Math.pow(curveStep, 2));
 				a = DrivePhysics.determineAcceleration(v, 1, useBoost);
 				if(useBoost) boost -= (100D / 3) * curveStep; // Consume boost.
 				if(!useBoost && v + a * curveStep > optimalSpeed) a = (optimalSpeed - v);
 			}
 			
-			v = Utils.clamp(v + a * curveStep, 1, Constants.MAXCARSPEED);
+			v = Utils.clamp(v + a * curveStep, 1, Constants.MAX_CAR_VELOCITY);
 			s += v * curveStep;
 			
 			int i = (int)Utils.clamp((double)(analysePoints - 1) * s / this.distance, 1, analysePoints - 1);
@@ -123,17 +123,23 @@ public class DiscreteCurve {
 		if(this.invalidCurve()) return null;
 		
 		double[] k = new double[this.points.length];
-		for(int i = 1; i < k.length - 1; i++){
+		for(int i = 1; i < k.length - 1; i++){	
 			Vector2 A = this.points[i - 1], B = this.points[i], C = this.points[i + 1];
+			
+			if(B.minus(A).normalized().dotProduct(C.minus(B).normalized()) > 0.99999){
+				k[i] = DrivePhysics.getTurnRadius(Constants.MAX_CAR_VELOCITY);
+				continue;
+			}
+			
 			double a = A.distance(B), b = B.distance(C), c = C.distance(A);
 			
 			double p = (a + b + c) / 2D;
 			double areaSquared = (p * (p - a) * (p - b) * (p - c));
 			
-			if(areaSquared < 0){
-				k[i] = DrivePhysics.getTurnRadius(Constants.MAXCARSPEED);
-				continue;
-			}
+//			if(areaSquared < 0){
+//				k[i] = DrivePhysics.getTurnRadius(Constants.MAX_CAR_VELOCITY);
+//				continue;
+//			}
 			
 			double area = Math.sqrt(areaSquared);
 			double radius = (a * b * c) / (4D * area);
@@ -227,19 +233,19 @@ public class DiscreteCurve {
 	 * @return Displacement for all 2300 velocities
 	 */
 	private static double[] formAccCurve(boolean boostNotBrake){
-		double v = (boostNotBrake ? 0 : Constants.MAXCARSPEED);
+		double v = (boostNotBrake ? 0 : Constants.MAX_CAR_VELOCITY);
 		double s = 0;
 		
-		double[] curve = new double[(int)Constants.MAXCARSPEED + 1];
+		double[] curve = new double[(int)Constants.MAX_CAR_VELOCITY + 1];
 		while(true){
 			double a = DrivePhysics.determineAcceleration(v, boostNotBrake ? 1 : -1, boostNotBrake);
 			double step = (1D / Math.abs(a));
-			v = Utils.clamp(v + a * step, 0, Constants.MAXCARSPEED);
+			v = Utils.clamp(v + a * step, 0, Constants.MAX_CAR_VELOCITY);
 			s += v * step;
 			
 			curve[(int)v] = Math.min(s, curve[(int)v] == 0 ? Double.MAX_VALUE : curve[(int)v]);
 			
-			if(boostNotBrake ? v >= Constants.MAXCARSPEED : v <= 0) break;
+			if(boostNotBrake ? v >= Constants.MAX_CAR_VELOCITY : v <= 0) break;
 		}
 //		System.out.println(Arrays.toString(curve));
 		
@@ -251,7 +257,7 @@ public class DiscreteCurve {
 	}
 	
 	public double getSpeed(double t){
-		if(this.invalidCurve()) return Constants.MAXCARSPEED;
+		if(this.invalidCurve()) return Constants.MAX_CAR_VELOCITY;
 		double speedIndex = Utils.clamp(t * (this.speeds.length - 1), 0, this.speeds.length - 1);
 		return Utils.lerp(this.speeds[(int)Math.floor(speedIndex)], 
 				this.speeds[(int)Math.ceil(speedIndex)], 
@@ -263,7 +269,7 @@ public class DiscreteCurve {
 	}
 	
 	public double getAcceleration(double t){
-		if(this.invalidCurve()) return Constants.MAXCARSPEED;
+		if(this.invalidCurve()) return Constants.MAX_CAR_VELOCITY;
 		double accIndex = Utils.clamp(t * (double)(this.speeds.length - 1), 0, this.speeds.length - 1);
 		return Utils.lerp(this.accelerations[(int)Math.floor(accIndex)], 
 				this.accelerations[(int)Math.ceil(accIndex)], 

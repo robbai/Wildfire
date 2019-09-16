@@ -23,7 +23,7 @@ public class DrivePhysics {
 	 *  https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc#L34-L53
 	 */
 	private static double curvature(double v){
-		v = Utils.clamp(Math.abs(v), 0, Constants.MAXCARSPEED);
+		v = Utils.clamp(Math.abs(v), 0, Constants.MAX_CAR_VELOCITY);
 
 		for(int i = 0; i < 5; i++){
 			if(speedCurvature[i][0] <= v && (v < speedCurvature[i + 1][0] || (i == 4 && v == speedCurvature[5][0]))){
@@ -41,15 +41,15 @@ public class DrivePhysics {
 	public static double determineAcceleration(double velocityForward, double throttle, boolean boost){
 		if(boost) throttle = 1;
 
-		double boostAcceleration = (boost ? Constants.BOOSTACC : 0);
+		double boostAcceleration = (boost ? Constants.BOOST_GROUND_ACCELERATION : 0);
 
 		// Coasting and braking.
 		boolean coast = (Math.abs(throttle) < 0.01);
 		boolean brake = (!coast && velocityForward * throttle < 0);
 		if(coast){
-			return -Math.signum(velocityForward) * Constants.COASTACC;
+			return -Math.signum(velocityForward) * Constants.COAST_ACCELERATION;
 		}else if(brake){
-			return -Math.signum(velocityForward) * (Constants.BRAKEACC + boostAcceleration);
+			return -Math.signum(velocityForward) * (Constants.BRAKE_ACCELERATION + boostAcceleration);
 		}
 
 		// Throttle.
@@ -90,7 +90,7 @@ public class DrivePhysics {
 		Vector2 local = Utils.toLocal(car, target).flatten();
 
 		int step = 20;
-		for(int v = 0; v <= Constants.MAXCARSPEED; v += step){
+		for(int v = 0; v <= Constants.MAX_CAR_VELOCITY; v += step){
 			double turningRadius = getTurnRadius(v);
 
 			Vector2 left = new Vector2(turningRadius, 0);
@@ -102,7 +102,7 @@ public class DrivePhysics {
 			}
 		}
 
-		return Constants.MAXCARSPEED;
+		return Constants.MAX_CAR_VELOCITY;
 	}
 
 	public static double maxVelocity(double velocityForward, double boost, double maxTime){
@@ -115,7 +115,7 @@ public class DrivePhysics {
 			
 			velocity += acceleration * step;
 			
-			if(Math.abs(velocity) > Constants.MAXCARSPEED) return Constants.MAXCARSPEED * Math.signum(velocity);
+			if(Math.abs(velocity) > Constants.MAX_CAR_VELOCITY) return Constants.MAX_CAR_VELOCITY * Math.signum(velocity);
 			
 			boost -= (100D / 3) * step;
 			
@@ -139,7 +139,7 @@ public class DrivePhysics {
 			
 			velocity += acceleration * step;
 			
-			if(Math.abs(velocity) > Constants.MAXCARSPEED) return Constants.MAXCARSPEED * Math.signum(velocity);
+			if(Math.abs(velocity) > Constants.MAX_CAR_VELOCITY) return Constants.MAX_CAR_VELOCITY * Math.signum(velocity);
 			
 			distance += velocity * step;
 			
@@ -161,7 +161,7 @@ public class DrivePhysics {
 			if(Math.abs(acceleration) < 0.1 && Math.abs(velocity) < 0.1) break;
 			
 			velocity += acceleration * step;
-			velocity = Utils.clamp(velocity, -Constants.MAXCARSPEED, Constants.MAXCARSPEED);
+			velocity = Utils.clamp(velocity, -Constants.MAX_CAR_VELOCITY, Constants.MAX_CAR_VELOCITY);
 			boost -= (100D / 3) * step;
 			
 			displace += velocity * step;
@@ -205,7 +205,7 @@ public class DrivePhysics {
 	}
 	
 	public static double minTravelTime(double forwardVelocity, double startBoost, double targetDistance){
-		return minTravelTime(forwardVelocity, startBoost, targetDistance, Constants.MAXCARSPEED);
+		return minTravelTime(forwardVelocity, startBoost, targetDistance, Constants.MAX_CAR_VELOCITY);
 	}
 	
 	public static double minTravelTime(CarData car, double targetDistance){

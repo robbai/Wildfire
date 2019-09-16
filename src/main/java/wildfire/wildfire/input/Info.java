@@ -108,7 +108,7 @@ public class Info {
 			
 			double time = (rawSlice.gameSeconds() - car.elapsedSeconds);
 			double jumpHeight = localSlice.z;
-			if(jumpHeight > JumpPhysics.maxJumpHeight + (Constants.BALLRADIUS + SmartDodgeAction.dodgeDistance) * (SmartDodgeAction.zRatio * 0.72)) continue;
+			if(jumpHeight > JumpPhysics.maxJumpHeight + (Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance) * (SmartDodgeAction.zRatio * 0.72)) continue;
 //			if(jumpHeight > JumpPhysics.maxJumpHeight) continue;
 			double peakTime = JumpPhysics.getFastestTimeZ(jumpHeight);
 			double driveTime = (time - peakTime);
@@ -119,7 +119,7 @@ public class Info {
 			
 			if(finalVelocity < DrivePhysics.maxVelocity(initialVelocity, car.boost, time) && acceleration < 1800){
 //				Vector3 impactPosition = slicePosition.plus(car.position.minus(slicePosition).scaledToMagnitude(Constants.BALLRADIUS));
-				Vector3 impactPosition = slicePosition.plus(slicePosition.minus(Constants.enemyGoal(car).withZ(slicePosition.z)).scaledToMagnitude(Constants.BALLRADIUS + SmartDodgeAction.dodgeDistance * 0.405));
+				Vector3 impactPosition = slicePosition.plus(slicePosition.minus(Constants.enemyGoal(car).withZ(slicePosition.z)).scaledToMagnitude(Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance * 0.405));
 //				Vector3 impactPosition = slicePosition;
 				return new Impact(impactPosition, rawSlice, time);
 			}

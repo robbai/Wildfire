@@ -67,7 +67,6 @@ public class PatienceState extends State {
 			if(pointDisplace.magnitude() > 1500 || input.car.velocity.magnitude() > 1100){
 				Vector2 impactDisplace = input.info.impact.getPosition().minus(input.car.position).flatten();
 				double angle = pointDisplace.angle(impactDisplace);
-//				System.out.println((int)Math.toDegrees(angle) + " degrees");
 				if(angle < 0.08) return false;
 			}
 		}
@@ -95,17 +94,16 @@ public class PatienceState extends State {
 		wildfire.renderer.drawString2d("Final Velocity: " + (int)v + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
 		wildfire.renderer.drawString2d("Acceleration: " + (int)a + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
 		
-		double radians = Handling.aim(car, point.getPosition().flatten());
-//	    double steer = radians * -3;
-	    
-	    ControlsOutput controls = Handling.driveDestination(car, point.getPosition());
-		if(Math.abs(radians) > 0.3 || v > DrivePhysics.maxVelocity(u, car.boost) - 250){
+		// Controls.
+	    ControlsOutput controls;
+	    double pointRadians = Handling.aim(car, point.getPosition().flatten());
+		if(Math.abs(pointRadians) > 0.3 || v > DrivePhysics.maxVelocity(u, car.boost) - 250){
 			double throttle = Handling.produceAcceleration(car, a);
-			controls = controls.withThrottle(throttle).withBoost(throttle > 1 && Math.abs(radians) < 0.2);
+			controls = Handling.forwardDrive(car, point.getPosition());
+			controls = controls.withThrottle(throttle).withBoost(throttle > 1 && Math.abs(pointRadians) < 0.2);
 		}else{
 			controls = Handling.stayStill(car);
 		}
-		
 		return controls;
 	}
 

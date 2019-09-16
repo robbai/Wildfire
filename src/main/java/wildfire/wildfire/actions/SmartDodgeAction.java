@@ -68,13 +68,13 @@ public class SmartDodgeAction extends Action {
 			
 			// Cone.
 			if(coneRequired){
-				if(Utils.teamSign(input.car) * carLocation.y > Constants.PITCHLENGTH) continue; // Inside enemy goal.
-				Vector2 trace = Utils.traceToY(carLocation.flatten(), ballLocation.minus(carLocation).flatten(), Utils.teamSign(input.car) * Constants.PITCHLENGTH);
-				if(trace == null || Math.abs(trace.x) > Constants.GOALHALFWIDTH - Constants.BALLRADIUS) continue;
+				if(Utils.teamSign(input.car) * carLocation.y > Constants.PITCH_LENGTH) continue; // Inside enemy goal.
+				Vector2 trace = Utils.traceToY(carLocation.flatten(), ballLocation.minus(carLocation).flatten(), Utils.teamSign(input.car) * Constants.PITCH_LENGTH);
+				if(trace == null || Math.abs(trace.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS) continue;
 			}
 
 //			if(distance < Constants.BALLRADIUS + dodgeDistance && displace.normalized().z < zRatio){
-			if(distance < Constants.BALLRADIUS + dodgeDistance){
+			if(distance < Constants.BALL_RADIUS + dodgeDistance){
 //			if(distance < Constants.BALLRADIUS){
 				this.target = new Slice(ballLocation, time);
 				this.pressTime = press;
@@ -120,7 +120,7 @@ public class SmartDodgeAction extends Action {
 			}
 			
 //			if(timeDifference >= this.target.getTime() - tick){
-			if(willIntersectNextTick(car, wildfire.ballPrediction, 1)){
+			if(willIntersectNextTick(car, wildfire.ballPrediction, 2)){
 				// Dodge
 				controls.withJump(true);
 				this.angle = Handling.aim(car, (onPrediction ? this.target.getPosition() : input.ball.position));
@@ -160,21 +160,17 @@ public class SmartDodgeAction extends Action {
 	    double rollVel = car.angularVelocity.dotProduct(car.orientation.noseVector);
 	    
 	    for(int i = 0; i < ticks; i++){
-			carVelocity = carVelocity.plus(AirControl.worldUp.scaled(-Constants.GRAVITY * tick)).capMagnitude(Constants.MAXCARSPEED);
+			carVelocity = carVelocity.plus(AirControl.worldUp.scaled(-Constants.GRAVITY * tick)).capMagnitude(Constants.MAX_CAR_VELOCITY);
 			carPosition = carPosition.plus(carVelocity.scaled(tick));
 	    }
 	    CarOrientation carOrientation = CarOrientation.convert(car.orientation.eularPitch + pitchVel * tick * ticks, car.orientation.eularYaw + yawVel * tick * ticks, car.orientation.eularRoll + rollVel * tick * ticks);
 		
-		ballPosition = ballPosition.plus(carPosition.minus(ballPosition).scaledToMagnitude(Constants.BALLRADIUS));
+		ballPosition = ballPosition.plus(carPosition.minus(ballPosition).scaledToMagnitude(Constants.BALL_RADIUS));
 		
 		Vector3 local = Utils.toLocal(carPosition, carOrientation, ballPosition);
+		local = local.plus(Constants.RIPPER_OFFSET);
 		
-		// https://discordapp.com/channels/348658686962696195/348661571297214465/617774276879056919
-	    return Math.abs(local.y) - 9 < 127.93 && Math.abs(local.x) < 83.28 && Math.abs(local.z) - 15.75 < 31.30;
-	}
-	
-	private boolean willIntersectNextTick(CarData car, BallPrediction ballPrediction){
-		return willIntersectNextTick(car, ballPrediction, 1);
+	    return Math.abs(local.x) < Constants.RIPPER.x && Math.abs(local.y) < Constants.RIPPER.y && Math.abs(local.z) < Constants.RIPPER.z;
 	}
 
 }

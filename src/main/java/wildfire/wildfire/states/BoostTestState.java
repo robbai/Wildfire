@@ -12,7 +12,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class BoostTestState extends BoostState {
 
-	private final double maxBoost = 50;
+	private final double maxBoost = 55;
 
 	public BoostTestState(Wildfire wildfire){
 		super("Boost (Greedy)", wildfire);
@@ -28,8 +28,8 @@ public class BoostTestState extends BoostState {
 	private BoostPad getBoost(InfoPacket input){
 		Impact impact = input.info.impact;
 		double impactTime = impact.getTime();
-		if(Math.abs(impact.getPosition().y) > (Constants.PITCHLENGTH - 1100)) impactTime *= 1.2;
-		if(Math.abs(impact.getPosition().x) > (Constants.PITCHWIDTH - 950)) impactTime *= 1.25;
+		if(Math.abs(impact.getPosition().y) > (Constants.PITCH_LENGTH - 1100)) impactTime *= 1.2;
+		if(Math.abs(impact.getPosition().x) > (Constants.PITCH_WIDTH - 950)) impactTime *= 1.3;
 		if(impact.getPosition().z > 260) impactTime *= 1.35;
 		
 		boolean carCorrectSide = Behaviour.correctSideOfTarget(input.car, impact.getBallPosition());

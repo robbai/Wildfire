@@ -5,8 +5,6 @@ import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.utils.Behaviour;
-import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Utils;
 
 public class ShadowTestState extends ShadowState {
 

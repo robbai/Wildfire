@@ -22,11 +22,10 @@ import wildfire.wildfire.utils.Utils;
 
 public class ShadowState extends State {
 
-	protected Vector2 homeGoal;
+	private Vector2 homeGoal;
 
 	public ShadowState(String name, Wildfire wildfire){
 		super(name, wildfire);
-		this.updateHomeGoal(wildfire.team);
 	}
 
 	public ShadowState(Wildfire wildfire){
@@ -35,35 +34,37 @@ public class ShadowState extends State {
 
 	@Override
 	public boolean ready(InfoPacket input){
-		//Avoid stopping forever
+		this.homeGoal = Constants.homeGoal(input.car.team);
+		
+		// Avoid stopping forever.
 		if(avoidStoppingForever(input)) return false;
 		
 		boolean correctSide = Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition());
 		
-		//Zooming at the ball
+		// Zooming at the ball.
 		double velocityImpactCorrection = input.car.velocity.flatten().correctionAngle(input.info.impact.getPosition().minus(input.car.position).flatten());
 		if(Math.abs(velocityImpactCorrection) < 0.25 && input.info.impact.getTime() < (correctSide ? 1.6 : 1.2)
 				&& input.car.forwardVelocity > 900 && input.info.impact.getPosition().y * Utils.teamSign(input.car) < -1500) return false;
 		
-		//Ball must not be close to our net
+		// Ball must not be close to our net.
 		if(input.ball.position.flatten().distance(homeGoal) < 3500) return false; // || Utils.teamSign(input.car) * input.ball.position.y < -4700
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < -2900) return false;
 		
-		//We're on the wrong side of the ball
+		// We're on the wrong side of the ball.
 		if(!correctSide && input.ball.velocity.y * Utils.teamSign(input.car) < 1100){
 			double opponentDist = Behaviour.closestOpponentDistance(input, input.ball.position);
 			return opponentDist > Math.max(1500, input.info.impact.getTime() * 1200) || Behaviour.isTowardsOwnGoal(input.car, input.info.impact.getPosition());
 		}
 		
-		//The ball must not be centralised
+		// The ball must not be centralised.
 		if(Math.abs(input.ball.position.x) < (Behaviour.isOpponentBehindBall(input) ? 1600 : 1400)) return false;
 		
-		//Outside of the "useful hitting arc"
+		// Outside of the "useful hitting arc".
 		if(Math.abs(input.ball.position.y) < 3500 && new Vector3(0, -Utils.teamSign(input.car), 0).angle(input.car.position.minus(input.info.impact.getPosition())) > Math.PI * 0.55){
 			if(input.info.impact.getPosition().distanceFlat(input.car.position) > 2800) return true;
 		}
 		
-		//There is no defender
+		// There is no defender.
 		if(!Behaviour.isOpponentBehindBall(input)) return false;
 		
 		return Math.abs(Handling.aim(input.car, input.info.impact.getPosition().flatten())) > Math.PI * 0.6 && Utils.teamSign(input.car.team) * input.ball.velocity.y > -800;
@@ -71,23 +72,23 @@ public class ShadowState extends State {
 	
 	@Override
 	public boolean expire(InfoPacket input){		
-		//Avoid stopping forever
+		// Avoid stopping forever.
 		if(avoidStoppingForever(input)) return true;
 		
 		double distance = input.info.impact.getPosition().distanceFlat(input.car.position);
 		boolean correctSide = Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition());
 				
-		//Aiming very close to the ball, and close-by		
+		// Aiming very close to the ball, and close-by.		
 		if(Math.abs(Handling.aim(input.car, input.info.impact.getPosition().flatten())) < 0.225 && distance < 3300) return true;
 		
-		//Ball is centralised
+		// Ball is centralised.
 		if(correctSide && Math.abs(input.ball.position.x) < (Behaviour.hasTeammate(input) ? 1400 : 1200) && distance < 7000) return true;
 		
-		//Ball is close to our net
+		// Ball is close to our net.
 		if(input.ball.position.flatten().distance(homeGoal) < 3300 || Utils.teamSign(input.car) * input.ball.position.y < -4500) return true;
 		if(Utils.teamSign(input.car) * input.ball.velocity.y < -2400) return true;		
 		
-		//Beating the opponent
+		// Beating the opponent.
 		double ourDistance = input.car.position.distance(input.ball.position);
 		if(ourDistance < (Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition().flatten()) ? 1400 : 1650)) return true;
 		double closestOpponentDistance = Behaviour.closestOpponentDistance(input, input.ball.position);
@@ -100,10 +101,7 @@ public class ShadowState extends State {
 
 	@Override
 	public ControlsOutput getOutput(InfoPacket input){
-		//Update the home goal every three seconds
-		if(input.elapsedSeconds % 3 < 1) updateHomeGoal(input.car.team);
-		
-		//Drive down the wall
+		// Drive down the wall.
 		if(Behaviour.isOnWall(input.car)){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
@@ -117,43 +115,38 @@ public class ShadowState extends State {
 		
 		Vector2 target = getTarget(input);
 		
-		double steerRadians = Handling.aim(input.car, target);
+		double radians = Handling.aim(input.car, target);
 		double distance = target.distance(input.car.position.flatten());
 		boolean reverse = false;
 		
 		// Actions.
 		if(input.car.hasWheelContact && distance > 2350 && !input.car.isSupersonic && input.car.position.z < 100){
-			if(input.car.velocity.magnitude() > (input.car.boost == 0 ? 1250 : 1500) && Math.abs(steerRadians) < 0.4){
+			double velocityNoseComponent = input.car.velocity.normalized().dotProduct(input.car.orientation.noseVector);
+			if(input.car.velocity.magnitude() > (input.car.boost == 0 ? 1250 : 1500) && Math.abs(radians) < 0.3 && velocityNoseComponent > 0.95){
 				double componentTowardsBall = input.car.velocity.normalized().dotProduct(input.info.impact.getPosition().minus(input.car.position).normalized());
-				double dodgeRadians = (input.info.impact.getPosition().distance(input.car.position) > (componentTowardsBall > 0.9 ? 500 : 250) ? steerRadians : Handling.aim(input.car, input.ball.position.flatten()));
+				double dodgeRadians = (input.info.impact.getPosition().distance(input.car.position) > (componentTowardsBall > 0.9 ? 500 : 250) ? radians : Handling.aim(input.car, input.ball.position.flatten()));
 				currentAction = new DodgeAction(this, dodgeRadians, input);
-			}else if(Math.abs(steerRadians) > Math.PI * 2.7){
+			}else if(Math.abs(radians) > Math.toRadians(120)){
 				double forwardVelocity = input.car.forwardVelocity;
 				reverse = (forwardVelocity < 0);
-				if(reverse && forwardVelocity < -1000) currentAction = new HalfFlipAction(this, input);
+				if(forwardVelocity < -950 && velocityNoseComponent < -0.9) currentAction = new HalfFlipAction(this, input);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;
 		}
 		
-		float throttle;
-		if(distance < 3000 && input.car.velocity.magnitude() > distance * 2){
+		double throttle;
+		if(distance < 3000 && input.car.velocityDir(target.withZ(input.car.position.z).minus(input.car.position)) > distance * 2){
 			throttle = (reverse ? 1 : -1);
 			wildfire.sendQuickChat(QuickChatSelection.Information_AllYours);
 		}else{
-			throttle = (float)distance / 4000F * (reverse ? -1 : 1);
+			throttle = (distance / 4000 * (reverse ? -1 : 1));
 			if(distance > 3500 && input.car.isSupersonic) wildfire.sendQuickChat(QuickChatSelection.Information_Defending);
 		}
 		
-		if(reverse){
-			steerRadians = Utils.invertAim(steerRadians);
-		}else{
-			steerRadians = -steerRadians;
-		}
-		
-        return new ControlsOutput().withSteer(steerRadians * 3).withThrottle(throttle)
-        		.withBoost(distance > 1300 && Math.abs(steerRadians) < 0.2 && !Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition()))
-        		.withSlide(input.car.velocity.magnitude() < 1600 && Math.abs(steerRadians) > 1.3);
+		ControlsOutput controls = (reverse ? Handling.steeringBackwards(input.car, target) : Handling.steering(input.car, target));
+		return controls.withThrottle(throttle)
+				.withBoost(controls.holdBoost() && throttle > 0.9 && distance > 1300 && !Behaviour.correctSideOfTarget(input.car, input.info.impact.getPosition()));
 	}
 
 	/**
@@ -175,18 +168,11 @@ public class ShadowState extends State {
 			}
 		}
 		
-		wildfire.renderer.drawCircle(Color.BLACK, target, (bestBoost == null ? Constants.BALLRADIUS : 45));
+		wildfire.renderer.drawCircle(Color.BLACK, target, (bestBoost == null ? Constants.BALL_RADIUS : 45));
 		if(bestBoost == null) return target;
 		
 		wildfire.renderer.drawCircle(Color.BLUE, bestBoost.getLocation().flatten(), 70);
 		return bestBoost.getLocation().flatten();
-	}
-	
-	/**
-	 * I don't know why I made this a method
-	 */
-	private void updateHomeGoal(int team){
-		homeGoal = Constants.homeGoal(team);
 	}
 
 }

@@ -83,39 +83,38 @@ public class CompositeArc extends Curve {
 		length = L[0] + L[1] + L[2] + L[3] + L[4];
 	}
 	
-	public static CompositeArc create(CarData car, Vector2 ballPosition, Vector2 goal, double finalVelocity, double lineup){
-		double carLength = 50;
-		Vector2 carDirection = car.orientation.noseVector.flatten(), carPosition = car.position.flatten(), 
-				/**ballPosition = ball.flatten(),*/ goalDirection = goal.minus(ballPosition).normalized();
-		double playerTurnRadius = DrivePhysics.getTurnRadius(Math.max(Constants.MAXCARTHROTTLE, car.forwardVelocityAbs)),
-				ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
+	public static CompositeArc create(CarData car, Vector2 ball, Vector2 goal, double finalVelocity, double L0, double L4){
+		// Sanitise.
+		L0 = Math.max(1, Math.abs(L0));
+		L4 = Math.max(1, Math.abs(L4));
 		
-		CompositeArc shortest = null;
+		Vector2 carDirection = car.orientation.noseVector.flatten(), carPosition = car.position.flatten();
+		Vector2 goalDirection = goal.minus(ball).normalized();
+		double playerTurnRadius = DrivePhysics.getTurnRadius(Math.max(Constants.MAX_THROTTLE_VELOCITY, car.forwardVelocityAbs)), ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
+		
+		// Find the shortest composite-arc based on its length.
+		CompositeArc shortestCompositeArc = null;
 		for(double playerTurn : signs){
 			for(double ballTurn : signs){
-				CompositeArc compArc;
+				CompositeArc compositeArc;
 				try{
-					compArc = new CompositeArc(carLength, carPosition, carDirection, playerTurn * playerTurnRadius, carLength + lineup, ballPosition, goalDirection, ballTurn * ballTurnRadius);
+					compositeArc = new CompositeArc(L0, carPosition, carDirection, playerTurn * playerTurnRadius, L4, ball, goalDirection, ballTurn * ballTurnRadius);
 				}catch(Exception e){
-					compArc = null;
+					compositeArc = null;
 					e.printStackTrace();
 				}
 				
-				if(compArc != null && (shortest == null || compArc.length < shortest.length)){
-					shortest = compArc;
+				if(compositeArc != null && (shortestCompositeArc == null || compositeArc.length < shortestCompositeArc.length)){
+					shortestCompositeArc = compositeArc;
 				}
 			}
 		}
 		
-		return shortest;
+		return shortestCompositeArc;
 	}
 	
-	public static CompositeArc create(CarData car, Vector2 ball, Vector2 goal, double lineup){
-		return create(car, ball, goal, DrivePhysics.maxVelocity(car.forwardVelocity, car.boost), lineup);
-	}
-	
-	public static CompositeArc create(CarData car, Vector2 ball, Vector2 goal){
-		return create(car, ball, goal, DrivePhysics.maxVelocity(car.forwardVelocity, car.boost), 0);
+	public static CompositeArc create(CarData car, Vector2 ball, Vector2 goal, double L0, double L4){
+		return create(car, ball, goal, DrivePhysics.maxVelocity(car.forwardVelocityAbs, car.boost), L0, L4);
 	}
 	
 	@Override
@@ -226,7 +225,7 @@ public class CompositeArc extends Curve {
 
 		double traversed = DrivePhysics.maxDistance(firstArcAccTime, velocity, car.boost);
 		velocity = firstArcFinalVel;
-		boost -= (Constants.BOOSTRATE * firstArcAccTime);
+		boost -= (Constants.BOOST_RATE * firstArcAccTime);
 		double time = firstArcAccTime;
 
 		double lengthL0 = (includeL0 ? this.getL(0) : 0);

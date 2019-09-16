@@ -21,34 +21,36 @@ public class PathState extends State {
 	 * it kind of assists the other states
 	 */
 	
-	private static final double maxExtraTime = 1.1, selfDoubtTime = -0/**.08*/;
+	private final double maxExtraTime = 1.5;
 	
 	private boolean force, dodge = false;
 	private Vector3 slicePosition;
 
+	private Vector2 enemyGoal;
+
+	private double globalPathTime;
+
 	public PathState(Wildfire wildfire, boolean force){
 		super("Path", wildfire);
 		this.force = force;
+		this.enemyGoal = Constants.enemyGoal(wildfire.team);
 	}
 	
 	@Override
 	public boolean ready(InfoPacket input){
 		if(!force){
-//			// This is to avoid starting a path when there is a shooter
-//			if(Behaviour.closestOpponentDistance(input, input.ball.position) < 1700 && Behaviour.isOpponentBehindBall(input)){
-//				//&& Utils.teamSign(input.car) * input.info.impact.getPosition().y < 1200
-//				return false;
-//			}
-			
 			if(!requirements(input)) return false;
 		}
 		
-		int startLow = input.info.impact.getFrame();
-		int low = startLow, high = Math.min(wildfire.ballPrediction.slicesLength(), (int)Math.ceil(input.info.impact.getFrame() + maxExtraTime * 60));
+		int startLow = input.info.impact.getFrame(), low = startLow;
+		int high = wildfire.ballPrediction.slicesLength();
+//		if(!force) high = Math.min(high, (int)Math.ceil(input.info.impact.getFrame() + maxExtraTime * 60));
+		high = Math.min(high, (int)Math.ceil(input.info.impact.getFrame() + maxExtraTime * 60));
+//		high = Math.min(high, (int)Math.ceil(input.info.impact.getFrame() * 1.4));
 		
-		DiscreteCurve[] results = new DiscreteCurve[high - low + 1];
+		CompositeArc[] results = new CompositeArc[high - low + 1];
 		
-		// Generate the path
+		// Generate the path.
 		while(low < high){
 			int middle = Math.floorDiv(low + high, 2); 
 					
@@ -57,38 +59,48 @@ public class PathState extends State {
 			Vector3 slicePosition = Vector3.fromFlatbuffer(rawSlice.physics().location());
 			double time = (rawSlice.gameSeconds() - input.elapsedSeconds);
 			
-//			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -400);
-			Vector2 enemyGoal = Constants.enemyGoal(input.car);
-			
 			Vector2 ballPosition = slicePosition.flatten();
-			ballPosition = ballPosition.plus(ballPosition.minus(enemyGoal).scaledToMagnitude(Constants.BALLRADIUS));
+			ballPosition = offsetBall(ballPosition, enemyGoal);
 
-			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, 0);
-			DiscreteCurve discreteCurve = (compositeArc == null ? null : new DiscreteCurve(input.car.forwardVelocityAbs, input.car.boost, compositeArc));
-			results[middle - startLow] = discreteCurve;
+			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, Constants.RIPPER.y, 0);
+//			DiscreteCurve discreteCurve = new DiscreteCurve(input.car.forwardVelocityAbs, input.car.boost, compositeArc);
+//			results[middle - startLow] = discreteCurve;
+			results[middle - startLow] = compositeArc;
 			
-			if(discreteCurve == null || discreteCurve.getTime() + selfDoubtTime > time){
+//			if(discreteCurve.getTime() > time){
+//			if(compositeArc.minTravelTime(input.car, true, false) + 1D / 60 > time){
+//			if(Utils.lerp(compositeArc.minTravelTime(input.car, true, true), discreteCurve.getTime(), 0.05) > time){
+			time -= 1D / 60;
+			double acceleration = (2 * (compositeArc.getLength() - time * input.car.forwardVelocity)) / Math.pow(time, 2);
+//			if(acceleration > 1000 || compositeArc.minTravelTime(input.car, true, true) > time){
+			if(acceleration > 1000){
 				low = middle + 1;
 			}else{
 				high = middle;
 			}
 		}
 		
-		DiscreteCurve discreteCurve = results[low - startLow];
-		if(discreteCurve == null) return false;
+//		DiscreteCurve discreteCurve = results[low - startLow];
+//		if(discreteCurve == null) return false;
+		CompositeArc compositeArc = results[low - startLow];
+		if(compositeArc == null) return false;
+		DiscreteCurve discreteCurve = new DiscreteCurve(input.car.forwardVelocityAbs, input.car.boost, compositeArc);
 		
 		// Extra conditions.
 		double pathTime = (wildfire.ballPrediction.slices(low).gameSeconds() - input.elapsedSeconds);
-		if(pathTime > input.info.enemyImpactTime - (0.2 + selfDoubtTime)) return false;
+		if(pathTime > input.info.enemyImpactTime - 0.25) return false;
 		Vector3 slicePosition = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(low).physics().location());
 		if(Utils.toLocal(input.car, slicePosition).z > 130) return false;
 		if(curveOutOfBounds(discreteCurve)) return false;
 		
+//		System.out.println("startLow = " + startLow + ", low = " + low + ", high = " + high + ", mid = " + Math.floorDiv(low + high, 2));
+		
 		// Start the mechanic!
 		this.slicePosition = slicePosition;
-//		FollowDiscreteMechanic follow = new FollowDiscreteMechanic(this, discreteCurve, input.elapsedSeconds, this.dodge, pathTime + 0.13);
-		FollowDiscreteMechanic follow = new FollowDiscreteMechanic(this, discreteCurve, input.elapsedSeconds, this.dodge, pathTime);
-		follow.linearTargetTime = true;
+		this.globalPathTime = (pathTime + input.elapsedSeconds);
+		FollowDiscreteMechanic follow = new FollowDiscreteMechanic(this, discreteCurve, input.elapsedSeconds, this.dodge, pathTime - 1D / 60);
+		follow.linearTarget = true;
+		follow.renderPredictionToTargetTime = true;
 		this.currentMechanic = follow;
 		if(this.runningMechanic()){
 			return true;
@@ -96,6 +108,10 @@ public class PathState extends State {
 			this.currentMechanic = null;
 			return false;
 		}
+	}
+
+	private Vector2 offsetBall(Vector2 ballPosition, Vector2 enemyGoal){
+		return ballPosition.plus(ballPosition.minus(enemyGoal).scaledToMagnitude(Constants.BALL_RADIUS + 65));
 	}
 
 	private boolean curveOutOfBounds(DiscreteCurve discreteCurve){
@@ -111,7 +127,7 @@ public class PathState extends State {
 		if(!force && !requirements(input)) return true;
 		
 		// Somebody messed it up.
-		if(this.slicePosition != null && !Behaviour.isOnPrediction(wildfire.ballPrediction, this.slicePosition)){
+		if(this.slicePosition != null && !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, this.slicePosition, this.globalPathTime)){
 			return true;
 		}
 		
@@ -125,10 +141,9 @@ public class PathState extends State {
 	}
 	
 	private boolean requirements(InfoPacket input){
-//		return ((input.info.impactDistance > 700 || this.runningMechanic()) && input.info.impact.getTime() > 0.4);
-		return (input.info.impactDistance > 1100 && input.info.impact.getTime() > 0.2);
-//		return (input.car.forwardVelocity > 1200 && input.info.impact.getTime() > 0.4);
-//		return (input.info.impact.getTime() > 0.2);
+		if(!this.runningMechanic() && input.info.impactDistance < 91300) return false;
+//		return input.car.forwardVelocity > (input.car.boost < 5 ? 1350 : 1550);
+		return input.car.forwardVelocity > 1300;
 		
 //		if(Behaviour.isBallAirborne(input.ball) || Behaviour.isKickoff(input) || input.ball.velocity.flatten().magnitude() > 3200
 //				|| Utils.distanceToWall(input.car.position) < 400 || input.car.velocityDir(input.ball.position.minus(input.car.position).flatten()) < -1000) return false;

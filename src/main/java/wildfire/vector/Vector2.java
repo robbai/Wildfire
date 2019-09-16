@@ -106,13 +106,9 @@ public class Vector2 {
     public Vector2 rotate(double angle){
     	return new Vector2(x * Math.cos(angle) - y * Math.sin(angle), y * Math.cos(angle) + x * Math.sin(angle));
     }
-
-	public Vector3 withZ(double z){
-		return new Vector3(x, y, z);
-	}
 	
 	public Vector2 confine(double borderX, double borderY){
-		return new Vector2(Math.min(Constants.PITCHWIDTH - borderX, Math.max(-Constants.PITCHWIDTH + borderX, x)), Math.min(Constants.PITCHLENGTH - borderY, Math.max(-Constants.PITCHLENGTH + borderY, y)));
+		return new Vector2(Math.min(Constants.PITCH_WIDTH - borderX, Math.max(-Constants.PITCH_WIDTH + borderX, x)), Math.min(Constants.PITCH_LENGTH - borderY, Math.max(-Constants.PITCH_LENGTH + borderY, y)));
 	}
 	
 	public Vector2 confine(){
@@ -135,6 +131,10 @@ public class Vector2 {
 		return new Vector2(this.x, y);
 	}
 	
+	public Vector3 withZ(double z){
+		return new Vector3(this.x, this.y, z);
+	}
+	
 	@Override
 	public String toString(){
 		boolean little = (this.magnitude() < 1);
@@ -146,7 +146,7 @@ public class Vector2 {
 	}
 	
 	public boolean isOutOfBounds(){
-		 return Math.abs(x) > Constants.PITCHWIDTH || Math.abs(y) > Constants.PITCHLENGTH;
+		 return Math.abs(x) > Constants.PITCH_WIDTH || Math.abs(y) > Constants.PITCH_LENGTH;
 	}
 	
 	public double magnitudeInDirection(Vector2 direction){

@@ -14,8 +14,9 @@ def make_default_playlist():
     # Add the exercises
     exercises = [
         #(BallRollingToGoalie('Ball Rolling To Goalie'), 1)
-        #(BackboardShot('Backboard Shot'), 1)
-        (RunawayBall('Runaway Ball'), 1)
+        (BackboardShot('Backboard Shot'), 1)
+        #(RunawayBall('Runaway Ball'), 1)
+        #(RunawayBall('Ball Still', ball_still = True), 1)
     ]
 
     # Configure Wildfire(s)

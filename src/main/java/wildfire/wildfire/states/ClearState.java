@@ -44,10 +44,10 @@ public class ClearState extends State {
 		
 		// Near our backboard.
 		if(!Behaviour.correctSideOfTarget(input.car, input.ball.position)){
-			return impactYFlip < -(Constants.PITCHLENGTH - 340);
+			return impactYFlip < -(Constants.PITCH_LENGTH - 340);
 		}
 
-		//Check if we have a shot opportunity
+		// Check if we have a shot opportunity.
 		if(!Behaviour.isOpponentBehindBall(input) && input.info.impact.getPosition().distanceFlat(input.car.position) < 3000){
 			double aimBall = Handling.aim(input.car, input.info.impact.getPosition().flatten());
 			if(Math.abs(aimBall) < Math.PI * 0.3 && impactYFlip > -3000){
@@ -56,7 +56,11 @@ public class ClearState extends State {
 		}
 		
 		onTarget  = Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team);
-		if(!onTarget && Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000 && Utils.teamSign(input.car.team) * input.ball.position.y > -4000) return false;
+		if(onTarget){
+			return true;
+		}else if(Utils.teamSign(input.car.team) * input.ball.velocity.y > -1000 && Utils.teamSign(input.car.team) * input.ball.position.y > -4000){
+			return false;
+		}
 		
 		return Behaviour.defendNotReturn(input, input.info.impact.getPosition(), homeZoneSize, onTarget);
 	}
@@ -94,7 +98,7 @@ public class ClearState extends State {
 			return Handling.arriveAtSmartDodgeCandidate(car, candidate, wildfire.renderer);
 		}
 		
-		double impactRadians = Handling.aim(car, input.info.impact.getPosition().flatten());
+		double impactRadians = Handling.aim(car, input.info.impact.getPosition());
 				
 		// Dodge or half-flip
 		if(Handling.canHandbrake(car)){
@@ -143,9 +147,9 @@ public class ClearState extends State {
 				wildfire.renderer.drawString2d("Stop" + (closeby ? " (" + (int)xDifference + ")" : ""), Color.WHITE, new Point(0, 20), 2, 2);
 				if(closeby){
 					wildfire.sendQuickChat(QuickChatSelection.Information_InPosition);
-					return stayStill(input);
+					return Handling.stayStill(car);
 				}else if(xDifference < 900 && car.velocity.magnitude() < 1300){
-					return drivePoint(input, intersect, true);
+					return drivePoint(car, intersect.withZ(input.info.impact.getBallPosition().z), true);
 				}
 			}
 		}
@@ -157,7 +161,7 @@ public class ClearState extends State {
 		}else{
 			// Back-wall.
 			if(Math.abs(input.info.impact.getPosition().y) > 4600){
-				if(Math.abs(input.info.impact.getPosition().x) > Constants.GOALHALFWIDTH + 20){
+				if(Math.abs(input.info.impact.getPosition().x) > Constants.GOAL_WIDTH + 20){
 					offsetMagnitude += 8;
 				}else{
 					offsetMagnitude -= 4;
@@ -173,38 +177,28 @@ public class ClearState extends State {
 		wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition(), Color.MAGENTA, 140);
 		wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition().plus(offset.withZ(0)), Color.RED, 40);
 		
-		return drivePoint(input, input.info.impact.getPosition().flatten().plus(offset), input.info.impact.getTime() < 1);
+		return drivePoint(car, input.info.impact.getPosition().plus(offset.withZ(0)), input.info.impact.getTime() < 1);
 	}
 	
-	private ControlsOutput drivePoint(InfoPacket input, Vector2 point, boolean allowBackwards){
-		if(Math.abs(input.car.position.y) > Constants.PITCHLENGTH) point = point.withX(Utils.clamp(point.x, -700, 700));
+	private ControlsOutput drivePoint(CarData car, Vector3 destination, boolean allowBackwards){
+		if(Math.abs(car.position.y) > Constants.PITCH_LENGTH) destination = destination.withX(Utils.clamp(destination.x, -700, 700));
 		
-		boolean rush = (input.car.forwardVelocity > 700);
+		boolean rush = (car.forwardVelocity > 700);
 		
-		double steer = Handling.aim(input.car, point);
-		boolean reverse = (Math.cos(steer) < 0 && allowBackwards);
+		double radians = Handling.aim(car, destination);
+		boolean reverse = (Math.cos(radians) < 0 && allowBackwards);
 		
 		double throttle;
-		if(Handling.insideTurningRadius(input.car, point) && !reverse){
-			double maxVelocity = Math.min(DrivePhysics.maxVelForTurn(input.car, point.withZ(input.car.position.z)), Constants.SUPERSONIC);
-			double acceleration = (maxVelocity - input.car.forwardVelocity) / 0.025;
-			throttle = Handling.produceAcceleration(input.car, acceleration);
+		if(Handling.insideTurningRadius(car, destination) && !reverse){
+			double maxVelocity = Math.min(DrivePhysics.maxVelForTurn(car, destination.withZ(car.position.z)), Constants.SUPERSONIC_VELOCITY);
+			double acceleration = (maxVelocity - car.forwardVelocity) / 0.025;
+			throttle = Handling.produceAcceleration(car, acceleration);
 		}else{
-			throttle = (rush ? 1 : (reverse ? -1 : 1));
+			throttle = (rush || !reverse ? 1 : -1);
 		}
 		
-		if(reverse){
-			steer = Utils.invertAim(steer);
-		}else{
-			steer = -steer;
-		}
-		
-		return new ControlsOutput().withThrottle(throttle).withBoost(!reverse && Math.abs(steer) < (rush ? 0.3 : 0.2) && !input.car.isSupersonic)
-				.withSteer(steer * 3).withSlide(Math.abs(steer) > 1.2 && Handling.canHandbrake(input.car));
-	}
-	
-	private ControlsOutput stayStill(InfoPacket input){
-		return new ControlsOutput().withThrottle((float)-input.car.forwardVelocity / 80).withBoost(false);
+		ControlsOutput controls = (reverse ? Handling.steeringBackwards(car, destination) : Handling.steering(car, destination));
+		return controls.withThrottle(throttle).withBoost(controls.holdBoost() && Math.abs(radians) < (rush ? 0.3 : 0.2));
 	}
 
 }

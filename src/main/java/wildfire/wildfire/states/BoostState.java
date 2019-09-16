@@ -48,6 +48,7 @@ public class BoostState extends State {
 		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.info.impactDistanceFlat < 2400 && !(steal || possession)) || input.info.impact.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4500) || (Math.abs(input.info.impact.getPosition().x) < 1500 && !possession) || ((Behaviour.isInCone(input.car, input.info.impact.getPosition(), 200) && !(steal || possession)))){
 			return false;
 		}
+		
 		boost = getBoost(input);
 		return boost != null;
 	}
@@ -77,19 +78,22 @@ public class BoostState extends State {
 		}
 		
 		Vector2 boostLocation = boost.getLocation().flatten();
-		double distance = car.position.distanceFlat(boostLocation);
-		double radians = Handling.aim(car, boostLocation);
+		double boostDistance = car.position.distanceFlat(boostLocation);
+		double boostRadians = Handling.aim(car, boostLocation);
 		
-		if(distance > 2000 && car.velocity.magnitude() < 1000) wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
+		if(boostDistance > 2000 && car.velocity.magnitude() < 1000){
+			wildfire.sendQuickChat(QuickChatSelection.Information_NeedBoost);
+		}
 		
 		// Actions.
 		double forwardVelocity = car.forwardVelocity;
-		if(car.hasWheelContact && distance > 2000 && !car.isSupersonic){	
+		if(car.hasWheelContact && boostDistance > 2000 && !car.isSupersonic){	
+			double velocityNoseComponent = car.velocity.normalized().dotProduct(car.orientation.noseVector);
 			if(Behaviour.isOnWall(car)){
 				currentAction = new HopAction(this, input, boostLocation);
-			}else if(Math.abs(radians) < 0.12 && forwardVelocity > 1100){
-				currentAction = new DodgeAction(this, radians, input);
-			}else if(Math.abs(radians) > 0.95 * Math.PI && forwardVelocity < -850){
+			}else if(Math.abs(boostRadians) < 0.12 && forwardVelocity > 1200 && velocityNoseComponent > 0.95){
+				currentAction = new DodgeAction(this, boostRadians, input);
+			}else if(Math.abs(boostRadians) > 0.95 * Math.PI && forwardVelocity < -950 && velocityNoseComponent < -0.9){
 				currentAction = new HalfFlipAction(this, input);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
@@ -101,21 +105,20 @@ public class BoostState extends State {
 		Vector2 carPosition = car.position.flatten();
 		Vector2 cross = boostLocation.minus(carPosition).cross();
 		BezierCurve bezier = new BezierCurve(carPosition, 
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(distance / 8)), 
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(boostDistance / 8)), 
 				carPosition.plus(boostLocation).scaled(0.5),
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(distance / -16)),
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(boostDistance / -16)),
 				boostLocation.plus(car.position.flatten().minus(boostLocation).scaledToMagnitude(circleRadius)));
 		bezier.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.blue, boostLocation, circleRadius);
 		
 		// Stuck in goal.
-		boolean stuckInGoal = Math.abs(car.position.y) > Constants.PITCHLENGTH;
+		boolean stuckInGoal = Math.abs(car.position.y) > Constants.PITCH_LENGTH;
 		if(stuckInGoal){
-			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -700, 700), Utils.clamp(boostLocation.y, -Constants.PITCHLENGTH + 500, Constants.PITCHLENGTH - 500));
+			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -700, 700), Utils.clamp(boostLocation.y, -Constants.PITCH_LENGTH + 500, Constants.PITCH_LENGTH - 500));
 		}
 		
-//		boolean reverse = (forwardVelocity < -400 && !stuckInGoal && distance < 2600);
-		return Handling.arriveDestination(car, boostLocation, true);
+		return Handling.chaosDrive(car, boostLocation, true);
 	}
 
 	private BoostPad getBoost(InfoPacket input){
@@ -138,6 +141,7 @@ public class BoostState extends State {
 				bestDistance = distance;
 			}
 		}
+		
 		return bestBoost;
 	}
 

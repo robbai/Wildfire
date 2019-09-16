@@ -36,9 +36,9 @@ public class MixerState extends State {
 		Vector2 teamSignVec = new Vector2(0, teamSign);
 		
 		// The ball must be on the wing.
-		if(Math.abs(impactLocation.x) < Constants.PITCHWIDTH - 550) return false;
+		if(Math.abs(impactLocation.x) < Constants.PITCH_WIDTH - 550) return false;
 		if(teamSign * impactLocation.y < -1000) return false;
-		if(teamSign * impactLocation.y > Constants.PITCHLENGTH - 900) return false;
+		if(teamSign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
 		
 		// We must be solidly behind the ball.
 		if(input.info.impact.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
@@ -60,8 +60,8 @@ public class MixerState extends State {
 		Vector3 impactLocation = input.info.impact.getPosition();
 		double impactDistance = impactLocation.distance(input.car.position);
 		double teamSign = Utils.teamSign(input.car);
-		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCHWIDTH - Constants.BALLRADIUS),
-				teamSign * (Constants.PITCHLENGTH - 700));
+		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCH_WIDTH - Constants.BALL_RADIUS),
+				teamSign * (Constants.PITCH_LENGTH - 700));
 		double aimImpact = Handling.aim(input.car, impactLocation.flatten());
 		
 		// Dodge.
@@ -81,7 +81,7 @@ public class MixerState extends State {
 		wildfire.renderer.drawCircle(Color.CYAN, corner, 700);
 		wildfire.renderer.drawCircle(Color.BLUE, Constants.homeGoal(1 - input.car.team), maxGoalArea);
 		
-		return Handling.driveDestination(input.car, destination.flatten());
+		return Handling.forwardDrive(input.car, destination.flatten());
 	}
 
 }

@@ -18,7 +18,7 @@ public class JumpPhysics {
 //	}
 	
 	public static OptionalDouble getTimeToZ(double z, double press){
-		double velocity = Constants.JUMPVEL, acceleration = (Constants.JUMPACC - Constants.GRAVITY);
+		double velocity = Constants.JUMP_VELOCITY, acceleration = (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY);
 		
 		double displacement = (velocity * press + 0.5 * acceleration * Math.pow(press, 2));
 		if(displacement > z){
@@ -42,7 +42,7 @@ public class JumpPhysics {
 //	}
 	
 	public static double getMaxHeight(double press){
-		double velocity = Constants.JUMPVEL, acceleration = (Constants.JUMPACC - Constants.GRAVITY);
+		double velocity = Constants.JUMP_VELOCITY, acceleration = (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY);
 		
 		double displacement = (velocity * press + 0.5 * acceleration * Math.pow(press, 2));
 		
@@ -55,8 +55,8 @@ public class JumpPhysics {
 
 	public static OptionalDouble getPressForPeak(double z){
 		double g = -Constants.GRAVITY;
-		double a = (Constants.JUMPACC + g);
-		double u = Constants.JUMPVEL;
+		double a = (Constants.JUMP_HOLD_ACCELERATION + g);
+		double u = Constants.JUMP_VELOCITY;
 		
 		double pressTime = ((Math.sqrt(g * (g - a) * (2 * a * z + Math.pow(u, 2))) - a * u + g * u) / (a * (a - g)));
 		
@@ -104,17 +104,17 @@ public class JumpPhysics {
 	}
 	
 	public static double getPeakTime(double press){
-		return press + (Constants.JUMPVEL + (Constants.JUMPACC - Constants.GRAVITY) * press) / Constants.GRAVITY;
+		return press + (Constants.JUMP_VELOCITY + (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY) * press) / Constants.GRAVITY;
 	}
 
 	public static Vector3 simCar(CarData car, double press, double time){
 		final double step = (1D / 120);
 		
 		final Vector3 gravity = new Vector3(0, 0, -Constants.GRAVITY * step);
-		final Vector3 jumpAcc = car.orientation.roofVector.scaled(Constants.JUMPACC * step);
+		final Vector3 jumpAcc = car.orientation.roofVector.scaled(Constants.JUMP_HOLD_ACCELERATION * step);
 		
 		Vector3 position = car.position;
-		Vector3 velocity = car.velocity.plus(car.orientation.roofVector.scaled(Constants.JUMPVEL));
+		Vector3 velocity = car.velocity.plus(car.orientation.roofVector.scaled(Constants.JUMP_VELOCITY));
 		
 		double t = 0;
 		while(t < time){

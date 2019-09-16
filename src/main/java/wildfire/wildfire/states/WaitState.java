@@ -63,7 +63,7 @@ public class WaitState extends State {
 		bounce = bounce3.flatten();
 		bounce = bounce.plus(bounce.minus(Behaviour.getTarget(input.car, bounce)).scaledToMagnitude(desiredDistanceGround));
 		timeLeft = Behaviour.getBounceTime(input.elapsedSeconds, wildfire.ballPrediction);
-		bounceDistance = bounce.distance(input.car.position.flatten()) + (input.car.position.z - Constants.BALLRADIUS);
+		bounceDistance = bounce.distance(input.car.position.flatten()) + (input.car.position.z - Constants.BALL_RADIUS);
 		
 		towardsOwnGoal = Behaviour.isTowardsOwnGoal(input.car, bounce.withZ(0), 240);
 		enemyGoal = Behaviour.getTarget(input.car, bounce);
@@ -82,7 +82,7 @@ public class WaitState extends State {
 		}
 		
 		// Can't reach point (optimistic).
-		if(DrivePhysics.maxDistance(timeLeft, input.car.velocityDir(bounce.withZ(Constants.CARHEIGHT).minus(input.car.position)), input.car.boost) < bounceDistance - 50){
+		if(DrivePhysics.maxDistance(timeLeft, input.car.velocityDir(bounce.withZ(Constants.CAR_HEIGHT).minus(input.car.position)), input.car.boost) < bounceDistance - 50){
 			return false;
 		}
 		
@@ -110,7 +110,7 @@ public class WaitState extends State {
 			currentAction = null;
 		}
 
-		wildfire.renderer.drawCircle(Color.YELLOW, bounce, Constants.BALLRADIUS);
+		wildfire.renderer.drawCircle(Color.YELLOW, bounce, Constants.BALL_RADIUS);
 		
 		/*
 		 *  Smart dodge.
@@ -122,7 +122,7 @@ public class WaitState extends State {
 //		wildfire.renderer.drawCircle(Color.ORANGE, bounce, circleRadius);
 		
 		// Drive down the wall.
-		if(Behaviour.isOnWall(car) && bounce.withZ(Constants.BALLRADIUS).distance(car.position) > 700){
+		if(Behaviour.isOnWall(car) && bounce.withZ(Constants.BALL_RADIUS).distance(car.position) > 700){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
 		}else if(Behaviour.isCarAirborne(car)){
@@ -186,12 +186,11 @@ public class WaitState extends State {
 		}
 		
 		// Handling.
-	    double steer = (radians * -3);
-		ControlsOutput controls = new ControlsOutput().withSteer(steer);
+		ControlsOutput controls = Handling.steering(car, bounce);
 		double targetVelocity = (bounceDistance / timeLeft);
-		double currentVelocity = car.velocityDir(bounce.withZ(Constants.CARHEIGHT).minus(car.position));
+		double currentVelocity = car.velocityDir(bounce.withZ(Constants.CAR_HEIGHT).minus(car.position));
 		double acceleration = ((targetVelocity - currentVelocity) / timeLeft);
-		if(Math.abs(radians) > 0.4){
+		if(Math.abs(radians) > 0.35){
 			// Turn.
 			return Handling.turnOnSpot(car, bounce);
 		}else{
@@ -214,7 +213,7 @@ public class WaitState extends State {
 		if(alwaysSmartDodge){
 			this.planSmartDodge = true;
 		}else if(!towardsOwnGoal && car.hasWheelContact && car.position.z < 200){ // && impactLocation.z > 250
-			if(Behaviour.closestOpponentDistance(input, bounce.withZ(Constants.BALLRADIUS)) < 2200){
+			if(Behaviour.closestOpponentDistance(input, bounce.withZ(Constants.BALL_RADIUS)) < 2200){
 				this.planSmartDodge = true;
 			}else if(bounce.distance(enemyGoal) < 2900){
 				this.planSmartDodge = true;
@@ -267,7 +266,7 @@ public class WaitState extends State {
 			Vector2 targetDirection = candidateGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
 			if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
 			
-			CompositeArc compArc = CompositeArc.create(car, flatCandidate, Utils.traceToWall(flatCandidate, targetDirection), lineup);
+			CompositeArc compArc = CompositeArc.create(car, flatCandidate, Utils.traceToWall(flatCandidate, targetDirection), Constants.RIPPER.y, lineup);
 			Vector2[] points = compArc.discretise((int)(DiscreteCurve.analysePoints * 0.5));
 			
 			DiscreteCurve discrete = new DiscreteCurve(car.forwardVelocity, car.boost, points, OptionalDouble.of(timeLeft));

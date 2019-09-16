@@ -25,11 +25,11 @@ public class DodgeTable extends Table {
 		 *  Find speed bounds.
 		 *  They're just short of ±2300 D: 
 		 */
-		this.minVelocity = Constants.MAXCARSPEED;
-		this.maxVelocity = -Constants.MAXCARSPEED;
+		this.minVelocity = Constants.MAX_CAR_VELOCITY;
+		this.maxVelocity = -Constants.MAX_CAR_VELOCITY;
 		for(CSVRecord record : this.records){
 			double startSpeed = Double.parseDouble(record.get("start_speed"));
-			if(Math.abs(Constants.MAXCARSPEED - Math.abs(startSpeed)) < 90) continue;
+			if(Math.abs(Constants.MAX_CAR_VELOCITY - Math.abs(startSpeed)) < 90) continue;
 			this.minVelocity = Math.min(this.minVelocity, startSpeed);
 			this.maxVelocity = Math.max(this.maxVelocity, startSpeed);
 		}

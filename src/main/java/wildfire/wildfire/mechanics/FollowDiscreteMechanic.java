@@ -7,6 +7,7 @@ import java.util.OptionalDouble;
 import wildfire.input.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
+import wildfire.vector.Vector3;
 import wildfire.wildfire.actions.DodgeAction;
 import wildfire.wildfire.curve.DiscreteCurve;
 import wildfire.wildfire.handling.Handling;
@@ -17,13 +18,14 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowDiscreteMechanic extends Mechanic {
 
-	public final static double steerLookahead = 0.312, speedLookahead = (1D / 60);
+	public final static double steerLookahead = 0.317, speedLookahead = (1D / 60);
 	private final static boolean verboseRender = true;
 
 	private DiscreteCurve curve;
 	private boolean dodge;
 	private OptionalDouble targetTime;
-	public boolean linearTargetTime;
+	public boolean renderPredictionToTargetTime = false;
+	public boolean linearTarget = false;
 
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge, OptionalDouble targetTime){
 		super("Follow Discrete", state, timeStarted);
@@ -63,15 +65,22 @@ public class FollowDiscreteMechanic extends Mechanic {
 		Vector2 target = curve.S(Math.min(curve.getDistance(), carS + Math.max(400, initialVelocity) * steerLookahead));
 		double targetVelocity = curve.getSpeed(Utils.clamp((carS + initialVelocity * speedLookahead) / curve.getDistance(), 0, 1));
 		
-//		if(this.targetTime.isPresent()) targetVelocity = Math.min(targetVelocity, (curve.getDistance() - carS) / (this.targetTime.getAsDouble() - timeElapsed));
-//		if(this.targetTime.isPresent() && updatedTimeLeft < this.targetTime.getAsDouble() - timeElapsed) targetVelocity = ((curve.getDistance() - carS) / (this.targetTime.getAsDouble() - timeElapsed));
 		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
 		if(this.targetTime.isPresent()){
 			double targetTimeLeft = (this.targetTime.getAsDouble() - timeElapsed);
-			if(this.linearTargetTime){
-				targetAcceleration = (((curve.getDistance() - carS) / targetTimeLeft) - initialVelocity) / 0.05;
-			}else{	
-				double arrivalAcceleration = ((2 * (curve.getDistance() - carS - targetTimeLeft * initialVelocity)) / Math.pow(targetTimeLeft, 2));		
+			
+			if(renderPredictionToTargetTime){
+				int endFrame = Math.min((int)Math.ceil(targetTimeLeft * 60), wildfire.ballPrediction.slicesLength() - 1);
+				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.WHITE, 0, endFrame);
+				Vector3 slicePosition = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(endFrame).physics().location());
+				wildfire.renderer.drawCrosshair(input.car, slicePosition, Color.GRAY, 80);
+				wildfire.renderer.drawCrosshair(input.car, curve.T(1).withZ(slicePosition.z), Color.BLACK, 40);
+			}
+			
+			if(linearTarget){
+				targetAcceleration = ((curve.getDistance() - carS) / targetTimeLeft - initialVelocity) / 0.05; // Enforce!
+			}else{
+				double arrivalAcceleration = ((2 * (curve.getDistance() - carS - targetTimeLeft * initialVelocity)) / Math.pow(targetTimeLeft, 2));
 				targetAcceleration = Math.min(targetAcceleration, arrivalAcceleration);
 			}
 		}
@@ -97,18 +106,18 @@ public class FollowDiscreteMechanic extends Mechanic {
 		 */
 		double radians = Handling.aim(input.car, target);
 		
-		if(Math.abs(radians) < 0.4 && dodge){
+		if(Math.abs(radians) < 0.4 && targetAcceleration > 0 && dodge){
 			// Low time results in a chip shot, high time results in a low shot
-			boolean dodgeNow = (updatedTimeLeft < 0.32);
+			boolean dodgeNow = (updatedTimeLeft < 0.15);
 			if(dodgeNow){
-				double endRadians = Handling.aim(input.car, curve.T(1));
-				return this.startAction(new DodgeAction(this.state, endRadians, input), input);
+//				double endRadians = Handling.aim(input.car, curve.T(1));
+				return this.startAction(new DodgeAction(this.state, input.info.impactRadians * 3, input), input);
 			}
 		}
 		
 		double throttle = Handling.produceAcceleration(input.car, targetAcceleration);
-		return new ControlsOutput()
-				.withSteer(radians * -5)
+		return Handling.forwardDrive(input.car, target).withSlide(false)
+//		return new ControlsOutput().withSteer(-Math.signum(radians))
 				.withThrottle(throttle)
 				.withBoost((throttle > 1 /**|| (input.car.isSupersonic && targetAcceleration > 0)*/) && input.car.hasWheelContact);
 	}
@@ -122,7 +131,7 @@ public class FollowDiscreteMechanic extends Mechanic {
 		if(distance > 70) return true;
 		
 		double carS = curve.findClosestS(car.position.flatten(), false);
-		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / (dodge ? 8 : 4)) / curve.getDistance() >= 1;
+		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 8) / curve.getDistance() >= 1;
 	}
 
 }

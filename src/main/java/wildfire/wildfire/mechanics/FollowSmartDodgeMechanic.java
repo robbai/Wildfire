@@ -19,6 +19,8 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowSmartDodgeMechanic extends Mechanic {
 	
+	public final static double steerLookahead = 0.312, speedLookahead = (1D / 60);
+	
 	public static final double earlyTime = 0.001;
 
 	private DiscreteCurve curve;
@@ -38,8 +40,8 @@ public class FollowSmartDodgeMechanic extends Mechanic {
 		double initialVelocity = input.car.forwardVelocityAbs;
 		double timeElapsed = this.timeDifference(input.elapsedSeconds);
 //		double timeLeft = (curve.getTime() * (1 - carS / curve.getDistance()));
-		Vector2 target = curve.S(Math.min(curve.getDistance(), carS + Math.max(400, initialVelocity) * FollowDiscreteMechanic.steerLookahead));
-		double targetVelocity = curve.getSpeed(Utils.clamp((carS + initialVelocity * FollowDiscreteMechanic.speedLookahead) / curve.getDistance(), 0, 1));	
+		Vector2 target = curve.S(Math.min(curve.getDistance(), carS + Math.max(400, initialVelocity) * steerLookahead));
+		double targetVelocity = curve.getSpeed(Utils.clamp((carS + initialVelocity * speedLookahead) / curve.getDistance(), 0, 1));	
 		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
 				
 		// Jump calculations.
@@ -50,7 +52,7 @@ public class FollowSmartDodgeMechanic extends Mechanic {
 		
 		// Manipulate the target timing to jump in time.
 		double jumpWeighting;
-		if(input.car.orientation.noseVector.dotProduct(curve.getDestination().withZ(Constants.CARHEIGHT).minus(input.car.position)) < 0){
+		if(input.car.orientation.noseVector.dotProduct(curve.getDestination().withZ(Constants.CAR_HEIGHT).minus(input.car.position)) < 0){
 			jumpWeighting = 0;
 		}else{
 			double jumpAcceleration = ((jumpVelocity - initialVelocity) / driveTime);
@@ -64,22 +66,20 @@ public class FollowSmartDodgeMechanic extends Mechanic {
 		wildfire.renderer.drawString2d("Target Acc.: " + (int)targetAcceleration + "uu/s^2", Color.WHITE, new Point(0, 80), 2, 2);
 		curve.render(wildfire.renderer, Color.YELLOW);
 		wildfire.renderer.drawCircle(Color.CYAN, target, 10);
-		wildfire.renderer.drawCircle(Color.RED, curve.S(Math.min(curve.getDistance(), carS + initialVelocity * FollowDiscreteMechanic.speedLookahead)), 5);
+		wildfire.renderer.drawCircle(Color.RED, curve.S(Math.min(curve.getDistance(), carS + initialVelocity * speedLookahead)), 5);
 		wildfire.renderer.drawCrosshair(input.car, this.candidate.getPosition(), Color.RED, 80);
 
-		/*
-		 *  Handling.
-		 */
-		double radians = Handling.aim(input.car, target);
-		
+		// Smart-dodge.
 		SmartDodgeAction smartDodge = new SmartDodgeAction(this.state, input, false);
 		if(!smartDodge.failed){
 			return this.startAction(smartDodge, input);
 		}
 
+		/*
+		 *  Handling.
+		 */
 		double throttle = Handling.produceAcceleration(input.car, targetAcceleration);
-		return new ControlsOutput()
-				.withSteer(radians * -5)
+		return Handling.forwardDrive(input.car, target).withSlide(false)
 				.withThrottle(throttle)
 				.withBoost((throttle > 1 /**|| (input.car.isSupersonic && targetAcceleration > 0)*/) && input.car.hasWheelContact);
 	}
@@ -93,7 +93,7 @@ public class FollowSmartDodgeMechanic extends Mechanic {
 		if(distance > 70) return true;
 		
 		double carS = curve.findClosestS(car.position.flatten(), false);
-		return (carS + Math.abs(car.forwardVelocity) * FollowDiscreteMechanic.steerLookahead / 4) / curve.getDistance() >= 1;
+		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 4) / curve.getDistance() >= 1;
 	}
 
 }

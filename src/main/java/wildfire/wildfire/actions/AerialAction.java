@@ -41,7 +41,7 @@ public class AerialAction extends Action {
 			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
 			if(location.isOutOfBounds()) continue;
 			
-			location = location.plus(car.position.minus(location).scaledToMagnitude(Constants.BALLRADIUS / 2));
+			location = location.plus(car.position.minus(location).scaledToMagnitude(Constants.BALL_RADIUS / 2));
 //			location = location.plus(location.minus(Utils.enemyGoal(car).withZ(Utils.BALLRADIUS)).scaledToMagnitude(140));
 			
 			//Double jumping
@@ -143,7 +143,7 @@ public class AerialAction extends Action {
 		
 		Vector3 a = new Vector3(acceleration(s.x, u.x, t), acceleration(s.y, u.y, t), accelerationGravity(s.z, u.z, t));
 		averageAcceleration = a.magnitude();
-		if(averageAcceleration > Constants.BOOSTACC) return false;
+		if(averageAcceleration > Constants.BOOST_GROUND_ACCELERATION) return false;
 		
 		double boostRequired = getBoostRequired(averageAcceleration, t);
 			
@@ -152,7 +152,7 @@ public class AerialAction extends Action {
 	}
 	
 	private static double getBoostRequired(double averageAcceleration, double time){
-		return (averageAcceleration * time) / Constants.BOOSTACC * (100D / 3);
+		return (averageAcceleration * time) / Constants.BOOST_GROUND_ACCELERATION * (100D / 3);
 	}
 
 	private double acceleration(double s, double u, double t){

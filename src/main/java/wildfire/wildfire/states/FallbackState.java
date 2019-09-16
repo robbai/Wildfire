@@ -26,7 +26,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.2, scope = 0.36;
+	private static final double dropoff = 0.19, scope = 0.36;
 	
 	/*
 	 * Yeah this one too, I guess
@@ -50,7 +50,7 @@ public class FallbackState extends State {
 		
 		// Goal.
 		Vector2 goal = Behaviour.getTarget(car, input.ball, -140);
-		wildfire.renderer.drawCrosshair(car, goal.withZ(Constants.BALLRADIUS), Color.WHITE, 125);
+		wildfire.renderer.drawCrosshair(car, goal.withZ(Constants.BALL_RADIUS), Color.WHITE, 125);
 		
 		// Drive down the wall.
 		if(wall && input.info.impact.getTime() > 0.8){
@@ -64,15 +64,16 @@ public class FallbackState extends State {
 		wildfire.renderer.drawCrosshair(car, impactPoint, Color.MAGENTA, 125);
 
 		// Avoid own-goaling.
-		Vector2 trace = Utils.traceToY(car.position.flatten(), impactPoint.minus(car.position).flatten(), Utils.teamSign(car) * -Constants.PITCHLENGTH);
+		Vector2 trace = Utils.traceToY(car.position.flatten(), impactPoint.minus(car.position).flatten(), Utils.teamSign(car) * -Constants.PITCH_LENGTH);
 		boolean avoidOwnGoal = !Behaviour.correctSideOfTarget(car, input.ball.position) && trace != null;
 		if(avoidOwnGoal){
-			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 4.6, 50, 400), impactPoint.y, impactPoint.z);
+			impactPoint = new Vector3(impactPoint.x - Math.signum(trace.x) * Utils.clamp(distance / 4.5, 50, 400), impactPoint.y, impactPoint.z);
 			wildfire.renderer.drawCrosshair(car, impactPoint, Color.PINK, 125);
 		}
 		
 		// Smart-dodge.
-		if(impactPoint.minus(car.position).dotProduct(car.orientation.roofVector) > 160){
+		if(impactPoint.minus(car.position).dotProduct(car.orientation.roofVector) > 170
+				&& input.info.impactDistance < 4000){
 			if(isOkayToSmartDodge(input)){
 				SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
 				if(!smartDodge.failed){
@@ -84,10 +85,10 @@ public class FallbackState extends State {
 		}
 
 		// Target.
-		Vector3 localTarget = getLocalPosition(car, new Vector3(), Utils.toLocal(car, goal.withZ(Constants.BALLRADIUS)), 0, Utils.toLocal(car, impactPoint));
+		Vector3 localTarget = getLocalPosition(car, new Vector3(), Utils.toLocal(car, goal.withZ(Constants.BALL_RADIUS)), 0, Utils.toLocal(car, impactPoint));
 		Vector3 target = Utils.toGlobal(car, localTarget);
 		target = Behaviour.goalStuck(car, target);
-		wildfire.renderer.drawCircle(Color.ORANGE, target, Constants.BALLRADIUS * 0.2);
+		wildfire.renderer.drawCircle(Color.ORANGE, target, Constants.BALL_RADIUS * 0.2);
 				
 		/*
 		 * Actions
@@ -101,7 +102,7 @@ public class FallbackState extends State {
 			double goalAngle = Vector2.angle(input.info.impact.getPosition().minus(car.position).flatten(), goal.minus(car.position.flatten()));
 
 			// Check if we can go for a shot.
-			Vector2 traceGoal = Utils.traceToY(car.position.flatten(), input.info.impact.getPosition().minus(car.position).flatten(), Utils.teamSign(car) * Constants.PITCHLENGTH);
+			Vector2 traceGoal = Utils.traceToY(car.position.flatten(), input.info.impact.getPosition().minus(car.position).flatten(), Utils.teamSign(car) * Constants.PITCH_LENGTH);
 			boolean shotOpportunity = (traceGoal != null && Math.abs(traceGoal.x) < 1200);
 
 			if((Math.abs(dodgeAngle) < 0.3 && !shotOpportunity) || goalAngle < 0.5 || Utils.teamSign(car) * input.ball.velocity.y < -500 ||  Utils.teamSign(car) * car.position.y < -3000 || wall){
@@ -113,7 +114,7 @@ public class FallbackState extends State {
 			}
 		}else if(Behaviour.isCarAirborne(car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
-		}else if(wall && Math.abs(car.position.x) < Constants.GOALHALFWIDTH - 50){
+		}else if(wall && Math.abs(car.position.x) < Constants.GOAL_WIDTH - 50){
 			currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
 		}else if(input.info.impact.getTime() > (avoidOwnGoal ? 1.45 : 2.25) && !car.isSupersonic 
 				&& velocity > (car.boost == 0 ? 1200 : 1500) && Math.abs(steerImpact) < 0.2){
@@ -133,22 +134,22 @@ public class FallbackState extends State {
 		 */
 		double radians = Handling.aim(car, target);
 		
-//		boolean movingFast = (Math.abs(forwardVelocity) > 1600);
 		boolean movingSlow = (forwardVelocity < 900 && forwardVelocity > -900);
 		boolean insideTurningRadius = (Handling.insideTurningRadius(car, target) && Math.abs(radians) > 0.24);
 		if(insideTurningRadius) wildfire.renderer.drawTurningRadius(Color.WHITE, car);
 
-		double maxVelocity = (insideTurningRadius && !movingSlow ? Math.min(DrivePhysics.maxVelForTurn(car, target), Constants.SUPERSONIC) : Constants.SUPERSONIC);
+		double maxVelocity = (insideTurningRadius && !movingSlow ? Math.min(DrivePhysics.maxVelForTurn(car, target), Constants.SUPERSONIC_VELOCITY) : Constants.SUPERSONIC_VELOCITY);
 		double acceleration = (maxVelocity - car.forwardVelocity) / 0.05;
 		double throttle = Handling.produceAcceleration(car, acceleration);
-//		double throttle = (insideTurningRadius && movingFast ? -1 : 10);
 
-        return new ControlsOutput().withSteer(-radians * 3).withThrottle(throttle).withBoost(Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 1)
+		// TODO replace most of this with a method from Handling.java
+        return new ControlsOutput().withSteer(Handling.steering(car, target).getSteer()).withThrottle(throttle).withBoost(Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 1)
         		.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > 1.2 && car.forwardVelocityAbs > 500);
 	}
 	
 	private boolean isOkayToSmartDodge(InfoPacket input){
 		if(input.info.jumpImpact == null) return false;
+//		if(Utils.distanceToWall(input.info.impact.getBallPosition()) < 160) return false;
 		
 		Vector3 jumpImpact = input.info.jumpImpact.getBallPosition();
 		CarData car = input.car;
@@ -157,9 +158,12 @@ public class FallbackState extends State {
 		Vector2 carToTrace = trace.minus(carPosition.flatten());
 		
 		if(carToTrace.y * Utils.teamSign(car) < 0){
-			return Math.abs(trace.x) > (trace.x * jumpImpact.x < 0 ? Constants.GOALHALFWIDTH + 250 : Constants.PITCHWIDTH - 1200);
+//			if(jumpImpact.y * Utils.teamSign(car) < -(Constants.PITCHLENGTH - 1800)){
+//				return Math.abs(carToTrace.normalized().x) > 0.8;
+//			}
+			return Math.abs(trace.x) > (trace.x * jumpImpact.x < 0 ? Constants.GOAL_WIDTH + 250 : Constants.PITCH_WIDTH - 1200);
 		}else{
-			return Math.abs(trace.x) < Constants.GOALHALFWIDTH + 50 || Math.abs(trace.x) > Constants.PITCHWIDTH - 1300;
+			return Math.abs(trace.x) < Constants.GOAL_WIDTH + 50 || Math.abs(trace.x) > Constants.PITCH_WIDTH - 1300;
 		}
 	}
 

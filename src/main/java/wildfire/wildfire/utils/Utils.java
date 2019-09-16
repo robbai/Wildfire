@@ -55,7 +55,7 @@ public class Utils {
 	}
 	
 	public static double distanceToWall(Vector3 position){
-		return Math.min(Constants.PITCHWIDTH - Math.abs(position.x), Math.abs(position.y) > Constants.PITCHLENGTH ? 0 : Constants.PITCHLENGTH - Math.abs(position.y));
+		return Math.min(Constants.PITCH_WIDTH - Math.abs(position.x), Math.abs(position.y) > Constants.PITCH_LENGTH ? 0 : Constants.PITCH_LENGTH - Math.abs(position.y));
 	}
 	
 	public static Vector2 traceToX(Vector2 start, Vector2 direction, double x){
@@ -86,14 +86,14 @@ public class Utils {
 		Vector2 trace;
 		
 		if(!direction.isZero()){
-			trace = traceToX(start, direction, Math.signum(direction.x) * Constants.PITCHWIDTH);
-			if(trace != null && Math.abs(trace.y) <= Constants.PITCHLENGTH) return trace;
+			trace = traceToX(start, direction, Math.signum(direction.x) * Constants.PITCH_WIDTH);
+			if(trace != null && Math.abs(trace.y) <= Constants.PITCH_LENGTH) return trace;
 			
-			trace = traceToY(start, direction, Math.signum(direction.y) * Constants.PITCHLENGTH);
-			if(trace != null && Math.abs(trace.x) <= Constants.PITCHWIDTH) return trace;
+			trace = traceToY(start, direction, Math.signum(direction.y) * Constants.PITCH_LENGTH);
+			if(trace != null && Math.abs(trace.x) <= Constants.PITCH_WIDTH) return trace;
 		}
 		
-		//Direction is zero or the start is outside of the map
+		// Direction is zero or the start is outside of the map.
 		return start.confine();
 	}
 	

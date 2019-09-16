@@ -30,11 +30,11 @@ import wildfire.wildfire.pitch.Pitch;
 public class WildfireJava {
 	
 	/**
-	 * This prevents the server from being launched
+	 * This prevents the server from being launched.
 	 */
 	private final static boolean testGui = false;
 	
-	private static final Integer DEFAULT_PORT = 25965;
+	private static final Integer DEFAULT_PORT = 25966;
 	
 	public static ArrayList<Wildfire> bots = new ArrayList<Wildfire>();
 
@@ -44,7 +44,7 @@ public class WildfireJava {
     	System.out.println("Args: " + Arrays.toString(args));
     	setArguments(args);
     	
-    	//Bot Manager
+    	// Bot manager.
     	BotManager botManager = new BotManager();
     	Integer port = PortReader.readPortFromArgs(args).orElseGet(() -> {
             System.out.println("Could not read port from args, using default!");
@@ -57,22 +57,22 @@ public class WildfireJava {
 	        Pitch.initTriangles();
     	}
         
-        //Frame
+        // Frame.
         JFrame frame = new JFrame("Wildfire");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
-        //Panel
+        // Panel.
         JPanel panel = new JPanel();
         final int borderSize = 15;
         panel.setBorder(new EmptyBorder(borderSize, borderSize, borderSize, borderSize));
         panel.setLayout(new BorderLayout());
         
-        //Icon
+        // Icon
         URL url = WildfireJava.class.getClassLoader().getResource("icon.png");
         Image image = Toolkit.getDefaultToolkit().createImage(url);
         frame.setIconImage(image);
         
-        //Labels
+        // Labels.
         JPanel dataPanel = new JPanel();
         dataPanel.setLayout(new BoxLayout(dataPanel, BoxLayout.Y_AXIS));
         dataPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -82,7 +82,7 @@ public class WildfireJava {
         panel.add(dataPanel, BorderLayout.WEST);
         
         
-        //Table
+        // Table.
         JPanel tablePanel = new JPanel();
         tablePanel.setLayout(new BoxLayout(tablePanel, BoxLayout.Y_AXIS));
         tablePanel.setBounds(borderSize, borderSize, borderSize, borderSize);     
@@ -98,7 +98,7 @@ public class WildfireJava {
         frame.pack();
         frame.setVisible(true);
         
-        //Listener
+        // Listener.
         ActionListener myListener = e -> {
             Set<Integer> runningBotIndices = botManager.getRunningBotIndices();
             OptionalInt maxIndex = runningBotIndices.stream().mapToInt(k -> k).max();
@@ -108,7 +108,7 @@ public class WildfireJava {
             	int botListSize = 0;
             	ArrayList<String[]> data = new ArrayList<String[]>(); 
                 
-                //Iterate through all the bots
+                // Iterate through all the bots.
                 for(int i = 0; i <= maxIndexInt; i++){
                 	Wildfire bot = getBotAtIndex(i);
                 	if(bot == null || !runningBotIndices.contains(i)) continue;
@@ -116,7 +116,7 @@ public class WildfireJava {
                     botListSize ++;
                 }
                 
-                //Update the table
+                // Update the table.
                 JTable newTable = new JTable(toDataArray(data), columns);
                 newTable.setRowHeight(newTable.getRowHeight() * 2);
                 scrollPane.setBounds(scrollPane.getX(), scrollPane.getY(), scrollPane.getWidth(), Math.max(newTable.getRowHeight() * (botListSize + 2), scrollPane.getHeight()));

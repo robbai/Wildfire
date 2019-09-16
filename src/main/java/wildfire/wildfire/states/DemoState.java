@@ -150,7 +150,7 @@ public class DemoState extends State {
 		
 		//Stuck in goal
 		Vector2 target = impact.flatten();
-		if(Math.max(Math.abs(target.y), Math.abs(input.car.position.y)) > Constants.PITCHLENGTH){
+		if(Math.max(Math.abs(target.y), Math.abs(input.car.position.y)) > Constants.PITCH_LENGTH){
 			target = new Vector2(Utils.clamp(target.x, -600, 600), target.y);
 		}
 		

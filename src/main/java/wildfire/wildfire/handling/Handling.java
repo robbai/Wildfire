@@ -26,7 +26,7 @@ public class Handling {
 	}
 	
 	public static double aim(CarData car, Vector2 point){
-		return aim(car, point.withZ(Constants.CARHEIGHT));
+		return aim(car, point.withZ(Constants.CAR_HEIGHT));
 	}
 
 	public static double aimFromPoint(Vector2 carPosition, Vector2 carDirection, Vector2 point){
@@ -60,34 +60,29 @@ public class Handling {
     	return Math.min(localPoint.distance(right), localPoint.distance(left)) < turningRadius;
 	}
 	
-	public static ControlsOutput arriveDestination(CarData car, Vector2 point, boolean rush){
-		double steer = Handling.aim(car, point);
+	public static ControlsOutput chaosDrive(CarData car, Vector3 destination, boolean rush){
+		boolean reverse = (Math.cos(Handling.aim(car, destination)) < 0);
 		
-		double throttle = (rush ? 1 : Math.signum(Math.cos(steer)));
+		ControlsOutput controls = (reverse ? steeringBackwards(car, destination) : steering(car, destination));
 		
-		boolean reverse = (throttle < 0);
-		if(reverse) steer = -Utils.invertAim(steer);
+		double distance = car.position.distanceFlat(destination);
 		
-		double distance = car.position.distanceFlat(point);
-		double velocity = car.velocity.magnitude();
-		
-		return new ControlsOutput().withThrottle(throttle)
-				.withBoost(!reverse && Math.abs(steer) < 0.2 && !car.isSupersonic && distance > (rush ? 1200 : 2000))
-				.withSteer(-steer * 3F).withSlide(rush && Math.abs(steer) > Math.PI * 0.3 && Handling.canHandbrake(car) && velocity > 600);
+		return controls.withThrottle(reverse ? -1 : 1)
+				.withBoost(controls.holdBoost() && distance > (rush ? 1200 : 2000))
+				.withSlide(controls.holdHandbrake() && rush);
 	}
 	
-	public static ControlsOutput driveDestination(CarData car, Vector3 destination){
-		double velocityForward = car.forwardVelocity;
-		double radians = aim(car, destination);
-		
-		return new ControlsOutput().withThrottle(1)
-				.withBoost(Math.abs(radians) < 0.2 && !car.isSupersonic)
-				.withSteer(-radians * 3)
-				.withSlide(Math.abs(radians) > 1.1 && Handling.canHandbrake(car) && Math.abs(velocityForward) > 500);
+	public static ControlsOutput chaosDrive(CarData car, Vector2 destination, boolean rush){
+		return chaosDrive(car, destination.withZ(Constants.CAR_HEIGHT), rush);
 	}
 	
-	public static ControlsOutput driveDestination(CarData car, Vector2 destination){
-		return driveDestination(car, destination.withZ(Constants.CARHEIGHT));
+	public static ControlsOutput forwardDrive(CarData car, Vector3 destination){
+		ControlsOutput controls = steering(car, destination);
+		return controls.withThrottle(1);
+	}
+	
+	public static ControlsOutput forwardDrive(CarData car, Vector2 destination){
+		return forwardDrive(car, destination.withZ(Constants.CAR_HEIGHT));
 	}
 	
 	public static ControlsOutput stayStill(CarData car){
@@ -121,13 +116,13 @@ public class Handling {
 		double velocityForward = car.forwardVelocity;
 		double throttleAcceleration = DrivePhysics.determineAcceleration(velocityForward, 1, false);
 		
-		double brakeCoastTransition = -0.45 * Constants.BRAKEACC - 0.55 * Constants.COASTACC;
-		double coastingThrottleTransition = -0.5 * Constants.COASTACC;
-		double throttleBoostTransition = throttleAcceleration + 0.5 * Constants.BOOSTACC;
+		double brakeCoastTransition = -0.45 * Constants.BRAKE_ACCELERATION - 0.55 * Constants.COAST_ACCELERATION;
+		double coastingThrottleTransition = -0.5 * Constants.COAST_ACCELERATION;
+		double throttleBoostTransition = throttleAcceleration + 0.5 * Constants.BOOST_GROUND_ACCELERATION;
 		
 		// Sliding down the wall.
 		if(car.orientation.roofVector.z < 0.7){
-			brakeCoastTransition = -0.5 * Constants.BRAKEACC;
+			brakeCoastTransition = -0.5 * Constants.BRAKE_ACCELERATION;
 			coastingThrottleTransition = brakeCoastTransition;
 		}
 		
@@ -147,7 +142,7 @@ public class Handling {
 		Vector3 carPosition = car.position;
 		Vector3 ballPosition = candidate.getPosition();
 		
-		ControlsOutput controls = driveDestination(car, ballPosition);
+		ControlsOutput controls = forwardDrive(car, ballPosition);
 		
 		double jumpHeight = candidate.getPosition().minus(car.position).dotProduct(car.orientation.roofVector);
 		double peakTime = JumpPhysics.getFastestTimeZ(jumpHeight);
@@ -159,6 +154,7 @@ public class Handling {
 		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 		double acceleration = ((finalVelocity - initialVelocity) / driveTime);
 		
+		// Render.
 		if(renderer != null){
 			renderer.drawCrosshair(car, ballPosition, Color.RED, 70);
 //			renderer.drawString2d("Value: " + Utils.round(jumpHeight) + ", " + Utils.round(peakTime), Color.WHITE, new Point(0, 40), 2, 2);
@@ -168,11 +164,10 @@ public class Handling {
 		}
 		
 		// Controls.
-//		if(Math.abs(controls.getSteer()) > 0.5) return controls;
 		if(Math.abs(controls.getSteer()) > 0.5) return turnOnSpot(car, ballPosition);
 		if(acceleration > 0 && Behaviour.correctSideOfTarget(car, ballPosition)){
 			double maxVel = DrivePhysics.maxVelocity(driveTime, initialVelocity, car.boost);
-			if(maxVel > finalVelocity) acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(350, 800, finalVelocity / Constants.MAXCARSPEED));
+			if(maxVel > finalVelocity) acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(350, 600, finalVelocity / Constants.MAX_CAR_VELOCITY));
 		}
 		double throttle = produceAcceleration(car, acceleration); 
 		return controls.withThrottle(throttle).withBoost(throttle > 1);
@@ -183,7 +178,7 @@ public class Handling {
 	}
 
 	public static ControlsOutput turnOnSpot(CarData car, Vector3 destination){
-		ControlsOutput controls = driveDestination(car, destination);
+		ControlsOutput controls = forwardDrive(car, destination);
 		double targetVelocity = 600;
 		double acceleration = (targetVelocity - car.forwardVelocity) / 0.05;
 		double throttle = produceAcceleration(car, acceleration);
@@ -191,13 +186,54 @@ public class Handling {
 	}
 	
 	public static ControlsOutput turnOnSpot(CarData car, Vector2 destination){
-		return turnOnSpot(car, destination.withZ(Constants.CARHEIGHT));
+		return turnOnSpot(car, destination.withZ(Constants.CAR_HEIGHT));
 	}
 	
 	public static boolean canHandbrake(CarData car){
 		Vector2 localVel = Utils.toLocalFromRelative(car, car.velocity).flatten();
 		if(localVel.isZero()) return false;
 		return localVel.normalized().dotProduct(forwardVector) > 0.9 && localVel.magnitude() > 250;
+	}
+	
+	public static ControlsOutput steering(CarData car, Vector3 destination){
+		double yawError = Handling.aim(car, destination);
+		double yawVelocity = car.angularVelocity.dotProduct(car.orientation.roofVector);
+		
+		ControlsOutput controls = steeringBlind(yawError, yawVelocity);
+		return controls
+				.withBoost(controls.holdBoost() && car.hasWheelContact && !car.isSupersonic)
+				.withSlide(controls.holdHandbrake() && car.hasWheelContact && canHandbrake(car));
+	}
+	
+	public static ControlsOutput steering(CarData car, Vector2 destination){
+		return steering(car, destination.withZ(Constants.CAR_HEIGHT));
+	}
+	
+	public static ControlsOutput steeringBackwards(CarData car, Vector3 destination){
+		double yawError = -Utils.invertAim(Handling.aim(car, destination));
+		double yawVelocity = -car.angularVelocity.dotProduct(car.orientation.roofVector);
+		
+		ControlsOutput controls = steeringBlind(yawError, yawVelocity);
+		return controls
+				.withBoost(false)
+				.withSlide(controls.holdHandbrake() && car.hasWheelContact && canHandbrake(car));
+	}
+	
+	public static ControlsOutput steeringBackwards(CarData car, Vector2 destination){
+		return steeringBackwards(car, destination.withZ(Constants.CAR_HEIGHT));
+	}
+	
+	public static ControlsOutput steeringBlind(double yawError, double yawVelocity){
+		double steer;
+		if(Math.abs(yawError) > Math.toRadians(40)){
+			steer = -Math.signum(yawError);
+		}else{
+			steer = (-yawError * 6 - yawVelocity * 0.3);
+		}
+		
+		return new ControlsOutput().withSteer(steer)
+				.withBoost(Math.abs(yawError) < Math.toRadians(15))
+				.withSlide(Math.abs(yawError) > Math.toRadians(50) && yawError * steer < 0);
 	}
 
 }
