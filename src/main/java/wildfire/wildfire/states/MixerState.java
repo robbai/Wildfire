@@ -32,7 +32,7 @@ public class MixerState extends State {
 	@Override
 	public boolean ready(InfoPacket input){
 		Vector3 impactLocation = input.info.impact.getPosition();
-		double teamSign = Utils.teamSign(input.car);
+		double teamSign = input.car.sign;
 		Vector2 teamSignVec = new Vector2(0, teamSign);
 		
 		// The ball must be on the wing.
@@ -57,16 +57,17 @@ public class MixerState extends State {
 
 	@Override
 	public ControlsOutput getOutput(InfoPacket input){
-		Vector3 impactLocation = input.info.impact.getPosition();
-		double impactDistance = impactLocation.distance(input.car.position);
-		double teamSign = Utils.teamSign(input.car);
-		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCH_WIDTH - Constants.BALL_RADIUS),
-				teamSign * (Constants.PITCH_LENGTH - 700));
-		double aimImpact = Handling.aim(input.car, impactLocation.flatten());
+		CarData car = input.car;
+		
+		Vector3 impactLocation = input.info.impact.getBallPosition();
+		double impactDistance = input.info.impactDistance;
+		
+		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCH_WIDTH - Constants.BALL_RADIUS), car.sign * (Constants.PITCH_LENGTH - 700));
+		double aimImpact = Handling.aim(car, impactLocation.flatten());
 		
 		// Dodge.
-		if((impactDistance < 300 || (impactDistance > 3500 && !input.car.isSupersonic)) && Math.abs(aimImpact) < 0.25){
-			if(input.car.forwardVelocity > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
+		if((input.info.impact.getTime() < 0.2 || (impactDistance > 3500 && !car.isSupersonic)) && Math.abs(aimImpact) < 0.25){
+			if(car.forwardVelocity > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
 			currentAction = new DodgeAction(this, aimImpact, input);
 		}
 		if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
@@ -77,11 +78,11 @@ public class MixerState extends State {
 		Vector3 destination = impactLocation.plus(offset.withZ(0));
 		
 		//Render
-		wildfire.renderer.drawCrosshair(input.car, destination, Color.CYAN, 60);
+		wildfire.renderer.drawCrosshair(car, destination, Color.CYAN, 60);
 		wildfire.renderer.drawCircle(Color.CYAN, corner, 700);
-		wildfire.renderer.drawCircle(Color.BLUE, Constants.homeGoal(1 - input.car.team), maxGoalArea);
+		wildfire.renderer.drawCircle(Color.BLUE, Constants.homeGoal(1 - car.team), maxGoalArea);
 		
-		return Handling.forwardDrive(input.car, destination.flatten());
+		return Handling.forwardDrive(car, destination.flatten());
 	}
 
 }

@@ -6,9 +6,9 @@ import rlbot.pyinterop.SocketServer;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.grabby.Grabby;
 
-public class WildfirePythonInterface extends SocketServer {
+public class PythonInterface extends SocketServer {
 
-    public WildfirePythonInterface(int port, BotManager botManager){
+    public PythonInterface(int port, BotManager botManager){
         super(port, botManager);
     }
 
@@ -20,9 +20,9 @@ public class WildfirePythonInterface extends SocketServer {
     
     @Override
     public void shutdown(){
-    	if(WildfireJava.getArguments().contains("never-shutdown")){
+    	if(Main.getArguments().contains("never-shutdown")){
     		System.out.println("Preventing shut down...");
-//    		for(int i = 0; i < WildfireJava.bots.size(); i++) this.retireBot(i);
+//    		for(int i = 0; i < Main.bots.size(); i++) this.retireBot(i);
     		return;
     	}
     	super.shutdown();

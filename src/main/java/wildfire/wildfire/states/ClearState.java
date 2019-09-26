@@ -95,7 +95,9 @@ public class ClearState extends State {
 				currentAction = null;
 			}
 			
-			return Handling.arriveAtSmartDodgeCandidate(car, candidate, wildfire.renderer);
+			if((candidate.getPosition().y - car.position.y) * car.sign > -1000 || !Behaviour.isOnTarget(wildfire.ballPrediction, car.team)){
+				return Handling.arriveAtSmartDodgeCandidate(car, candidate, wildfire.renderer);
+			}
 		}
 		
 		double impactRadians = Handling.aim(car, input.info.impact.getPosition());
@@ -106,8 +108,8 @@ public class ClearState extends State {
 			boolean backflip = (Math.abs(impactRadians) > 0.75 * Math.PI);
 			
 			if(travellingToBall ? (input.info.impact.getTime() < (backflip ? 0.23 : 0.29)) :
-				(input.info.impactDistance < (backflip ? 120 : (input.car.position.z > 80 ? 120 : 160)))
-					&& Math.abs(car.position.z - input.info.impact.getPosition().z) < 330){
+				(/*input.info.impactDistance*/input.ball.position.distance(input.car.position) < (input.car.position.z > 80 ? 220 : (backflip ? 220 : 260)))
+					&& Math.abs(car.position.z - input.info.impact.getPosition().z) < 350){
 				currentAction = new DodgeAction(this, impactRadians, input);
 			}else if(car.forwardVelocity < -1000){
 				currentAction = new HalfFlipAction(this, input);
@@ -122,7 +124,7 @@ public class ClearState extends State {
 		
 		// Aerial
 		double ballSpeedAtCar = input.ball.velocity.magnitude() * Math.cos(input.ball.velocity.flatten().correctionAngle(car.position.minus(input.ball.position).flatten())); 
-		if(car.hasWheelContact && input.info.impact.getPosition().z > (ballSpeedAtCar > 1700 ? 300 : 500) && input.info.impact.getPosition().y * Utils.teamSign(car) < 0 && car.position.z < 140){
+		if(car.hasWheelContact && input.info.impact.getPosition().z > (ballSpeedAtCar > 1700 ? 300 : 500) && input.info.impact.getPosition().y * car.sign < 0 && car.position.z < 140){
 			double maxRange = input.info.impact.getPosition().z * 4;
 			double minRange = input.info.impact.getPosition().z * 1.3;
 			if(Utils.isPointWithinRange(car.position.flatten(), input.info.impact.getPosition().flatten(), minRange, maxRange)){
@@ -135,7 +137,7 @@ public class ClearState extends State {
 		wildfire.renderer.drawCircle(Color.GREEN, Constants.homeGoal(car.team), homeZoneSize);
 		
 		// We are in position for the ball to hit us (and we can't quickly turn towards the ball).
-		if(car.position.y * Utils.teamSign(car) > -5050 && Math.abs(impactRadians) > 0.4 * Math.PI && Math.abs(impactRadians) < 0.8 * Math.PI){
+		if(car.position.y * car.sign > -5050 && Math.abs(impactRadians) > 0.4 * Math.PI && Math.abs(impactRadians) < 0.8 * Math.PI){
 			//We don't want to wait too long for the ball to reach us
 			double ballTime = Math.abs((car.position.y - input.ball.position.y) / input.ball.velocity.y);
 			Vector2 intersect = Utils.traceToY(input.ball.position.flatten(), input.ball.velocity.flatten(), car.position.y);

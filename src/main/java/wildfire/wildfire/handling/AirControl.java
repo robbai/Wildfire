@@ -7,8 +7,6 @@ import wildfire.vector.Vector3;
 
 public class AirControl {
 
-	public static final Vector3 worldUp = new Vector3(0, 0, 1);
-
 	/**
 	 * https://github.com/DomNomNom/RocketBot/blob/32e69df4f2841501c5f1da97ce34673dccb670af/NomBot_v1.5/NomBot_v1_5.py#L56-L103
 	 */
@@ -63,11 +61,11 @@ public class AirControl {
 	}
 	
 	public static double[] getPitchYawRoll(CarData car, Vector2 forward){
-		return getPitchYawRoll(car, forward, worldUp);
+		return getPitchYawRoll(car, forward, Vector3.Z);
 	}
 	
 	public static double[] getPitchYawRoll(CarData car, Vector3 forward){
-		return getPitchYawRoll(car, forward, worldUp);
+		return getPitchYawRoll(car, forward, Vector3.Z);
 	}
 
 }

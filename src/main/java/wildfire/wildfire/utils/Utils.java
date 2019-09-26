@@ -16,9 +16,12 @@ public class Utils {
 		return aim != 0 ? aim + -Math.signum(aim) * Math.PI : Math.PI;
 	}
 	
+	@Deprecated
 	public static int teamSign(int team){
 		return (team == 0 ? 1 : -1);
 	}
+	
+	@Deprecated
 	public static int teamSign(CarData car){
 		return teamSign(car.team);
 	}

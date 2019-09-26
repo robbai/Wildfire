@@ -27,7 +27,7 @@ import wildfire.util.PortReader;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.pitch.Pitch;
 
-public class WildfireJava {
+public class Main {
 	
 	/**
 	 * This prevents the server from being launched.
@@ -51,7 +51,7 @@ public class WildfireJava {
             return DEFAULT_PORT;
         });
     	if(!testGui){
-    		WildfirePythonInterface pythonInterface = new WildfirePythonInterface(port, botManager);
+    		PythonInterface pythonInterface = new PythonInterface(port, botManager);
             new Thread(pythonInterface::start).start();
 	        
 	        Pitch.initTriangles();
@@ -68,7 +68,7 @@ public class WildfireJava {
         panel.setLayout(new BorderLayout());
         
         // Icon
-        URL url = WildfireJava.class.getClassLoader().getResource("icon.png");
+        URL url = Main.class.getClassLoader().getResource("icon.png");
         Image image = Toolkit.getDefaultToolkit().createImage(url);
         frame.setIconImage(image);
         

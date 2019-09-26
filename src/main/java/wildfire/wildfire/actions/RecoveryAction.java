@@ -32,7 +32,7 @@ public class RecoveryAction extends Action {
 
 	@Override
 	public ControlsOutput getOutput(InfoPacket input){
-		boolean canBoostDown = (input.car.orientation.noseVector.dotProduct(AirControl.worldUp.scaled(-1)) > zToBoost);
+		boolean canBoostDown = (input.car.orientation.noseVector.dotProduct(Vector3.Z.scaled(-1)) > zToBoost);
 				
 		Vector3[] fall = simulateFall(boostDown ? (canBoostDown ? Color.RED : Color.YELLOW) : Color.WHITE, input.car.position, input.car.velocity);
 		
@@ -44,29 +44,24 @@ public class RecoveryAction extends Action {
 		wildfire.renderer.drawString2d("Est. Time: " + Utils.round(intersectTime) + "s", Color.WHITE, new Point(0, 40), 2, 2);
 		
 		// whatisaphone's Secret Recipe.
-		boostDown = (input.car.boost > 5 && (intersect == null || (intersectTime > 1.3 && intersectLocation.z < Constants.CEILING - 400)));
+		boostDown = (input.car.boost >= 1 && (intersect == null || (intersectTime > 1.3 && intersectLocation.z < Constants.CEILING - 400)));
 		
 		boolean planWavedash = (!input.car.doubleJumped && !boostDown && input.car.velocity.z < -420 && input.car.orientation.roofVector.z > 0.8
 				&& (intersect == null || intersectLocation.z < 400));
 		wildfire.renderer.drawString2d("Plan Wavedash: " + planWavedash, Color.WHITE, new Point(0, 60), 2, 2);
 		
 		Vector3 desiredRoof;
-		if(boostDown){
-			desiredRoof = input.car.velocity.withZ(0);
-		}else if(triangle != null && (!planWavedash || triangleCentre.z > 20)){
+		if(triangle != null && (!planWavedash || triangleCentre.z > 20)){
 			Vector3 fallNormal = triangle.getNormal().scaled(-1);
-			
-			wildfire.renderer.drawLine3d(Color.GREEN, input.car.position, input.car.position.plus(fallNormal.scaledToMagnitude(120)));
-			
 			desiredRoof = fallNormal;
 		}else{
-			desiredRoof = AirControl.worldUp;
+			desiredRoof = Vector3.Z;
 		}
 		
 		Vector3 desiredNose;
 		if(boostDown || (triangle != null && triangleCentre.z > 200 && intersectLocation.z < Constants.CEILING - 400)){
 			// Aim down.
-			desiredNose = AirControl.worldUp.scaled(-1);
+			desiredNose = Vector3.Z.scaled(-1);
 		}else if(input.car.velocity.flatten().magnitude() > 800){
 			desiredNose = input.car.velocity.withZ(0);
 		}else{
@@ -82,9 +77,13 @@ public class RecoveryAction extends Action {
 			}
 		}
 		
+		// Render the target orientations.
+		wildfire.renderer.drawLine3d(Color.RED, input.car.position, input.car.position.plus(desiredNose.scaledToMagnitude(200)));
+		wildfire.renderer.drawLine3d(Color.GREEN, input.car.position, input.car.position.plus(desiredRoof.scaledToMagnitude(200)));
+		
 		return new ControlsOutput().withPitchYawRoll(AirControl.getPitchYawRoll(input.car, desiredNose, desiredRoof))
 				.withBoost(boostDown && canBoostDown).withJump(false)
-				.withThrottle(timeDifference(input.elapsedSeconds) > 0.5 ? 1 : 0); //Throttle to avoid turtling
+				.withThrottle(timeDifference(input.elapsedSeconds) > 0.5 ? 1 : 0); // Throttle to avoid turtling.
 	}
 
 	@Override
@@ -108,7 +107,7 @@ public class RecoveryAction extends Action {
 		if(velocity.magnitude() > 2300) velocity.scaledToMagnitude(2300);
 		Vector3 newPosition = position.plus(velocity.scaled(fallStep));
 		
-		wildfire.renderer.drawLine3d(colour, position.toFramework(), newPosition.toFramework());
+		wildfire.renderer.drawLine3d(colour, position.fbs(), newPosition.fbs());
 		positions[depth] = newPosition;
 		return simulateFall(colour, positions, velocity, depth + 1);
 	}

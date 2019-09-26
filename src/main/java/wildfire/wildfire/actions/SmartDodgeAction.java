@@ -160,7 +160,7 @@ public class SmartDodgeAction extends Action {
 	    double rollVel = car.angularVelocity.dotProduct(car.orientation.noseVector);
 	    
 	    for(int i = 0; i < ticks; i++){
-			carVelocity = carVelocity.plus(AirControl.worldUp.scaled(-Constants.GRAVITY * tick)).capMagnitude(Constants.MAX_CAR_VELOCITY);
+			carVelocity = carVelocity.plus(Vector3.Z.scaled(-Constants.GRAVITY * tick)).capMagnitude(Constants.MAX_CAR_VELOCITY);
 			carPosition = carPosition.plus(carVelocity.scaled(tick));
 	    }
 	    CarOrientation carOrientation = CarOrientation.convert(car.orientation.eularPitch + pitchVel * tick * ticks, car.orientation.eularYaw + yawVel * tick * ticks, car.orientation.eularRoll + rollVel * tick * ticks);
@@ -168,7 +168,7 @@ public class SmartDodgeAction extends Action {
 		ballPosition = ballPosition.plus(carPosition.minus(ballPosition).scaledToMagnitude(Constants.BALL_RADIUS));
 		
 		Vector3 local = Utils.toLocal(carPosition, carOrientation, ballPosition);
-		local = local.plus(Constants.RIPPER_OFFSET);
+		local = local.minus(Constants.RIPPER_OFFSET);
 		
 	    return Math.abs(local.x) < Constants.RIPPER.x && Math.abs(local.y) < Constants.RIPPER.y && Math.abs(local.z) < Constants.RIPPER.z;
 	}

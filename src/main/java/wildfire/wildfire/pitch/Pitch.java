@@ -10,7 +10,7 @@ import java.util.Random;
 import de.javagl.obj.FloatTuple;
 import de.javagl.obj.ObjReader;
 import de.javagl.obj.ReadableObj;
-import wildfire.WildfireJava;
+import wildfire.Main;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.utils.Constants;
@@ -55,7 +55,7 @@ public class Pitch {
 	public static boolean initTriangles(){
 		InputStream inputStream;
 		try {
-			URL url = WildfireJava.class.getClassLoader().getResource("pitch.obj");
+			URL url = Main.class.getClassLoader().getResource("pitch.obj");
 			inputStream = url.openStream();
 			ReadableObj obj = ObjReader.read(inputStream);
 			

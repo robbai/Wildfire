@@ -37,8 +37,8 @@ public class WallHitState extends State {
 		if(!isAppropriateWallHit(input.car, input.info.impact.getPosition())) return false;
 		
 		// We would like the hit to be constructive
-		return Utils.teamSign(input.car) * input.info.impact.getPosition().y < -4000 || 
-				Utils.teamSign(input.car) * (input.info.impact.getPosition().y - input.car.position.y) > (Behaviour.hasTeammate(input) ? -900 : -600);
+		return input.car.sign * input.info.impact.getPosition().y < -4000 || 
+				input.car.sign * (input.info.impact.getPosition().y - input.car.position.y) > (Behaviour.hasTeammate(input) ? -900 : -600);
 	}
 	
 	@Override
@@ -63,7 +63,7 @@ public class WallHitState extends State {
 			if(!isAppropriateWallHit(car, input.info.impact.getPosition())){
 				wildfire.renderer.drawString2d("Abandon", Color.WHITE, new Point(0, 20), 2, 2);
 				
-				if(car.velocity.z < -500 && input.info.impact.getTime() > 4){
+				if(input.info.impact.getTime() > 4 && (car.position.z > 1000 || car.velocity.magnitude() < 600)){
 					currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
 					return currentAction.getOutput(input);
 				}
@@ -73,7 +73,7 @@ public class WallHitState extends State {
 				wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition(), Color.CYAN, 125);
 				
 				Vector3 target = input.info.impact.getPosition();
-				if(Math.abs(target.y) < Constants.PITCH_LENGTH - 800) target = target.plus(new Vector3(0, 85 * -Utils.teamSign(car), 0));
+				if(Math.abs(target.y) < Constants.PITCH_LENGTH - 800) target = target.plus(new Vector3(0, 85 * -car.sign, 0));
 								
 				double radians = Handling.aim(car, target);
 				
@@ -111,7 +111,7 @@ public class WallHitState extends State {
 				if(Behaviour.correctSideOfTarget(car, input.info.impact.getPosition())){
 					destination = destination.withY(Utils.lerp(car.position.y, input.info.impact.getPosition().y, 0.1));
 				}else{
-					destination = destination.withY(input.info.impact.getPosition().y - Utils.teamSign(car) * 150);
+					destination = destination.withY(input.info.impact.getPosition().y - car.sign * 150);
 				}
 			}
 			destination = destination.withX(Math.max(Math.abs(input.info.impact.getPosition().x), 1200) * Math.signum(input.info.impact.getPosition().x));
@@ -156,7 +156,7 @@ public class WallHitState extends State {
 	private boolean isAppropriateWallHit(CarData car, Vector3 target){
 		if(Utils.distanceToWall(target) > maxWallDistance) return false;
 		
-		boolean backWall = (target.y * Utils.teamSign(car) < -4400);
+		boolean backWall = (target.y * car.sign < -4400);
 		
 		if(target.z < Math.max(backWall ? 330 : 400, car.position.distanceFlat(target) / 5)) return false;
 		if(Math.abs(target.y) < 4350) return true;

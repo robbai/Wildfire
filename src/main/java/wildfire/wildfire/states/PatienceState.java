@@ -15,6 +15,7 @@ import wildfire.wildfire.obj.Slice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
+import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Utils;
 
 public class PatienceState extends State {
@@ -84,7 +85,7 @@ public class PatienceState extends State {
 		}
 		
 		// Motion equations.
-		double s = (point.getPosition().distanceFlat(car.position) - 110);
+		double s = (point.getPosition().distanceFlat(car.position) - Constants.RIPPER.y); // - 110
 		double t = point.getTime();
 		double u = car.velocityDir(point.getPosition().minus(car.position).flatten());
 		double v = ((2 * s) / t - u);

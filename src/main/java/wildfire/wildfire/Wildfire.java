@@ -11,7 +11,7 @@ import rlbot.cppinterop.RLBotDll;
 import rlbot.flat.BallPrediction;
 import rlbot.flat.GameTickPacket;
 import rlbot.flat.QuickChatSelection;
-import wildfire.WildfireJava;
+import wildfire.Main;
 import wildfire.boost.BoostManager;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.input.Info;
@@ -85,15 +85,17 @@ public class Wildfire implements Bot {
         new KickoffState(this);
         new BoostTestState(this);
         new WallHitState(this);
-        new PatienceState(this);
+        new PatientShootState(this);
+        new PathState(this, false);
+//        new PatienceState(this);
         new BoostState(this);
         new WaitState(this, false);
         new StalkState(this);
-        new MixerState(this);        
-        new ShootState(this);
+        new MixerState(this);
+//        new ShootState(this);
         new ClearState(this);
         new ReturnState(this);
-        new PathState(this, false);
+//        new PathState(this, false);
 //        new DemoState(this);
         new ShadowState(this);
 //        new ShadowTestState(this);
@@ -110,7 +112,7 @@ public class Wildfire implements Bot {
 //        fallbackState = new ReturnState(this);
 //        fallbackState = new ShadowState(this);
         
-        WildfireJava.bots.add(this);
+        Main.bots.add(this);
     }
 
     private ControlsOutput processInput(InfoPacket input){
@@ -270,7 +272,7 @@ public class Wildfire implements Bot {
 
     public void retire(){
         System.out.println("Retiring Wildfire [" + playerIndex + "]");
-        WildfireJava.bots.remove(this);
+        Main.bots.remove(this);
     }
 
     @Override

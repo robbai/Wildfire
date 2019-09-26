@@ -54,7 +54,7 @@ public class KickoffState extends State {
 		timeStarted = input.elapsedSeconds;
 		
 		// We apply a random-offset to the ball so we're not hard countered continually.
-		randomOffset = new Vector2(random.nextDouble() * 2 - 1, random.nextDouble() -Utils.teamSign(input.car)).scaledToMagnitude(15);
+		randomOffset = new Vector2(random.nextDouble() * 2 - 1, random.nextDouble() -input.car.sign).scaledToMagnitude(15);
 
 		// Choosing to fake the kickoff or not.
 		timedOut = false;
@@ -115,7 +115,7 @@ public class KickoffState extends State {
 					// Line-up like a pro!
 					target = new Vector2(0, input.car.position.y * 0.15);
 				}else{
-					target = new Vector2(0, Constants.BALL_RADIUS * -Utils.teamSign(input.car)).plus(randomOffset).scaledToMagnitude(Constants.BALL_RADIUS);
+					target = new Vector2(0, Constants.BALL_RADIUS * -input.car.sign).plus(randomOffset).scaledToMagnitude(Constants.BALL_RADIUS);
 				}
 				
 				dodge = (input.car.position.magnitude() < (spawn == KickoffSpawn.CORNER ? 760 : 800));
@@ -168,7 +168,7 @@ public class KickoffState extends State {
 			
 			Vector2 destination;
 			if(grabBoost){
-				destination = new Vector2(0, -Utils.teamSign(input.car) * 4290);
+				destination = new Vector2(0, -input.car.sign * 4290);
 				wildfire.renderer.drawCircle(Color.WHITE, destination, 50);
 			}else{
 				destination = Constants.homeGoal(input.car.team);
@@ -176,7 +176,7 @@ public class KickoffState extends State {
 			
 			// Controls.
 			boolean reverse = (Math.abs(input.car.position.y) < Math.abs(destination.y));
-			double steer = fakeAlignPID.getOutput(input.elapsedSeconds, input.car.position.x * -Utils.teamSign(input.car), 0) * (reverse ? -1 : 1);
+			double steer = fakeAlignPID.getOutput(input.elapsedSeconds, input.car.position.x * -input.car.sign, 0) * (reverse ? -1 : 1);
 			double throttleMag = (grabBoost ? 1 : destination.distance(input.car.position.flatten()) / 1000);
 			return new ControlsOutput().withSteer(steer).withThrottle((reverse ? -1 : 1) * throttleMag).withBoost(false).withSlide(false);
 		}

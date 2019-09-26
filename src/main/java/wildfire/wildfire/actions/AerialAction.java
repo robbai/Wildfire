@@ -172,7 +172,7 @@ public class AerialAction extends Action {
 		velocity = velocity.capMagnitude(2300);
 		
 		Vector3 next = start.plus(velocity.scaled(renderScale));
-		renderer.drawLine3d(colour, start.toFramework(), next.toFramework());
+		renderer.drawLine3d(colour, start.fbs(), next.fbs());
 		return renderFall(renderer, colour, next, velocity, t + renderScale);
 	}
 

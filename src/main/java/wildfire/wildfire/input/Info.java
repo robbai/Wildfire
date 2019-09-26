@@ -25,18 +25,15 @@ public class Info {
 	public WRenderer renderer;
 	
 	private Impact[] impacts;
-	public Impact impact;
+	public Impact impact, earliestEnemyImpact;
 	public double teammateImpactTime, enemyImpactTime;
+	public CarData earliestEnemy;
+	public double impactDistance, impactDistanceFlat, impactRadians;
+	public Impact jumpImpact;
 
 	private double timeFirstOnGround;
 	private boolean onGroundLast;
 	public double timeOnGround;
-
-	public double impactDistance, impactDistanceFlat;
-
-	public Impact jumpImpact;
-
-	public double impactRadians;
 
 	public Info(Wildfire wildfire){
 		this.wildfire = wildfire;
@@ -66,15 +63,22 @@ public class Info {
 		this.enemyImpactTime = Double.MAX_VALUE;
 		try{
 			for(int i = 0; i < input.cars.length; i++){
-				Impact impact = Behaviour.getEarliestImpactPoint(input.cars[i], ballPrediction);
+				CarData c = input.cars[i];
+				if(c == null) continue;
+				
+				Impact impact = Behaviour.getEarliestImpactPoint(c, ballPrediction);
 				this.impacts[i] = impact;
 				
 				if(i == this.wildfire.playerIndex){
 					this.impact = impact;
-				}else if(input.cars[i].team == this.wildfire.team){
+				}else if(c.team == this.wildfire.team){
 					this.teammateImpactTime = Math.min(this.teammateImpactTime, impact.getTime());
 				}else{
-					this.enemyImpactTime = Math.min(this.enemyImpactTime, impact.getTime());
+					if(impact.getTime() < this.enemyImpactTime){
+						this.enemyImpactTime = impact.getTime();
+						this.earliestEnemy = c;
+						this.earliestEnemyImpact = impact;
+					}
 				}
 			}
 			
@@ -108,7 +112,7 @@ public class Info {
 			
 			double time = (rawSlice.gameSeconds() - car.elapsedSeconds);
 			double jumpHeight = localSlice.z;
-			if(jumpHeight > JumpPhysics.maxJumpHeight + (Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance) * (SmartDodgeAction.zRatio * 0.72)) continue;
+			if(jumpHeight > JumpPhysics.maxJumpHeight + (Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance) * (SmartDodgeAction.zRatio * 0.7)) continue;
 //			if(jumpHeight > JumpPhysics.maxJumpHeight) continue;
 			double peakTime = JumpPhysics.getFastestTimeZ(jumpHeight);
 			double driveTime = (time - peakTime);

@@ -18,7 +18,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowDiscreteMechanic extends Mechanic {
 
-	public final static double steerLookahead = 0.317, speedLookahead = (1D / 60);
+	public final static double steerLookahead = 0.304, speedLookahead = (1D / 60);
 	private final static boolean verboseRender = true;
 
 	private DiscreteCurve curve;
@@ -70,7 +70,7 @@ public class FollowDiscreteMechanic extends Mechanic {
 			double targetTimeLeft = (this.targetTime.getAsDouble() - timeElapsed);
 			
 			if(renderPredictionToTargetTime){
-				int endFrame = Math.min((int)Math.ceil(targetTimeLeft * 60), wildfire.ballPrediction.slicesLength() - 1);
+				int endFrame = (int)Utils.clamp(Math.ceil(targetTimeLeft * 60), 0, wildfire.ballPrediction.slicesLength());
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.WHITE, 0, endFrame);
 				Vector3 slicePosition = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(endFrame).physics().location());
 				wildfire.renderer.drawCrosshair(input.car, slicePosition, Color.GRAY, 80);

@@ -19,9 +19,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowSmartDodgeMechanic extends Mechanic {
 	
-	public final static double steerLookahead = 0.312, speedLookahead = (1D / 60);
-	
-	public static final double earlyTime = 0.001;
+	public final static double steerLookahead = 0.312, speedLookahead = (1D / 60), earlyTime = 0/*.001*/;
 
 	private DiscreteCurve curve;
 

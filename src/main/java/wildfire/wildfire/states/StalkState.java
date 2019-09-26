@@ -22,7 +22,7 @@ public class StalkState extends State {
 	 * Wait for the opponent to clear the ball, then pounce!
 	 */
 	
-	private final double dangerZoneMinSize = 1100, dangerZoneMaxSize = 2800, confine = 500;
+	private final double dangerZoneMinSize = 1000, dangerZoneMaxSize = 2900, confine = 500;
 	
 	private CarData defender;
 	private double defenderDistance, defenderVelocity;
@@ -40,7 +40,7 @@ public class StalkState extends State {
 //				|| !correctSide
 				) return false;
 		
-		// We want to hit it!
+//		// We want to hit it!
 		if(input.info.impact.getTime() < (correctSide ? 0.55 : 0.3)) return false;
 		
 		if(input.info.impact.getTime() < input.info.enemyImpactTime + 0.2) return false;
@@ -48,7 +48,7 @@ public class StalkState extends State {
 		// It's not in their danger zone.
 		enemyGoal = Constants.enemyGoal(input.car);
 		double impactGoalDistance = input.info.impact.getPosition().distanceFlat(enemyGoal);
-		if(impactGoalDistance > dangerZoneMinSize || impactGoalDistance < dangerZoneMaxSize) return false;
+		if(impactGoalDistance < dangerZoneMinSize || impactGoalDistance > dangerZoneMaxSize) return false;
 		
 		// Grab the defender.
 		Pair<CarData, Pair<Double, Double>> enemy = getDefender(input.cars, input.ball);
@@ -88,7 +88,9 @@ public class StalkState extends State {
 		// Controller
 		ControlsOutput controller = Handling.chaosDrive(input.car, destination, false);
 		double throttleCap = (destinationDistance / 2000);
-		return controller.withThrottle(Utils.clamp(controller.getThrottle(), -throttleCap, throttleCap));
+		return controller
+				.withThrottle(Utils.clamp(controller.getThrottle(), -throttleCap, throttleCap))
+				.withBoost(controller.holdBoost() && throttleCap > 0.9);
 	}
 	
 	private double getSitbackDistance(){

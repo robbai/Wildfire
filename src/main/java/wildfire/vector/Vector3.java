@@ -6,6 +6,10 @@ import rlbot.gamestate.DesiredVector3;
 import wildfire.wildfire.utils.Constants;
 
 public class Vector3 {
+	
+	public static final Vector3 X = new Vector3(1, 0, 0);
+	public static final Vector3 Y = new Vector3(0, 1, 0);
+	public static final Vector3 Z = new Vector3(0, 0, 1);
 
     public final double x;
     public final double y;
@@ -32,7 +36,7 @@ public class Vector3 {
         return new Vector3(-vec.x(), vec.y(), vec.z());
     }
 
-    public rlbot.vector.Vector3 toFramework(){
+    public rlbot.vector.Vector3 fbs(){
         // Invert the X value again so that RLBot sees the format it expects.
         return new rlbot.vector.Vector3((float)-x, (float)y, (float)z);
     }

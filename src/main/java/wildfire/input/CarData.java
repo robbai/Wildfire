@@ -6,7 +6,7 @@ import wildfire.vector.Vector3;
 
 public class CarData {
 	
-    public final Vector3 position;
+	public final Vector3 position;
     public final Vector3 velocity;
     public final Vector3 angularVelocity;
     
@@ -26,7 +26,7 @@ public class CarData {
     
 	public final String name;
 	
-	public final double forwardVelocity, forwardVelocityAbs;
+	public final double forwardVelocity, forwardVelocityAbs, sign;
 
     public CarData(rlbot.flat.PlayerInfo playerInfo, float elapsedSeconds, int index){
         this.position = Vector3.fromFlatbuffer(playerInfo.physics().location());
@@ -51,6 +51,7 @@ public class CarData {
         
         this.forwardVelocity = this.velocity.dotProduct(this.orientation.noseVector);
         this.forwardVelocityAbs = Math.abs(this.forwardVelocity);
+        this.sign = (this.team == 0 ? 1 : -1);
     }
     
     public double velocityDir(Vector2 direction){

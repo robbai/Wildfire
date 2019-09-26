@@ -13,7 +13,7 @@ repositories {
     maven { url "https://jitpack.io" }
 }
 
-mainClassName = 'wildfire.WildfireJava'
+mainClassName = 'wildfire.Main'
 
 // This directory will be created and the interface dll copied into it at runtime.
 // The end result is that the interface dll will be available for loading.

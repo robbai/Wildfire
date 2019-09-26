@@ -39,6 +39,7 @@ public class BoostState extends State {
 
 	@Override
 	public boolean ready(InfoPacket input){
+		if(Math.abs(input.car.position.y) > Constants.PITCH_LENGTH) return false;
 		Vector2 impactFlat = input.info.impact.getPosition().flatten(); 
 		steal = (Utils.teamSign(input.car) * impactFlat.y > 4000 && Constants.enemyGoal(input.car.team).distance(impactFlat) > 2000 && !Behaviour.isInCone(input.car, impactFlat.withZ(0), 700));
 		possession = (Behaviour.closestOpponentDistance(input, input.ball.position) > Math.max(2600, input.car.position.distanceFlat(impactFlat)));
@@ -105,9 +106,9 @@ public class BoostState extends State {
 		Vector2 carPosition = car.position.flatten();
 		Vector2 cross = boostLocation.minus(carPosition).cross();
 		BezierCurve bezier = new BezierCurve(carPosition, 
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(boostDistance / 8)), 
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.25)).plus(cross.scaledToMagnitude(boostDistance / 16)), 
 				carPosition.plus(boostLocation).scaled(0.5),
-				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(boostDistance / -16)),
+				carPosition.plus(boostLocation.minus(carPosition).scaled(0.75)).plus(cross.scaledToMagnitude(boostDistance / -32)),
 				boostLocation.plus(car.position.flatten().minus(boostLocation).scaledToMagnitude(circleRadius)));
 		bezier.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.blue, boostLocation, circleRadius);
@@ -118,7 +119,9 @@ public class BoostState extends State {
 			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -700, 700), Utils.clamp(boostLocation.y, -Constants.PITCH_LENGTH + 500, Constants.PITCH_LENGTH - 500));
 		}
 		
-		return Handling.chaosDrive(car, boostLocation, true);
+		ControlsOutput controls = Handling.chaosDrive(car, boostLocation, true);
+		if(controls.holdHandbrake()) controls.withSlide(car.forwardVelocityAbs < 1000 || Utils.distanceToWall(car.position) < 600);
+		return controls;
 	}
 
 	private BoostPad getBoost(InfoPacket input){

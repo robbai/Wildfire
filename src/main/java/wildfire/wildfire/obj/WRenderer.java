@@ -32,7 +32,7 @@ public class WRenderer extends Renderer {
     }
 	
 	public void drawLine3d(Color color, Vector2 start, Vector2 end){
-		if(threeD) r.drawLine3d(color, start.withZ(minZ).toFramework(), end.withZ(minZ).toFramework());
+		if(threeD) r.drawLine3d(color, start.withZ(minZ).fbs(), end.withZ(minZ).fbs());
     }
 
     public void drawLine3d(Color color, rlbot.vector.Vector3 start, rlbot.vector.Vector3 end){
@@ -65,9 +65,9 @@ public class WRenderer extends Renderer {
     
     public void drawCrosshair(CarData car, Vector3 point, Color colour, double size){
     	if(!threeD || car.position.minus(point).isZero()) return;
-    	drawLine3d(colour, point.withZ(point.z - size / 2).toFramework(), point.withZ(point.z + size / 2).toFramework());
+    	drawLine3d(colour, point.withZ(point.z - size / 2).fbs(), point.withZ(point.z + size / 2).fbs());
     	Vector3 orthogonal = car.position.minus(point).scaledToMagnitude(size / 2).rotateHorizontal(Math.PI / 2).withZ(0);
-    	drawLine3d(colour, point.plus(orthogonal).toFramework(), point.minus(orthogonal).toFramework());
+    	drawLine3d(colour, point.plus(orthogonal).fbs(), point.minus(orthogonal).fbs());
     }
     
     public void drawCircle(Color colour, Circle circle){
@@ -86,13 +86,13 @@ public class WRenderer extends Renderer {
 		for(double i = 0; i < pointCount; i += 1){
             double angle = 2 * Math.PI * i / pointCount;
             Vector3 latest = new Vector3(centre.x + radius * Math.cos(angle), centre.y + radius * Math.sin(angle), centre.z);
-            if(last != null && !last.isOutOfBounds() && !latest.isOutOfBounds()) drawLine3d(colour, last.toFramework(), latest.toFramework());
+            if(last != null && !last.isOutOfBounds() && !latest.isOutOfBounds()) drawLine3d(colour, last.fbs(), latest.fbs());
             last = latest;
         }
 		
 		//Connect the end to the start
 		Vector3 start = new Vector3(centre.x + radius, centre.y, centre.z);
-		if(!last.isOutOfBounds() && !start.isOutOfBounds()) drawLine3d(colour, last.toFramework(), start.toFramework());
+		if(!last.isOutOfBounds() && !start.isOutOfBounds()) drawLine3d(colour, last.fbs(), start.fbs());
 	}
 	
 	/*
@@ -121,12 +121,12 @@ public class WRenderer extends Renderer {
 		this.threeD = threeD;
 	}
 	
-	public void renderPrediction(BallPrediction p, Color c, int startIndex, int endIndex){
-		if(p == null || startIndex == endIndex) return;
-		for(int i = Math.max(1, startIndex); i < Math.min(p.slicesLength(), endIndex); i++){
-			Vector3 a = Vector3.fromFlatbuffer(p.slices(i - 1).physics().location());
-			Vector3 b = Vector3.fromFlatbuffer(p.slices(i).physics().location());
-			drawLine3d(c, a.toFramework(), b.toFramework());
+	public void renderPrediction(BallPrediction ballPrediction, Color colour, int start, int end){
+		if(ballPrediction == null || start == end) return;
+		for(int i = Math.max(1, start); i < Math.min(ballPrediction.slicesLength(), end); i++){
+			Vector3 a = Vector3.fromFlatbuffer(ballPrediction.slices(i - 1).physics().location());
+			Vector3 b = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			drawLine3d(colour, a.fbs(), b.fbs());
 		}
 	}
 	
@@ -139,27 +139,43 @@ public class WRenderer extends Renderer {
     			t.getVector(1).withZ(Math.max(floor, t.getVector(1).z)),
     			t.getVector(2).withZ(Math.max(floor, t.getVector(2).z))};
     	
-    	r.drawLine3d(color, vectors[0].toFramework(), vectors[1].toFramework());
-    	r.drawLine3d(color, vectors[0].toFramework(), vectors[2].toFramework());
-    	r.drawLine3d(color, vectors[1].toFramework(), vectors[2].toFramework());
+    	r.drawLine3d(color, vectors[0].fbs(), vectors[1].fbs());
+    	r.drawLine3d(color, vectors[0].fbs(), vectors[2].fbs());
+    	r.drawLine3d(color, vectors[1].fbs(), vectors[2].fbs());
     }
 
 	public void drawLine3d(Color colour, Vector3 start, Vector3 end){
-		this.drawLine3d(colour, start.toFramework(), end.toFramework());
+		this.drawLine3d(colour, start.fbs(), end.fbs());
 	}
 
 	public void drawPolyline3d(Color colour, Vector2[] points){
 		if(!threeD || points.length < 2);
 		for(int i = 0; i < points.length - 1; i++){
-			r.drawLine3d(colour, points[i].withZ(minZ).toFramework(), points[i + 1].withZ(minZ).toFramework());
+			r.drawLine3d(colour, points[i].withZ(minZ).fbs(), points[i + 1].withZ(minZ).fbs());
 		}
 	}
 	
 	public void drawPolyline3d(Color colour, Vector3[] points){
 		if(!threeD || points.length < 2);
 		for(int i = 0; i < points.length - 1; i++){
-			r.drawLine3d(colour, points[i].toFramework(), points[i + 1].toFramework());
+			r.drawLine3d(colour, points[i].fbs(), points[i + 1].fbs());
 		}
+	}
+	
+	public void drawUprightSquare(Vector3 centre, Color colour, Vector3 forward, Vector3 up, double size){
+		Vector3 right = forward.crossProduct(up);
+		forward = forward.scaledToMagnitude(size / 2);
+		up = up.scaledToMagnitude(size / 2);
+		right = right.scaledToMagnitude(size / 2);
+		
+		r.drawLine3d(colour, centre.plus(right).plus(up).fbs(), centre.plus(right).minus(up).fbs());
+		r.drawLine3d(colour, centre.minus(right).plus(up).fbs(), centre.minus(right).minus(up).fbs());
+		r.drawLine3d(colour, centre.plus(right).plus(up).fbs(), centre.minus(right).plus(up).fbs());
+		r.drawLine3d(colour, centre.plus(right).minus(up).fbs(), centre.minus(right).minus(up).fbs());
+	}
+	
+	public void drawUprightSquare(Vector3 centre, Color colour, Vector3 forward, double size){
+		drawUprightSquare(centre, colour, forward, Vector3.Z, size);
 	}
 
 }

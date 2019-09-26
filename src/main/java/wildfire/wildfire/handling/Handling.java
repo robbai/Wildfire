@@ -225,15 +225,15 @@ public class Handling {
 	
 	public static ControlsOutput steeringBlind(double yawError, double yawVelocity){
 		double steer;
-		if(Math.abs(yawError) > Math.toRadians(40)){
+		if(Math.abs(yawError) > Math.toRadians(30)){
 			steer = -Math.signum(yawError);
 		}else{
-			steer = (-yawError * 6 - yawVelocity * 0.3);
+			steer = (-yawError * 6 - yawVelocity * 0.25);
 		}
 		
 		return new ControlsOutput().withSteer(steer)
 				.withBoost(Math.abs(yawError) < Math.toRadians(15))
-				.withSlide(Math.abs(yawError) > Math.toRadians(50) && yawError * steer < 0);
+				.withSlide(Math.abs(yawError) > Math.toRadians(55) && yawError * steer < 0);
 	}
 
 }

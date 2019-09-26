@@ -6,7 +6,7 @@ import com.studiohartman.jamepad.ControllerIndex;
 import com.studiohartman.jamepad.ControllerManager;
 import com.studiohartman.jamepad.ControllerUnpluggedException;
 
-import wildfire.WildfireJava;
+import wildfire.Main;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.Wildfire;
 
@@ -83,7 +83,7 @@ public class Human extends Thread {
 	}
 
 	public Human setEnabled(boolean enabled){
-		this.enabled = (enabled && WildfireJava.getArguments().contains("allow-human") && this.wildfire.isTestVersion());
+		this.enabled = (enabled && Main.getArguments().contains("allow-human") && this.wildfire.isTestVersion());
 		return this;
 	}
 

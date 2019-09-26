@@ -20,6 +20,7 @@ public class BoostTestState extends BoostState {
 	
 	@Override
 	public boolean ready(InfoPacket input){
+		if(Math.abs(input.car.position.y) > Constants.PITCH_LENGTH) return false;
 		if(input.car.boost > maxBoost) return false;
 		boost = getBoost(input);
 		return boost != null;

@@ -76,7 +76,7 @@ public class WaitState extends State {
 		
 		// Wall hit.
 		double wallDistance = Utils.distanceToWall(input.info.impact.getPosition());
-		if(input.info.impact.getPosition().y * Utils.teamSign(input.car) < 1500 
+		if(input.info.impact.getPosition().y * input.car.sign < 1500 
 				&& wallDistance < 260 && Math.abs(input.info.impact.getPosition().x) > 1500){
 			return false;
 		}
@@ -90,7 +90,7 @@ public class WaitState extends State {
 		if(Behaviour.isTeammateCloser(input, bounce)) return false;
 		
 		// Opponent's corner.
-		if(Utils.teamSign(input.car) * bounce.y > 4000 && Constants.enemyGoal(input.car.team).distance(bounce) > 1800 && !Behaviour.isInCone(input.car, bounce3, 1000)) return bounceDistance < 2200;
+		if(input.car.sign * bounce.y > 4000 && Constants.enemyGoal(input.car.team).distance(bounce) > 1800 && !Behaviour.isInCone(input.car, bounce3, 1000)) return bounceDistance < 2200;
 		
 		return ((Behaviour.isBallAirborne(input.ball) || input.info.impact.getPosition().z > 200) && input.ball.velocity.flatten().magnitude() < 5000)
 				|| (input.ball.position.z > 110 && input.ball.position.distanceFlat(input.car.position) < 220 && wallDistance > 400);
@@ -104,7 +104,7 @@ public class WaitState extends State {
 		boolean onTarget = Behaviour.isOnTarget(wildfire.ballPrediction, car.team);
 		double impactRadians = Handling.aim(car, input.info.impact.getPosition().flatten());
 		if(input.info.impact.getPosition().z > (onTarget && Math.abs(car.position.y) > 4500 ? 220 : 700) && Behaviour.correctSideOfTarget(car, input.info.impact.getPosition()) && car.hasWheelContact
-				&& Math.abs(impactRadians) < (onTarget ? 0.42 : 0.32) && input.info.impact.getPosition().y * Utils.teamSign(car) < (onTarget ? -1500 : -2500) && (onTarget || Utils.teamSign(car) * input.ball.velocity.y < -1000)){
+				&& Math.abs(impactRadians) < (onTarget ? 0.42 : 0.32) && input.info.impact.getPosition().y * car.sign < (onTarget ? -1500 : -2500) && (onTarget || car.sign * input.ball.velocity.y < -1000)){
 			currentAction = AerialAction.fromBallPrediction(this, car, wildfire.ballPrediction, input.info.impact.getPosition().z > 420);
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
 			currentAction = null;

@@ -195,7 +195,7 @@ public class DrivePhysics {
 		
 		while(distance < targetDistance){
 			velocity += determineAcceleration(velocity, 1, boost >= 1) * step;
-			velocity = Math.min(velocity, maxVel);
+			velocity = Utils.clamp(velocity, 1, maxVel);
 			if(velocity != maxVel) boost -= (100D / 3) * step;
 			distance += velocity * step;
 			time += step;

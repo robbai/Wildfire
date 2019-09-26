@@ -26,7 +26,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state
 	 */
-	private static final double dropoff = 0.19, scope = 0.36;
+	private static final double dropoff = 0.17, scope = 0.37;
 	
 	/*
 	 * Yeah this one too, I guess
@@ -59,7 +59,7 @@ public class FallbackState extends State {
 		}
 
 		// Impact point.
-		Vector3 impactPoint = input.info.impact.getPosition();
+		Vector3 impactPoint = matchHeight(input.info.impact.getPosition(), car);
 		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.yellow, 0, input.info.impact.getFrame());
 		wildfire.renderer.drawCrosshair(car, impactPoint, Color.MAGENTA, 125);
 
@@ -147,6 +147,14 @@ public class FallbackState extends State {
         		.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > 1.2 && car.forwardVelocityAbs > 500);
 	}
 	
+	/**
+	 * This brings the centre of the ball down to the car's height
+	 * so that rendering doesn't clip through the ground
+	 */
+	private Vector3 matchHeight(Vector3 position, CarData car){
+		return position.plus(car.orientation.roofVector.scaled(Constants.CAR_HEIGHT - Constants.BALL_RADIUS));
+	}
+
 	private boolean isOkayToSmartDodge(InfoPacket input){
 		if(input.info.jumpImpact == null) return false;
 //		if(Utils.distanceToWall(input.info.impact.getBallPosition()) < 160) return false;
@@ -175,7 +183,14 @@ public class FallbackState extends State {
 		Vector3 endLocal = impactPointLocal.plus(impactPointLocal.minus(goalLocal).withZ(0).scaledToMagnitude(distance * scope)).withZ(0);
 		endLocal = startLocal.plus(endLocal.minus(startLocal).scaled(dropoff));//.confine(35, 50);
 		
-		if(car.hasWheelContact) wildfire.renderer.drawLine3d(Color.RED, Utils.toGlobal(car, startLocal).toFramework(), Utils.toGlobal(car, endLocal).toFramework());
+		if(car.hasWheelContact){
+//			wildfire.renderer.drawLine3d(Color.RED, Utils.toGlobal(car, startLocal).fbs(), Utils.toGlobal(car, endLocal).fbs());
+			final double size = 80;
+			Vector3 globalStart = Utils.toGlobal(car, startLocal);
+			Vector3 globalEnd = Utils.toGlobal(car, endLocal);
+			wildfire.renderer.drawUprightSquare(globalStart.plus(car.orientation.roofVector.scaled(size / 2)), Color.RED, globalEnd.minus(globalStart), car.orientation.roofVector, size);
+		}
+		
 		Vector3 next = getLocalPosition(car, endLocal, goalLocal, ply + 1, impactPointLocal);
 		return ply < targetPly ? (ply == targetPly ? startLocal : next) : endLocal;
 	}
