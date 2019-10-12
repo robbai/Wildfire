@@ -56,6 +56,7 @@ public class PatientShootState extends State {
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
 			
 			if(slicePosition.y * car.sign < -3000) break;
+			if(Math.abs(slicePosition.y) > Constants.PITCH_LENGTH) break;
 			
 			if(slicePosition.z > Info.maxJumpImpactZ) continue;
 			this.jump = (slicePosition.z > maxLowZ);
