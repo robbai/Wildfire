@@ -80,7 +80,7 @@ public class ClearState extends State {
 		
 		// Smart-dodge.
 		Vector3 impactPosition = input.info.impact.getPosition();
-		if(input.info.impact.getTime() < 3 && Utils.toLocal(input.car, input.info.impact.getBallPosition()).z > 180/* && offset != null*/){
+		if(input.info.impact.getTime() < 3 && Utils.toLocal(input.car, input.info.impact.getBallPosition()).z > 180 && car.onFlatGround){
 //			Vector2 trace = Utils.traceToWall(car.position.flatten(), input.info.impact.getPosition().plus(offset.withZ(0)).minus(car.position).flatten());
 //			Slice candidate = SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, car, trace);
 			Slice candidate = input.info.jumpImpact;
