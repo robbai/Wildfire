@@ -49,7 +49,7 @@ public class Human extends Thread {
 					if(Main.getArguments().contains("allow-human")){
 						this.setEnabled(!this.isEnabled());
 					}else{
-						TrainingManager.write(new TrainingState(this.wildfire.gameTickPacketAgo(5)));
+						TrainingManager.write(new TrainingState(this.wildfire.gameTickPacketAgo(4)));
 					}
 				}
 				

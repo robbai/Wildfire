@@ -107,7 +107,7 @@ public class ClearState extends State {
 				dodgeRadians = Utils.clamp(impactRadians, -Math.PI, Math.PI);
 			}
 			
-			boolean travellingToBall = (car.velocity.normalized().dotProduct(impactPosition.minus(car.position).normalized()) > 0.9 && car.forwardVelocityAbs > 1000);
+			boolean travellingToBall = (car.velocity.normalized().dotProduct(impactPosition.minus(car.position).normalized()) > 0.8 && car.forwardVelocityAbs > 700);
 //			boolean backflip = (Math.abs(dodgeRadians) > 0.75 * Math.PI);
 			
 			if((input.info.impact.getTime() < (travellingToBall ? Behaviour.IMPACT_DODGE_TIME : Behaviour.IMPACT_DODGE_TIME - 0.08))
