@@ -148,11 +148,11 @@ public class ClearState extends State {
 				double xDifference = Math.abs(car.position.x - intersect.x);
 				boolean closeby = (xDifference < 0.45 * Utils.lerp(Constants.RIPPER.y, Constants.RIPPER.x, Math.abs(car.orientation.forward.flatten().normalized().x)));
 				wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten(), intersect);
-				wildfire.renderer.drawString2d("Stop" + (closeby ? " (" + (int)xDifference + ")" : ""), Color.WHITE, new Point(0, 20), 2, 2);
+				wildfire.renderer.drawString2d("Stop" + (closeby ? " (" + (int)xDifference + "uu)" : ""), Color.WHITE, new Point(0, 20), 2, 2);
 				if(closeby){
 					wildfire.sendQuickChat(QuickChatSelection.Information_InPosition);
 					return Handling.stayStill(car);
-				}else if(xDifference < 900 && car.velocity.magnitude() < 1300){
+				}else if(xDifference < 700 && car.velocity.magnitude() < 1500){
 					return drivePoint(car, intersect.withZ(input.info.impact.getBallPosition().z), true);
 				}
 			}
