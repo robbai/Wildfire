@@ -204,18 +204,22 @@ public class FallbackState extends State {
 //				return true;
 //			}
 		
-			Vector3 jumpImpact = input.info.jumpImpact.getBallPosition();
-			if(Utils.distanceToWall(jumpImpact) < (input.car.onFlatGround ? 220 : 180)) return false;
+			Impact jumpImpact = input.info.jumpImpact;
+			Vector3 jumpImpactPosition = jumpImpact.getBallPosition();
+			
+			if(jumpImpact.getTime() > 2){
+				if(Utils.distanceToWall(jumpImpactPosition) < (input.car.onFlatGround ? 220 : 180)) return false;
+			}
 
 			Vector3 carPosition = car.position;
-			Vector2 trace = Utils.traceToWall(carPosition.flatten(), jumpImpact.flatten());
+			Vector2 trace = Utils.traceToWall(carPosition.flatten(), jumpImpactPosition.flatten());
 			Vector2 carToTrace = trace.minus(carPosition.flatten());
 
 			if(carToTrace.y * car.sign < 0){
 				//if(jumpImpact.y * car.sign < -(Constants.PITCHLENGTH - 1800)){
 				//	return Math.abs(carToTrace.normalized().x) > 0.8;
 				//}
-				return Math.abs(trace.x) > (trace.x * jumpImpact.x < 0 ? Constants.GOAL_WIDTH + 250 : Constants.PITCH_WIDTH - 1200);
+				return Math.abs(trace.x) > (trace.x * jumpImpactPosition.x < 0 ? Constants.GOAL_WIDTH + 250 : Constants.PITCH_WIDTH - 1200);
 			}else{
 				return Math.abs(trace.x) < Constants.GOAL_WIDTH + 50 || Math.abs(trace.x) > Constants.PITCH_WIDTH - 1300;
 			}
