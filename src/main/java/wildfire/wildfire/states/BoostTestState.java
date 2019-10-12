@@ -26,6 +26,11 @@ public class BoostTestState extends BoostState {
 		boost = getBoost(input);
 		return boost != null;
 	}
+	
+	@Override
+	public boolean expire(InfoPacket input){
+		return !this.ready(input);
+	}
 
 	private BoostPad getBoost(InfoPacket input){
 		Impact impact = input.info.impact;
