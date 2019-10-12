@@ -128,7 +128,7 @@ public class FallbackState extends State {
 		}else if(wall && Math.abs(car.position.x) < Constants.GOAL_WIDTH - 50){
 			currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
 		}else if(input.info.impact.getTime() > (avoidOwnGoal ? 1.45 : 2.25) && !car.isSupersonic 
-				&& car.forwardVelocity > (car.boost < 0 ? 1200 : 1500) && Math.abs(steerImpact) < 0.2){
+				&& car.forwardVelocity > (car.boost < 1 ? 1200 : 1500) && Math.abs(steerImpact) < 0.2){
 			// Front flip for speed.
 			if(car.boost < 10 || Math.abs(steerImpact) > 0.08 || input.info.impact.getTime() < 2.5 || Utils.distanceToWall(car.position) < 300){
 				currentAction = new DodgeAction(this, 0, input);
