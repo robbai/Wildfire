@@ -3,7 +3,6 @@ package wildfire.wildfire.states;
 import java.awt.Color;
 import java.awt.Point;
 
-import rlbot.flat.QuickChatSelection;
 import wildfire.input.ball.BallData;
 import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
@@ -48,11 +47,11 @@ public class ReturnState extends State {
 		Vector2 carPosition = car.position.flatten();
 		Impact impact = input.info.impact;
 		boolean opponentBehind = Behaviour.isOpponentBehindBall(input);
-		boolean centered = (Math.abs(impact.getPosition().x) < Constants.PITCH_WIDTH - 1100);
+		boolean centered = (Math.abs(impact.getPosition().x) < Constants.PITCH_WIDTH - 1200);
 		double impactY = (car.sign * car.position.y);
 		
 		// Just hit it instead.
-		if((impact.getPosition().distanceFlat(car.position) < Math.max(1100, car.velocity.magnitude() * 0.75) || impact.getTime() < 0.8) &&
+		if((impact.getPosition().distanceFlat(car.position) < Math.max(1200, car.velocity.magnitude() * 0.75) || impact.getTime() < 0.8) &&
 				!Behaviour.isTowardsOwnGoal(car, impact.getPosition())){
 			if(impactY < -2000) return false;
 //			if(impactY > 4000 && centered) return true;
@@ -67,7 +66,7 @@ public class ReturnState extends State {
 			}
 		}
 		
-		if(impact.getPosition().distanceFlat(Constants.homeGoal(car)) < 2300){
+		if(impact.getPosition().distanceFlat(Constants.homeGoal(car)) < 2400){
 			return false;
 		}
 
@@ -131,7 +130,7 @@ public class ReturnState extends State {
 //			if(Behaviour.isInCone(car, impact.getPosition(), 200)) return true;
 			if(Math.abs(impact.getBallPosition().x) < 1300) return true;
 		}
-		if(carGoalDistance < impactGoalDistance * 0.6 || impactGoalDistance < 2800){
+		if(carGoalDistance < impactGoalDistance * 0.65 || impactGoalDistance < 2800){
 			return true;
 		}
 		

@@ -139,7 +139,7 @@ public class ClearState extends State {
 		wildfire.renderer.drawCircle(Color.GREEN, Constants.homeGoal(car.team), homeZoneSize);
 		
 		// We are in position for the ball to hit us (and we can't quickly turn towards the ball).
-		if(car.onFlatGround && car.position.y * car.sign > -Constants.PITCH_LENGTH + 100 && Math.abs(impactRadians) > Math.toRadians(55)){
+		if(car.onFlatGround && car.position.y * car.sign > -Constants.PITCH_LENGTH + 200 && Math.abs(impactRadians) > Math.toRadians(55)){
 			// We don't want to wait too long for the ball to reach us.
 			double ballTime = Math.abs((car.position.y - input.ball.position.y) / input.ball.velocity.y);
 			Vector2 intersect = Utils.traceToY(input.ball.position.flatten(), input.ball.velocity.flatten(), car.position.y);

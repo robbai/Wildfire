@@ -163,13 +163,16 @@ public class Handling {
 		}
 		
 		// Controls.
-		if(Math.abs(controls.getSteer()) > 0.3) return turnOnSpot(car, ballPosition);
 		if(fullDistance > 0/* && Behaviour.correctSideOfTarget(car, ballPosition)*/){
 			double maxVel = DrivePhysics.maxVelocity(Math.max(0, driveTime - 3D / 120), 0, car.boost);
 			if(maxVel > finalVelocity){
-				acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(300, 600, finalVelocity / Constants.MAX_CAR_VELOCITY));
+				acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(250, 550, finalVelocity / Constants.MAX_CAR_VELOCITY));
 //				acceleration = -initialVelocity / 0.15;
 			}
+		}
+		if(Math.abs(acceleration) < 800 && Math.abs(controls.getSteer()) > 0.3){
+			renderer.drawString2d("Turn", Color.WHITE, new Point(0, 120), 2, 2);
+			return turnOnSpot(car, ballPosition);
 		}
 		double throttle = produceAcceleration(car, acceleration); 
 		return controls.withThrottle(throttle).withBoost(throttle > 1);
