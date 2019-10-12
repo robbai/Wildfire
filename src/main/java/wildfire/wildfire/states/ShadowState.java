@@ -168,7 +168,7 @@ public class ShadowState extends State {
 		}
 		
 		//  s = u * t + 0.5 * a * t^2
-		double t = 0.3;
+		double t = 0.4;
 		double u = input.car.velocityDir(target.minus(input.car.position.flatten()));
 		double acceleration = ((2 * (distance - t * u)) / Math.pow(t, 2));
 		double throttle = Handling.produceAcceleration(input.car, acceleration);
