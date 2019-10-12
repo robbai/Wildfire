@@ -55,6 +55,7 @@ public class ReturnState extends State {
 		if((impact.getPosition().distanceFlat(car.position) < Math.max(1100, car.velocity.magnitude() * 0.75) || impact.getTime() < 0.8) &&
 				!Behaviour.isTowardsOwnGoal(car, impact.getPosition())){
 			if(impactY < -2000) return false;
+//			if(impactY > 4000 && centered) return true;
 		}
 		
 		// Don't own goal.
@@ -81,6 +82,13 @@ public class ReturnState extends State {
 //			}
 //		}
 		
+		// Check if we have a shot opportunity.
+		if(impact.getPosition().distanceFlat(car.position) < 3000){
+			if(impact.getTime() < input.info.enemyImpactTime + 0.1){
+				if(Behaviour.isInCone(car, impact.getPosition(), 300)) return false;
+			}
+		}
+		
 		if(!centered && impactY > (input.info.enemyImpactTime > 3 ? -1000 : 1200)){
 			Vector2 teamSignVec = new Vector2(0, -car.sign);
 			double yAngle = teamSignVec.angle(car.position.minus(impact.getPosition()).flatten());
@@ -91,15 +99,7 @@ public class ReturnState extends State {
 //				return false;
 //			}
 		}
-
-		// Check if we have a shot opportunity.
-		if(impact.getPosition().distanceFlat(car.position) < 3000){
-			double aimBall = Handling.aim(car, impact.getPosition().flatten());
-			if((Math.abs(aimBall) < Math.PI * 0.6) || impact.getTime() < input.info.enemyImpactTime){
-				if(Behaviour.isInCone(car, impact.getPosition(), 200)) return false;
-			}
-		}
-
+		
 		Vector2 homeGoal = Constants.homeGoal(car.team);
 		if(car.position.distanceFlat(homeGoal) < 2800){
 			boolean onTarget = Behaviour.isOnTarget(wildfire.ballPrediction, car.team);
