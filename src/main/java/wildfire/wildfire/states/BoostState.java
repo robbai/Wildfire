@@ -102,7 +102,7 @@ public class BoostState extends State {
 			double velocityNoseComponent = car.velocity.normalized().dotProduct(car.orientation.forward);
 			if(Behaviour.isOnWall(car)){
 				currentAction = new HopAction(this, input, boostLocation);
-			}else if(Math.abs(boostRadians) < Math.toRadians(6) && forwardVelocity > 1200 && velocityNoseComponent > 0.95 && car.boost < 1){
+			}else if(Math.abs(boostRadians) < Math.toRadians(10) && forwardVelocity > 1100 && velocityNoseComponent > 0.9 && car.boost < 1){
 				currentAction = new DodgeAction(this, boostRadians, input);
 			}else if(Math.abs(boostRadians) > Math.toRadians(150) && forwardVelocity < -500 && velocityNoseComponent < -0.8){
 				currentAction = new HalfFlipAction(this, input);
