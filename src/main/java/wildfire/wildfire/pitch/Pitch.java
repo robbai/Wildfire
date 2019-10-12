@@ -95,7 +95,8 @@ public class Pitch {
 	
 	public static Pair<Triangle, Vector3> segmentIntersect(Vector3 start, Vector3 end){
 //		long startTime = System.nanoTime();
-		for(int index = 0; index < triangles.length; index++){
+//		for(int index = 0; index < triangles.length; index++){
+		for(int index = triangles.length - 1; index >= 0; index--){
 			Triangle triangle = triangles[index];
 			Vector3 intersect = triangle.segmentIntersects(start, end);
 			if(intersect != null){

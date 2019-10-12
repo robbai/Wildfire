@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 
 import rlbot.flat.BallPrediction;
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.handling.AirControl;
@@ -38,13 +38,13 @@ public class AerialAction extends Action {
 	
 	public static AerialAction fromBallPrediction(State state, CarData car, BallPrediction ballPrediction, boolean forceDoubleJump){
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			Vector3 location = new Vector3(ballPrediction.slices(i).physics().location());
 			if(location.isOutOfBounds()) continue;
 			
 			location = location.plus(car.position.minus(location).scaledToMagnitude(Constants.BALL_RADIUS / 2));
 //			location = location.plus(location.minus(Utils.enemyGoal(car).withZ(Utils.BALLRADIUS)).scaledToMagnitude(140));
 			
-			//Double jumping
+			// Double jumping.
 			AerialAction a;
 			if(!forceDoubleJump){
 				a = new AerialAction(state, car, location, (double)i / 60, false);
@@ -63,8 +63,9 @@ public class AerialAction extends Action {
 		
 		double timeLeft = this.time - timeDifference;
 		if(timeLeft < 0){
-			AerialAction a = fromBallPrediction(this.state, input.car, wildfire.ballPrediction, false);
-			Utils.transferAction(this, (a != null && !a.failed ? a : new RecoveryAction(this.state, input.elapsedSeconds)));
+//			AerialAction a = fromBallPrediction(this.state, input.car, wildfire.ballPrediction, false);
+//			Utils.transferAction(this, (a != null && !a.failed ? a : new RecoveryAction(this.state, input.elapsedSeconds)));
+			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 		}
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s, Double Jump: " + this.doubleJump, Color.WHITE, new Point(0, 40), 2, 2);
 		
@@ -72,7 +73,7 @@ public class AerialAction extends Action {
 		wildfire.renderer.drawCrosshair(input.car, target, Color.WHITE, 200);		
 		
 		// Jump.
-		if((timeDifference < jumpTime && input.car.hasWheelContact) || (timeDifference > 0.22 && this.doubleJump && !input.car.doubleJumped)){
+		if((timeDifference < jumpTime && input.car.hasWheelContact) || (timeDifference > 0.22 && this.doubleJump && !input.car.hasDoubleJumped)){
 			controls.withJump(true);
 //			return controls;
 		}
@@ -88,19 +89,19 @@ public class AerialAction extends Action {
 		}
 		
 		// Calculate the direction.
-		Vector3 s = target.minus(input.car.position);
+		Vector3 displacement = target.minus(input.car.position);
 		Vector3 u = input.car.velocity;
-		Vector3 acc = new Vector3(acceleration(s.x, u.x, timeLeft), acceleration(s.y, u.y, timeLeft), accelerationGravity(s.z, u.z, timeLeft));
+		Vector3 acceleration = new Vector3(acceleration(displacement.x, u.x, timeLeft), acceleration(displacement.y, u.y, timeLeft), accelerationGravity(displacement.z, u.z, timeLeft));
 //		Vector3 localDirection = Utils.toLocalFromRelative(input.car, acc).normalized();
 //		Vector2 angles = Handling.getAngles(localDirection);
 		
-		double accelerationReq = acc.magnitude();
-		double accelerationReqForwards = acc.dotProduct(input.car.orientation.noseVector);
+		double accelerationReq = acceleration.magnitude();
+		double accelerationReqForwards = acceleration.dotProduct(input.car.orientation.forward);
 		
 		wildfire.renderer.drawString2d("Avg. Acceleration: " + (int)averageAcceleration + "uu/s^2", Color.WHITE, new Point(0, 60), 2, 2);
 		wildfire.renderer.drawString2d("Acceleration Req.: " + (int)accelerationReq + "uu/s^2", Color.WHITE, new Point(0, 80), 2, 2);
 		
-		double[] angles = AirControl.getPitchYawRoll(input.car, acc);
+		double[] angles = AirControl.getPitchYawRoll(input.car, acceleration);
 		
 		if(!controls.holdJump()){
 			controls.withPitchYawRoll(angles);
@@ -110,9 +111,9 @@ public class AerialAction extends Action {
 			controls.withRoll(0);
 		}
 		
-		//Boost
+		// Boost.
 		double boostThreshold = (input.car.position.z < 500 ? 20 : 70);
-		controls.withBoost(input.car.orientation.noseVector.normalized().dotProduct(acc.normalized()) > angleBoostThreshold && accelerationReqForwards > boostThreshold);
+		controls.withBoost(input.car.orientation.forward.normalized().dotProduct(acceleration.normalized()) > angleBoostThreshold && accelerationReqForwards > boostThreshold);
 		
 		return controls;
 	}
@@ -129,13 +130,13 @@ public class AerialAction extends Action {
 		Vector3 u = car.velocity;
 		if(car.hasWheelContact){
 			//Jump
-			u = u.plus(car.orientation.roofVector.scaledToMagnitude(doubleJump ? maxDoubleJumpVelocity : maxJumpVelocity));
+			u = u.plus(car.orientation.up.scaledToMagnitude(doubleJump ? maxDoubleJumpVelocity : maxJumpVelocity));
 			u = u.capMagnitude(2300);
 		}
 		
 		//Compensate for turning by reducing the time we have left
 		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalized();
-		double angleDifference = (2 - car.orientation.noseVector.dotProduct(generalDirection)) / 2;
+		double angleDifference = (2 - car.orientation.forward.dotProduct(generalDirection)) / 2;
 		double angleTime = (angleDifference * 1.05);
 //		System.out.println("Angular time: " + Utils.round(angleTime) + "s [" + Utils.round(car.orientation.noseVector.dotProduct(generalDirection)) + "]");
 		t -= angleTime;
@@ -172,7 +173,7 @@ public class AerialAction extends Action {
 		velocity = velocity.capMagnitude(2300);
 		
 		Vector3 next = start.plus(velocity.scaled(renderScale));
-		renderer.drawLine3d(colour, start.fbs(), next.fbs());
+		renderer.drawLine3d(colour, start, next);
 		return renderFall(renderer, colour, next, velocity, t + renderScale);
 	}
 

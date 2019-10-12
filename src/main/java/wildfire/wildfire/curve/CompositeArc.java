@@ -1,6 +1,6 @@
 package wildfire.wildfire.curve;
 
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.physics.DrivePhysics;
@@ -11,6 +11,8 @@ import wildfire.wildfire.utils.Constants;
  */
 public class CompositeArc extends Curve {
 	
+	private static final boolean rescale = false;
+
 	private static double[] signs = new double[] {1, -1};
 
 	private Vector2 p1, p2, t1, t2, n1, n2, o1, o2, q1, q2;
@@ -37,26 +39,28 @@ public class CompositeArc extends Curve {
 		double R = Math.abs(r1) + sign * Math.abs(r2);
 		double o1o2 = oDelta.magnitude();
 		
-		double beta = 0.97D;
-		if((Math.pow(R, 2) / Math.pow(o1o2, 2)) > beta){
-			Vector2 pDelta = this.p2.minus(this.p1);
-			Vector2 nDelta = n2.scaledToMagnitude(r2).minus(n1.scaledToMagnitude(r1));
+		if(rescale){
+			double beta = 0.97D;
+			if((Math.pow(R, 2) / Math.pow(o1o2, 2)) > beta){
+				Vector2 pDelta = this.p2.minus(this.p1);
+				Vector2 nDelta = n2.scaledToMagnitude(r2).minus(n1.scaledToMagnitude(r1));
 
-			double a = beta * nDelta.dotProduct(nDelta) - Math.pow(R, 2);
-			double b = 2D * beta * nDelta.dotProduct(pDelta);
-			double c = beta * pDelta.dotProduct(pDelta);
+				double a = beta * nDelta.dotProduct(nDelta) - Math.pow(R, 2);
+				double b = 2D * beta * nDelta.dotProduct(pDelta);
+				double c = beta * pDelta.dotProduct(pDelta);
 
-			double alpha = (-b - Math.sqrt(Math.pow(b, 2) - 4D * a * c)) / (2D * a);
+				double alpha = (-b - Math.sqrt(Math.pow(b, 2) - 4D * a * c)) / (2D * a);
 
-			this.r1 *= alpha;
-			this.r2 *= alpha;
-			R *= alpha;
+				this.r1 *= alpha;
+				this.r2 *= alpha;
+				R *= alpha;
 
-			o1 = this.p1.plus(n1.scaledToMagnitude(this.r1));
-			o2 = this.p2.plus(n2.scaledToMagnitude(this.r2));
+				o1 = this.p1.plus(n1.scaledToMagnitude(this.r1));
+				o2 = this.p2.plus(n2.scaledToMagnitude(this.r2));
 
-			oDelta = o2.minus(o1);
-			o1o2 = oDelta.magnitude();
+				oDelta = o2.minus(o1);
+				o1o2 = oDelta.magnitude();
+			}
 		}
 
 		Vector2 e1 = oDelta.normalized();
@@ -88,7 +92,7 @@ public class CompositeArc extends Curve {
 		L0 = Math.max(1, Math.abs(L0));
 		L4 = Math.max(1, Math.abs(L4));
 		
-		Vector2 carDirection = car.orientation.noseVector.flatten(), carPosition = car.position.flatten();
+		Vector2 carDirection = car.orientation.forward.flatten(), carPosition = car.position/*.plus(car.velocity.scaled(1D / 60))*/.flatten();
 		Vector2 goalDirection = goal.minus(ball).normalized();
 		double playerTurnRadius = DrivePhysics.getTurnRadius(Math.max(Constants.MAX_THROTTLE_VELOCITY, car.forwardVelocityAbs)), ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
 		

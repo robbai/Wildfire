@@ -3,7 +3,7 @@ package wildfire.wildfire.states;
 import java.awt.Color;
 
 import rlbot.flat.QuickChatSelection;
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -19,11 +19,12 @@ import wildfire.wildfire.utils.Utils;
 public class MixerState extends State {
 
 	/*
-	 * This state puts hits it towards the opponent's corner
-	 * This can be better than going for a shot
+	 * This state puts hits it towards the opponent's corner,
+	 * which can be better than going for a shot if the opponent
+	 * is in a good defensive position.
 	 */
 	
-	private double maxGoalArea = 3400;
+	private double maxGoalArea = 3100;
 
 	public MixerState(Wildfire wildfire){
 		super("Mixer", wildfire);
@@ -32,23 +33,26 @@ public class MixerState extends State {
 	@Override
 	public boolean ready(InfoPacket input){
 		Vector3 impactLocation = input.info.impact.getPosition();
-		double teamSign = input.car.sign;
-		Vector2 teamSignVec = new Vector2(0, teamSign);
+		Vector2 teamSignVec = new Vector2(0, input.car.sign);
+		Vector2 carPosition = input.car.position.flatten();
 		
-		// The ball must be on the wing.
-		if(Math.abs(impactLocation.x) < Constants.PITCH_WIDTH - 550) return false;
-		if(teamSign * impactLocation.y < -1000) return false;
-		if(teamSign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
+//		// The ball must be on the wing.
+		if(Math.abs(impactLocation.x) < Constants.PITCH_WIDTH - 550 * 2) return false;
+		if(input.car.sign * impactLocation.y < -1000) return false;
+		if(input.car.sign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
 		
 		// We must be solidly behind the ball.
 		if(input.info.impact.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
 		if(Behaviour.isCarAirborne(input.car) || Behaviour.isBallAirborne(input.ball)) return false;
-		double yAngle = teamSignVec.angle(impactLocation.minus(input.car.position).flatten());
-		if(yAngle > Math.toRadians(50)) return false;
+		double yAngle = teamSignVec.angle(input.car.position.minus(impactLocation).flatten());
+		if(yAngle > Math.toRadians(60)) return false;
 		
-		// We must not have a (good) shot.
-		if(Behaviour.isInCone(input.car, input.info.impact.getPosition()) 
-				&& Math.abs(input.info.impact.getPosition().y) < 2600) return false;
+		Vector2 backwallTrace = Utils.traceToY(carPosition, input.info.impact.getBallPosition().flatten().minus(carPosition), input.car.sign * Constants.PITCH_LENGTH);
+		if(backwallTrace == null || Math.abs(backwallTrace.x) < Constants.PITCH_WIDTH - 450) return false;
+		
+//		// We must not have a (good) shot.
+//		if(Behaviour.isInCone(input.car, input.info.impact.getPosition()) 
+//				&& Math.abs(input.info.impact.getPosition().x) < Constants.PITCH_WIDTH - 1100) return false;
 		
 		// There must be a goalkeeper.
 		CarData goalkeeper = Behaviour.getGoalkeeper(input.cars, 1 - input.car.team, maxGoalArea);
@@ -66,7 +70,9 @@ public class MixerState extends State {
 		double aimImpact = Handling.aim(car, impactLocation.flatten());
 		
 		// Dodge.
-		if((input.info.impact.getTime() < 0.2 || (impactDistance > 3500 && !car.isSupersonic)) && Math.abs(aimImpact) < 0.25){
+		if((input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME
+				|| (impactDistance > Behaviour.dodgeDistance(car) && car.forwardVelocity > 1200 && car.forwardVelocity < 2000))
+				&& Math.abs(aimImpact) < 0.25){
 			if(car.forwardVelocity > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
 			currentAction = new DodgeAction(this, aimImpact, input);
 		}

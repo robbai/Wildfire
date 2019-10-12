@@ -3,37 +3,41 @@ package wildfire.wildfire.input;
 import rlbot.cppinterop.RLBotDll;
 import rlbot.cppinterop.RLBotInterfaceException;
 import rlbot.flat.BallPrediction;
-import wildfire.input.CarData;
 import wildfire.input.DataPacket;
-import wildfire.vector.Vector3;
+import wildfire.input.car.CarData;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.SmartDodgeAction;
 import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.obj.Impact;
 import wildfire.wildfire.obj.WRenderer;
-import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.physics.JumpPhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.InterceptCalculator;
 import wildfire.wildfire.utils.Utils;
 
 public class Info {
+
+	public static final double maxJumpImpactZ = (JumpPhysics.maxJumpHeight + (Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance) * (SmartDodgeAction.zRatio * 0.51));
 
 	public Wildfire wildfire;
 	
 	public BallPrediction ballPrediction;
 	public WRenderer renderer;
 	
-	private Impact[] impacts;
-	public Impact impact, earliestEnemyImpact;
+	public Impact[] impacts;
+	public Impact impact, earliestEnemyImpact, jumpImpact;
 	public double teammateImpactTime, enemyImpactTime;
 	public CarData earliestEnemy;
-	public double impactDistance, impactDistanceFlat, impactRadians;
-	public Impact jumpImpact;
+	public double impactDistance, impactDistanceFlat, impactRadians, jumpImpactHeight;
 
 	private double timeFirstOnGround;
 	private boolean onGroundLast;
 	public double timeOnGround;
+	
+	private double timeFirstDodged;
+	private boolean didDodgeLast;
+	private double timeSinceDodge;
 
 	public Info(Wildfire wildfire){
 		this.wildfire = wildfire;
@@ -66,7 +70,7 @@ public class Info {
 				CarData c = input.cars[i];
 				if(c == null) continue;
 				
-				Impact impact = Behaviour.getEarliestImpactPoint(c, ballPrediction);
+				Impact impact = InterceptCalculator.getImpact(c);
 				this.impacts[i] = impact;
 				
 				if(i == this.wildfire.playerIndex){
@@ -100,36 +104,19 @@ public class Info {
 		this.onGroundLast = input.car.hasWheelContact;
 		this.timeOnGround = (input.elapsedSeconds - this.timeFirstOnGround);
 		
-		this.jumpImpact = getJumpImpact(car);
-	}
-
-	private Impact getJumpImpact(CarData car){
-		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-			rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
-			
-			Vector3 slicePosition = Vector3.fromFlatbuffer(rawSlice.physics().location());
-			Vector3 localSlice = Utils.toLocal(car, slicePosition);
-			
-			double time = (rawSlice.gameSeconds() - car.elapsedSeconds);
-			double jumpHeight = localSlice.z;
-			if(jumpHeight > JumpPhysics.maxJumpHeight + (Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance) * (SmartDodgeAction.zRatio * 0.7)) continue;
-//			if(jumpHeight > JumpPhysics.maxJumpHeight) continue;
-			double peakTime = JumpPhysics.getFastestTimeZ(jumpHeight);
-			double driveTime = (time - peakTime);
-			double fullDistance = localSlice.flatten().magnitude();
-			double initialVelocity = car.velocityDir(slicePosition.minus(car.position).flatten());
-			double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
-			double acceleration = ((finalVelocity - initialVelocity) / driveTime);
-			
-			if(finalVelocity < DrivePhysics.maxVelocity(initialVelocity, car.boost, time) && acceleration < 1800){
-//				Vector3 impactPosition = slicePosition.plus(car.position.minus(slicePosition).scaledToMagnitude(Constants.BALLRADIUS));
-				Vector3 impactPosition = slicePosition.plus(slicePosition.minus(Constants.enemyGoal(car).withZ(slicePosition.z)).scaledToMagnitude(Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance * 0.405));
-//				Vector3 impactPosition = slicePosition;
-				return new Impact(impactPosition, rawSlice, time);
-			}
+		// Dodge checking.
+		if(!this.didDodgeLast && input.car.hasDoubleJumped){
+			this.timeFirstDodged = input.elapsedSeconds;
 		}
+		this.didDodgeLast = input.car.hasDoubleJumped;
+		this.timeFirstDodged = (input.elapsedSeconds - this.timeFirstDodged);
 		
-		return null; // Uh oh.
+		this.jumpImpact = InterceptCalculator.getJumpImpact(car);
+		this.jumpImpactHeight = (this.jumpImpact == null ? 0 : this.jumpImpact.getBallPosition().minus(car.position).dotProduct(car.orientation.up));
+	}
+	
+	public boolean isDodgeTorquing(){
+		return this.timeSinceDodge < Constants.DODGE_TORQUE_TIME;
 	}
 
 }

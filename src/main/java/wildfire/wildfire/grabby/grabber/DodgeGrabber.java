@@ -11,8 +11,8 @@ import rlbot.gamestate.GameState;
 import rlbot.gamestate.PhysicsState;
 import rlbot.manager.BotLoopRenderer;
 import rlbot.render.Renderer;
-import wildfire.input.CarOrientation;
 import wildfire.input.DataPacket;
+import wildfire.input.car.CarOrientation;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -29,7 +29,7 @@ public class DodgeGrabber extends Grabber {
 	public static final double[] speeds = new double[] {-2300, -2200, -2100, -2000, -1900, -1800, -1700, -1600, -1500, -1400, -1300, -1200, -1100, -1000, -900, -800, -700, -600, -500, -400, -300, -200, -100, 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300};
 	public static final double[] angles = new double[] {0.0, 0.17453292519943295, 0.3490658503988659, 0.5235987755982988, 0.6981317007977318, 0.8726646259971648, 1.0471975511965976, 1.2217304763960306, 1.3962634015954636, 1.5707963267948966, 1.7453292519943295, 1.9198621771937625, 2.0943951023931953, 2.2689280275926285, 2.443460952792061, 2.6179938779914944, 2.792526803190927, 2.9670597283903604, Math.PI};
 	
-	public static final Vector3 origin = new Vector3(0, 0, Constants.CAR_HEIGHT), noseVector = new Vector3(0, 1, 0), rightVector = new Vector3(1, 0, 0), roofVector = new Vector3(0, 0, 1);
+	public static final Vector3 origin = new Vector3(0, 0, Constants.RIPPER_RESTING), noseVector = new Vector3(0, 1, 0), rightVector = new Vector3(1, 0, 0), roofVector = new Vector3(0, 0, 1);
 	public static final Vector2 noseFlat = noseVector.flatten();
 	
 	private int speedIndex, angleIndex;

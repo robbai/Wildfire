@@ -2,11 +2,12 @@ package wildfire.wildfire.states;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.util.ArrayList;
 
 import rlbot.flat.QuickChatSelection;
 import wildfire.boost.BoostManager;
 import wildfire.boost.BoostPad;
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.Wildfire;
@@ -39,14 +40,21 @@ public class BoostState extends State {
 
 	@Override
 	public boolean ready(InfoPacket input){
+		if(isPickupInevitable(input.car, BoostManager.getFullBoosts())) return false;
+			
 		if(Math.abs(input.car.position.y) > Constants.PITCH_LENGTH) return false;
+		
+		if(Behaviour.isOpponentBehindBall(input) && input.info.enemyImpactTime < 0.8 && Math.abs(input.info.earliestEnemyImpact.getBallPosition().y) < 3000){
+			return false;
+		}
+		
 		Vector2 impactFlat = input.info.impact.getPosition().flatten(); 
-		steal = (Utils.teamSign(input.car) * impactFlat.y > 4000 && Constants.enemyGoal(input.car.team).distance(impactFlat) > 2000 && !Behaviour.isInCone(input.car, impactFlat.withZ(0), 700));
+		steal = (input.car.sign * impactFlat.y > 4000 && Constants.enemyGoal(input.car.team).distance(impactFlat) > 2000 && !Behaviour.isInCone(input.car, impactFlat.withZ(0), 700));
 		possession = (Behaviour.closestOpponentDistance(input, input.ball.position) > Math.max(2600, input.car.position.distanceFlat(impactFlat)));
 		
 		// World's longest line.
 		boolean teammateAtBall = Behaviour.isTeammateCloser(input);
-		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.info.impactDistanceFlat < 2400 && !(steal || possession)) || input.info.impact.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4500) || (Math.abs(input.info.impact.getPosition().x) < 1500 && !possession) || ((Behaviour.isInCone(input.car, input.info.impact.getPosition(), 200) && !(steal || possession)))){
+		if(input.car.boost > maxBoost || Behaviour.isKickoff(input) || (input.info.impactDistanceFlat < 2000 && !(steal || possession)) || input.info.impact.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (teammateAtBall ? 2200 : 4500) || (Math.abs(input.info.impact.getPosition().x) < 1500 && !possession) || ((Behaviour.isInCone(input.car, input.info.impact.getPosition(), 200) && !(steal || possession)))){
 			return false;
 		}
 		
@@ -88,13 +96,14 @@ public class BoostState extends State {
 		
 		// Actions.
 		double forwardVelocity = car.forwardVelocity;
-		if(car.hasWheelContact && boostDistance > 2000 && !car.isSupersonic){	
-			double velocityNoseComponent = car.velocity.normalized().dotProduct(car.orientation.noseVector);
+		double dodgeDistance = Behaviour.dodgeDistance(car);
+		if(car.hasWheelContact && boostDistance > dodgeDistance && !car.isSupersonic){	
+			double velocityNoseComponent = car.velocity.normalized().dotProduct(car.orientation.forward);
 			if(Behaviour.isOnWall(car)){
 				currentAction = new HopAction(this, input, boostLocation);
-			}else if(Math.abs(boostRadians) < 0.12 && forwardVelocity > 1200 && velocityNoseComponent > 0.95){
+			}else if(Math.abs(boostRadians) < Math.toRadians(6) && forwardVelocity > 1200 && velocityNoseComponent > 0.95 && car.boost < 1){
 				currentAction = new DodgeAction(this, boostRadians, input);
-			}else if(Math.abs(boostRadians) > 0.95 * Math.PI && forwardVelocity < -950 && velocityNoseComponent < -0.9){
+			}else if(Math.abs(boostRadians) > Math.toRadians(150) && forwardVelocity < -500 && velocityNoseComponent < -0.8){
 				currentAction = new HalfFlipAction(this, input);
 			}
 			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
@@ -119,8 +128,15 @@ public class BoostState extends State {
 			boostLocation = new Vector2(Utils.clamp(boostLocation.x, -700, 700), Utils.clamp(boostLocation.y, -Constants.PITCH_LENGTH + 500, Constants.PITCH_LENGTH - 500));
 		}
 		
-		ControlsOutput controls = Handling.chaosDrive(car, boostLocation, true);
-		if(controls.holdHandbrake()) controls.withSlide(car.forwardVelocityAbs < 1000 || Utils.distanceToWall(car.position) < 600);
+		ControlsOutput controls;
+//		if(boostDistance < 1800){
+			controls = Handling.chaosDrive(car, boostLocation, true);
+//			if(controls.holdHandbrake()){
+//				controls.withSlide(car.forwardVelocityAbs < 1000 || Utils.distanceToWall(car.position) < 600);
+//			}
+//		}else{
+//			controls = Handling.forwardDrive(car, boostLocation);
+//		}
 		return controls;
 	}
 
@@ -134,8 +150,8 @@ public class BoostState extends State {
 		for(BoostPad boost : BoostManager.getFullBoosts()){
 			double distance = boost.getLocation().distanceFlat(teammateAtBall ? input.car.position : input.info.impact.getPosition());
 			if(distance > maxDistance || !boost.isActive()) continue;
-			if(boost.getLocation().y * Utils.teamSign(input.car) > input.info.impact.getPosition().y * Utils.teamSign(input.car) - 1000) continue;
-			if(steal && boost.getLocation().y * Utils.teamSign(input.car) < 4500) continue; // Steal their boost.
+			if(boost.getLocation().y * input.car.sign > input.info.impact.getPosition().y * input.car.sign - 1000) continue;
+			if(steal && boost.getLocation().y * input.car.sign < 4500) continue; // Steal their boost.
 			
 			if(!discardSpeed && input.car.velocityDir(boost.getLocation().minus(input.car.position).flatten()) < -250) continue;
 			
@@ -146,6 +162,22 @@ public class BoostState extends State {
 		}
 		
 		return bestBoost;
+	}
+	
+	protected boolean isPickupInevitable(CarData car, BoostPad boostPad){
+		double u = car.velocityDir(boostPad.getLocation().minus(car.position));
+		double s = boostPad.getLocation().distance(car.position);
+		double a = (Math.pow(u, 2) / (2 * s));
+		return Math.abs(a) > Constants.BRAKE_ACCELERATION;
+	}
+	
+	protected boolean isPickupInevitable(CarData car, ArrayList<BoostPad> boostPads){
+		for(BoostPad boostPad : boostPads){
+			if(isPickupInevitable(car, boostPad)){
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

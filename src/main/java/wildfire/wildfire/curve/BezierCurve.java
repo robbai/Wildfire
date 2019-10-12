@@ -3,8 +3,8 @@ package wildfire.wildfire.curve;
 import java.awt.Color;
 import java.util.ArrayList;
 
-import rlbot.render.Renderer;
 import wildfire.vector.Vector2;
+import wildfire.wildfire.obj.WRenderer;
 
 public class BezierCurve extends Curve {
 	
@@ -38,17 +38,17 @@ public class BezierCurve extends Curve {
 		return one.plus(two.minus(one).scaled(t));
 	}
 	
-	public void render(Renderer r, Color colour){
-		//Draw fixed lines
+	public void render(WRenderer r, Color colour){
+		// Draw fixed lines (control points).
 //		for(int i = 0; i < (this.points.length - 1); i++){
 //			r.drawLine3d(Color.WHITE, this.points[i].toFramework(), this.points[i + 1].toFramework());
-//		}
+//		}	
 		
-		//Draw curve
+		// Draw curve.
 		Vector2 last = null;
 		for(double t = 0; t <= 1; t += 0.01){
 			Vector2 next = this.T(t);
-			if(last != null) r.drawLine3d(colour, last.toFramework(), next.toFramework());
+			if(last != null) r.drawLine3d(colour, last, next);
 			last = next;
 		}
 	}

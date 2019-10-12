@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.OptionalDouble;
 
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -18,7 +18,7 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowDiscreteMechanic extends Mechanic {
 
-	public final static double steerLookahead = 0.304, speedLookahead = (1D / 60);
+	public final static double steerLookahead = 0.328, speedLookahead = (1D / 60);
 	private final static boolean verboseRender = true;
 
 	private DiscreteCurve curve;
@@ -62,7 +62,7 @@ public class FollowDiscreteMechanic extends Mechanic {
 		double timeElapsed = this.timeDifference(input.elapsedSeconds);
 		double guessedTimeLeft = (curve.getTime() - timeElapsed);
 		double updatedTimeLeft = (curve.getTime() * (1 - carS / curve.getDistance()));
-		Vector2 target = curve.S(Math.min(curve.getDistance(), carS + Math.max(400, initialVelocity) * steerLookahead));
+		Vector2 target = getTarget(carS, initialVelocity);
 		double targetVelocity = curve.getSpeed(Utils.clamp((carS + initialVelocity * speedLookahead) / curve.getDistance(), 0, 1));
 		
 		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
@@ -72,9 +72,12 @@ public class FollowDiscreteMechanic extends Mechanic {
 			if(renderPredictionToTargetTime){
 				int endFrame = (int)Utils.clamp(Math.ceil(targetTimeLeft * 60), 0, wildfire.ballPrediction.slicesLength());
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.WHITE, 0, endFrame);
-				Vector3 slicePosition = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(endFrame).physics().location());
-				wildfire.renderer.drawCrosshair(input.car, slicePosition, Color.GRAY, 80);
-				wildfire.renderer.drawCrosshair(input.car, curve.T(1).withZ(slicePosition.z), Color.BLACK, 40);
+				Vector3 slicePosition = new Vector3(wildfire.ballPrediction.slices(endFrame).physics().location());
+				if(slicePosition != null){
+					wildfire.renderer.drawCrosshair(input.car, slicePosition, Color.GRAY, 80);
+					Vector2 end = curve.T(1);
+					if(end != null) wildfire.renderer.drawCrosshair(input.car, end.withZ(slicePosition.z), Color.BLACK, 40);
+				}
 			}
 			
 			if(linearTarget){
@@ -122,16 +125,20 @@ public class FollowDiscreteMechanic extends Mechanic {
 				.withBoost((throttle > 1 /**|| (input.car.isSupersonic && targetAcceleration > 0)*/) && input.car.hasWheelContact);
 	}
 
+	private Vector2 getTarget(double carS, double initialVelocity){
+		return curve.S(Math.min(curve.getDistance() - 1, carS + Math.max(500, initialVelocity) * steerLookahead));
+	}
+
 	@Override
 	public boolean expire(InfoPacket input){
 		CarData car = input.car;
 		
-		double distance = curve.findClosestS(car.position.flatten(), true);
-//		System.out.println(distance);
-		if(distance > 70) return true;
+		double distanceError = curve.findClosestS(car.position.flatten(), true);
+		if(distanceError > 80) return true;
 		
 		double carS = curve.findClosestS(car.position.flatten(), false);
-		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 8) / curve.getDistance() >= 1;
+//		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 8) / curve.getDistance() >= 1;
+		return getTarget(carS, car.forwardVelocityAbs) == null;
 	}
 
 }

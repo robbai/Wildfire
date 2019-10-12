@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.OptionalDouble;
 
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -52,6 +52,8 @@ public class WaitState extends State {
 
 	@Override
 	public boolean ready(InfoPacket input){
+		if(!input.car.onFlatGround) return false;
+		
 		if(this.runningMechanic() && this.smartDodgeCandidate != null && 
 				this.currentMechanic instanceof FollowSmartDodgeMechanic && Behaviour.isOnPrediction(wildfire.ballPrediction, this.smartDodgeCandidate.getPosition())){
 			return true;
@@ -68,32 +70,32 @@ public class WaitState extends State {
 		towardsOwnGoal = Behaviour.isTowardsOwnGoal(input.car, bounce.withZ(0), 240);
 		enemyGoal = Behaviour.getTarget(input.car, bounce);
 		smartDodgeConditions(input, bounce, enemyGoal, input.info.impact.getPosition(), towardsOwnGoal);
-//		smartDodgeCandidate = (planSmartDodge ? SmartDodgeAction.getCandidateLocation(wildfire.ballPrediction, input.car, enemyGoal) : null);
 		smartDodgeCandidate = (planSmartDodge ? input.info.jumpImpact : null);
 		this.planSmartDodge &= (smartDodgeCandidate != null);
-//		this.planSmartDodgeCone &= (smartDodgeCandidate != null);
 		if(planSmartDodge && (this.runningMechanic() && !(this.currentMechanic instanceof FollowSmartDodgeMechanic))) this.currentMechanic = null;
 		
 		// Wall hit.
 		double wallDistance = Utils.distanceToWall(input.info.impact.getPosition());
-		if(input.info.impact.getPosition().y * input.car.sign < 1500 
-				&& wallDistance < 260 && Math.abs(input.info.impact.getPosition().x) > 1500){
-			return false;
-		}
+//		if(input.info.impact.getPosition().y * input.car.sign < 1500 
+//				&& wallDistance < 260 && Math.abs(input.info.impact.getPosition().x) > 1500){
+//			return false;
+//		}
 		
 		// Can't reach point (optimistic).
-		if(DrivePhysics.maxDistance(timeLeft, input.car.velocityDir(bounce.withZ(Constants.CAR_HEIGHT).minus(input.car.position)), input.car.boost) < bounceDistance - 50){
+		if(DrivePhysics.maxDistance(timeLeft, input.car.velocityDir(bounce.withZ(Constants.RIPPER_RESTING).minus(input.car.position)), input.car.boost) < bounceDistance - 50){
 			return false;
 		}
 		
 		// Teammate's closer.
 		if(Behaviour.isTeammateCloser(input, bounce)) return false;
 		
-		// Opponent's corner.
-		if(input.car.sign * bounce.y > 4000 && Constants.enemyGoal(input.car.team).distance(bounce) > 1800 && !Behaviour.isInCone(input.car, bounce3, 1000)) return bounceDistance < 2200;
-		
+//		// Opponent's corner.
+//		if(input.car.sign * bounce.y > 4000 && Constants.enemyGoal(input.car.team).distance(bounce) > 1800 && !Behaviour.isInCone(input.car, bounce3, 1000)) return bounceDistance < 2200;
+//		
 		return ((Behaviour.isBallAirborne(input.ball) || input.info.impact.getPosition().z > 200) && input.ball.velocity.flatten().magnitude() < 5000)
 				|| (input.ball.position.z > 110 && input.ball.position.distanceFlat(input.car.position) < 220 && wallDistance > 400);
+		
+//		return true;
 	}
 
 	@Override
@@ -115,7 +117,7 @@ public class WaitState extends State {
 		/*
 		 *  Smart dodge.
 		 */
-		planSmartDodge = (planSmartDodge && smartDodgeCandidate != null); // && smartDodgeCandidate.getPosition().z > 150
+		planSmartDodge = (planSmartDodge && smartDodgeCandidate != null && Utils.toLocal(car, smartDodgeCandidate.getPosition()).z > 80);
 		wildfire.renderer.drawString2d("Plan Smart Dodge: " + planSmartDodge, Color.WHITE, new Point(0, 40), 2, 2);
 		
 //		double circleRadius = getDesiredDistance(car, planSmartDodge ? smartDodgeCandidate.getPosition() : null);
@@ -133,10 +135,12 @@ public class WaitState extends State {
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeLeft) + "s", Color.WHITE, new Point(0, 20), 2, 2);
 		
 		// Make use of the candidate position from the smart dodge.
-		if(planSmartDodge && input.car.position.z < 100){
-			DiscreteCurve discrete = findSmartDodgeCurve(car, smartDodgeCandidate);
-			if(discrete != null){
-				return this.startMechanic(new FollowSmartDodgeMechanic(this, discrete, input.elapsedSeconds, smartDodgeCandidate), input);
+		if(planSmartDodge && input.car.onFlatGround){
+			if(car.onFlatGround){
+				DiscreteCurve discrete = findSmartDodgeCurve(car, smartDodgeCandidate);
+				if(discrete != null){
+					return this.startMechanic(new FollowSmartDodgeMechanic(this, discrete, input.elapsedSeconds, smartDodgeCandidate), input);
+				}
 			}
 			
 			SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
@@ -154,17 +158,19 @@ public class WaitState extends State {
 		}
 		
 		// Curve!
-		Vector2 bounceGoalDir = enemyGoal.minus(bounce).normalized();
-		Vector2 carBounceDir = bounce.minus(car.position.flatten()).normalized();
-		for(double offset = 1; offset >= 0; offset -= offsetDecrement){
-			Vector2 targetDirection = bounceGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
-			if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
-			
-			Biarc biarc = new Biarc(car.position.flatten(), car.orientation.noseVector.flatten(), bounce, targetDirection);
-			DiscreteCurve discrete = new DiscreteCurve(car.forwardVelocity, car.boost, biarc, timeLeft);
-			
-			if(discrete.isValid() && discrete.getTime() < timeLeft){
-				return this.startMechanic(new FollowDiscreteMechanic(this, discrete, input.elapsedSeconds, timeLeft), input);
+		if(car.onFlatGround){
+			Vector2 bounceGoalDir = enemyGoal.minus(bounce).normalized();
+			Vector2 carBounceDir = bounce.minus(car.position.flatten()).normalized();
+			for(double offset = 1; offset >= 0; offset -= offsetDecrement){
+				Vector2 targetDirection = bounceGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
+				if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
+				
+				Biarc biarc = new Biarc(car.position.flatten(), car.orientation.forward.flatten(), bounce, targetDirection);
+				DiscreteCurve discrete = new DiscreteCurve(car.forwardVelocity, car.boost, biarc, timeLeft);
+				
+				if(discrete.isValid() && discrete.getTime() < timeLeft){
+					return this.startMechanic(new FollowDiscreteMechanic(this, discrete, input.elapsedSeconds, timeLeft), input);
+				}
 			}
 		}
 		
@@ -188,7 +194,7 @@ public class WaitState extends State {
 		// Handling.
 		ControlsOutput controls = Handling.steering(car, bounce);
 		double targetVelocity = (bounceDistance / timeLeft);
-		double currentVelocity = car.velocityDir(bounce.withZ(Constants.CAR_HEIGHT).minus(car.position));
+		double currentVelocity = car.velocityDir(bounce.withZ(Constants.RIPPER_RESTING).minus(car.position));
 		double acceleration = ((targetVelocity - currentVelocity) / timeLeft);
 		if(Math.abs(radians) > 0.35){
 			// Turn.
@@ -258,19 +264,19 @@ public class WaitState extends State {
 		Vector2 carBounceDir = flatCandidate.minus(car.position.flatten()).normalized();
 		
 		// Arrival constants.
-		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(car.position).dotProduct(car.orientation.roofVector));
+		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(car.position).dotProduct(car.orientation.up));
 		double driveTime = (candidate.getTime() - peakTime);
-		double lineup = Utils.clamp(DrivePhysics.maxVelocity(Math.max(0, car.forwardVelocity), car.boost, driveTime) * peakTime, 650, flatCandidate.distance(carPosition) / 3.1);
+		double lineup = Utils.clamp(DrivePhysics.maxVelocity(Math.max(0, car.forwardVelocity), car.boost, driveTime) * peakTime, 700, flatCandidate.distance(carPosition) / 3);
 		
-		for(double offset = 1; offset >= 0; offset -= 0.125){
+		for(double offset = 1; offset >= 0; offset -= 1D / 8){
 			Vector2 targetDirection = candidateGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
 			if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
 			
-			CompositeArc compArc = CompositeArc.create(car, flatCandidate, Utils.traceToWall(flatCandidate, targetDirection), Constants.RIPPER.y, lineup);
-			Vector2[] points = compArc.discretise((int)(DiscreteCurve.analysePoints * 0.5));
+			CompositeArc compositeArc = CompositeArc.create(car, flatCandidate, Utils.traceToWall(flatCandidate, targetDirection), Constants.RIPPER.y, lineup);
+			Vector2[] points = compositeArc.discretise(DiscreteCurve.analysePoints);
 			
-			DiscreteCurve discrete = new DiscreteCurve(car.forwardVelocity, car.boost, points, OptionalDouble.of(timeLeft));
-			if(!discrete.isValid()) continue;
+			DiscreteCurve discreteCurve = new DiscreteCurve(car.forwardVelocity, car.boost, points, OptionalDouble.of(timeLeft));
+			if(!discreteCurve.isValid()) continue;
 			
 			/*
 			 *  Time check.
@@ -278,12 +284,16 @@ public class WaitState extends State {
 			 *  it's actually questioning "can I drive under the candidate before the ball reaches it",
 			 *  rather than "can I reach a position to jump to the candidate before the ball reaches it"
 			 */
-			if(discrete.getTime() > driveTime) continue;
+			if(discreteCurve.getTime() > driveTime) continue;
 			
 			// Render.
 			wildfire.renderer.drawPolyline3d(Color.PINK, points);
 			
-			return discrete;
+			if(!PathState.curveOutOfBounds(discreteCurve)){
+				return discreteCurve;
+			}else{
+				break;
+			}
 		}
 		
 		return null;

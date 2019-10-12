@@ -1,1 +1,1 @@
-rlbottraining run_module hello_world_training.py
+rlbottraining run_module training.py

@@ -3,7 +3,7 @@ package wildfire.wildfire.states;
 import java.awt.Color;
 import java.awt.Point;
 
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -16,7 +16,6 @@ import wildfire.wildfire.obj.State;
 import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Utils;
 
 public class PatienceState extends State {
 	
@@ -37,7 +36,7 @@ public class PatienceState extends State {
 		point = null;
 		
 		// General check to see if its a good idea
-		if(input.info.impact.getPosition().y * Utils.teamSign(input.car) < 1000 || input.car.position.z > 200) return false;
+		if(input.info.impact.getPosition().y * input.car.sign < 1000 || input.car.position.z > 200) return false;
 		double impactDistance = input.car.position.distanceFlat(input.info.impact.getPosition());
 		if(impactDistance > 5000) return false;
 		
@@ -46,11 +45,11 @@ public class PatienceState extends State {
 		
 		// Check if there's a solid defender who can hit the ball quicker
 		double closestOpponentDistance = Behaviour.closestOpponentDistance(input, input.ball.position);
-		if(closestOpponentDistance < Math.max(2300, impactDistance * 1.4) || Utils.teamSign(input.car.team) * input.ball.velocity.y < -850) return false;
+		if(closestOpponentDistance < Math.max(2300, impactDistance * 1.4) || input.car.sign * input.ball.velocity.y < -850) return false;
 		
 		int startFrame = input.info.impact.getFrame();
 		for(int i = (startFrame + (int)(delaySeconds * 60)); i < Math.min(wildfire.ballPrediction.slicesLength(), startFrame + (maxWaitingSeconds * 60)); i++){
-			Vector3 location = Vector3.fromFlatbuffer(wildfire.ballPrediction.slices(i).physics().location());
+			Vector3 location = new Vector3(wildfire.ballPrediction.slices(i).physics().location());
 			
 			if(Behaviour.isInCone(input.car, location, coneBorder) && location.z < 300){
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.YELLOW, 0, startFrame);

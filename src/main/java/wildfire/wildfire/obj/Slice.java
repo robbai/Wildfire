@@ -21,7 +21,7 @@ public class Slice {
 	}
 	
 	public Slice(rlbot.flat.PredictionSlice predictionSlice, double secondsElapsed){
-		this.position = Vector3.fromFlatbuffer(predictionSlice.physics().location());
+		this.position = new Vector3(predictionSlice.physics().location());
 		this.time = (predictionSlice.gameSeconds() - secondsElapsed);
 		this.frame = (int)(this.time * 60);
 	}

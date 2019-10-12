@@ -3,7 +3,7 @@ package wildfire.wildfire.mechanics;
 import java.awt.Color;
 import java.awt.Point;
 
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
 import wildfire.wildfire.actions.SmartDodgeAction;
@@ -19,7 +19,9 @@ import wildfire.wildfire.utils.Utils;
 
 public class FollowSmartDodgeMechanic extends Mechanic {
 	
-	public final static double steerLookahead = 0.312, speedLookahead = (1D / 60), earlyTime = 0/*.001*/;
+	// TODO extend FollowDiscreteMechanic
+	
+	public final static double steerLookahead = 0.312, speedLookahead = (1D / 60);
 
 	private DiscreteCurve curve;
 
@@ -43,18 +45,18 @@ public class FollowSmartDodgeMechanic extends Mechanic {
 		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
 				
 		// Jump calculations.
-		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(input.car.position).dotProduct(input.car.orientation.roofVector));
-		double driveTime = Math.max(0.00001, candidate.getTime() - peakTime - timeElapsed - earlyTime);
+		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(input.car.position).dotProduct(input.car.orientation.up));
+		double driveTime = (candidate.getTime() - peakTime - timeElapsed - 2D / 120);
 		double jumpVelocity = (2 * (curve.getDistance() - carS) - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 //		double jumpDistance = (jumpVelocity * peakTime);
 		
 		// Manipulate the target timing to jump in time.
 		double jumpWeighting;
-		if(input.car.orientation.noseVector.dotProduct(curve.getDestination().withZ(Constants.CAR_HEIGHT).minus(input.car.position)) < 0){
+		if(input.car.orientation.forward.dotProduct(curve.getDestination().withZ(Constants.RIPPER_RESTING).minus(input.car.position)) < 0){
 			jumpWeighting = 0;
 		}else{
 			double jumpAcceleration = ((jumpVelocity - initialVelocity) / driveTime);
-			jumpWeighting = Utils.clamp(1 / driveTime, 0, 1);
+			jumpWeighting = Utils.clamp(1.1 / driveTime, 0, 1);
 			targetAcceleration = Utils.lerp(Math.min(targetAcceleration, jumpAcceleration), jumpAcceleration, jumpWeighting);
 		}
 		

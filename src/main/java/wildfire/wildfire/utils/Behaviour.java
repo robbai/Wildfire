@@ -1,54 +1,23 @@
 package wildfire.wildfire.utils;
 
 import rlbot.flat.BallPrediction;
-import wildfire.input.BallData;
-import wildfire.input.CarData;
+import rlbot.flat.PredictionSlice;
 import wildfire.input.DataPacket;
+import wildfire.input.ball.BallData;
+import wildfire.input.car.CarData;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
-import wildfire.wildfire.obj.Impact;
-import wildfire.wildfire.physics.DrivePhysics;
 
 public class Behaviour {
-
-	public static Impact getEarliestImpactPoint(Vector3 carPosition, double carBoost, Vector3 carVelocity, double elapsedSeconds, BallPrediction ballPrediction){
-		// "NullPointerException - Lookin' good!"
-		if(ballPrediction == null){
-			System.err.println("NullPointerException - Lookin' good!");
-			return null;
-		}
-		
-		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-			rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
-			boolean finalSlice = (i == ballPrediction.slicesLength() - 1);
-			
-			Vector3 slicePosition = Vector3.fromFlatbuffer(rawSlice.physics().location());
-			
-			double time = (rawSlice.gameSeconds() - elapsedSeconds);
-			if(time < 0) continue;
-			
-			double distance = slicePosition.distance(carPosition) - Constants.BALL_RADIUS;
-			double initialVelocity = carVelocity.dotProduct(slicePosition.minus(carPosition).normalized());
-			
-			if(finalSlice || DrivePhysics.maxDistance(time, initialVelocity, carBoost) > distance){
-				Vector3 impactPosition = slicePosition.plus(carPosition.minus(slicePosition).scaledToMagnitude(Constants.BALL_RADIUS));
-				return new Impact(impactPosition, rawSlice, time);
-			}
-		}
-		
-		return null; // Uh oh.
-	}
 	
-	public static Impact getEarliestImpactPoint(CarData car, BallPrediction ballPrediction){
-		return getEarliestImpactPoint(car.position, car.boost, car.velocity, car.elapsedSeconds, ballPrediction);
-	}
+	public static final double IMPACT_DODGE_TIME = 0.195; 
 
 	public static boolean isTeammateCloser(DataPacket input, Vector3 target){
 		double ourDistance = target.distance(input.car.position);
 		for(byte i = 0; i < input.cars.length; i++){
-			CarData c = input.cars[i];
-			if(i == input.playerIndex || c == null || c.isDemolished || c.team != input.car.team) continue;
-			if(ourDistance > target.distance(c.position)) return true;
+			CarData car = input.cars[i];
+			if(i == input.playerIndex || car == null || car.isDemolished || car.team != input.car.team) continue;
+			if(ourDistance > target.distance(car.position)) return true;
 		}
 		return false;
 	}
@@ -187,7 +156,8 @@ public class Behaviour {
 	}
 
 	public static boolean isCarAirborne(CarData car){
-		return !car.hasWheelContact && (car.position.z > 150 || Math.abs(car.velocity.z) > 280);
+//		return !car.hasWheelContact && (car.position.z > 150 || Math.abs(car.velocity.z) > 280);
+		return !car.hasWheelContact;
 	}
 
 	public static boolean isBallAirborne(BallData ball){
@@ -205,7 +175,7 @@ public class Behaviour {
 		}
 		
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
-	    	Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+	    	Vector3 location = new Vector3(ballPrediction.slices(i).physics().location());
 	    	if(location.z <= Constants.BALL_RADIUS + 15) return location;
 	    }
 	    return null;
@@ -240,7 +210,7 @@ public class Behaviour {
 	public static boolean isOnTarget(BallPrediction ballPrediction, int team){
 		if(ballPrediction == null) return false;
 	    for(int i = 0; i < ballPrediction.slicesLength(); i++){
-	    	Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+	    	Vector3 location = new Vector3(ballPrediction.slices(i).physics().location());
 	    	if(Math.abs(location.y) >= Constants.PITCH_LENGTH) return Math.signum(location.y) != Utils.teamSign(team);
 	    }
 	    return false;
@@ -248,11 +218,11 @@ public class Behaviour {
 
 	public static boolean isOnPrediction(BallPrediction ballPrediction, Vector3 slicePosition, int start, int end){
 		for(int i = Math.max(0, start); i < Math.min(ballPrediction.slicesLength(), end); i++){
-			Vector3 location = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
-			Vector3 velocity = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().velocity());
+			Vector3 location = new Vector3(ballPrediction.slices(i).physics().location());
+			Vector3 velocity = new Vector3(ballPrediction.slices(i).physics().velocity());
 			
 			double distance = slicePosition.distance(location);
-			if(distance < velocity.scaled(1D / 60).magnitude()) return true;
+			if(distance < velocity.magnitude() / 60) return true;
 		}
 		return false;
 	}
@@ -262,8 +232,14 @@ public class Behaviour {
 	}
 	
 	public static boolean isOnPredictionAroundGlobalTime(BallPrediction ballPrediction, Vector3 slicePosition, double globalPathTime, int window){
-		double time = (globalPathTime - ballPrediction.slices(0).gameSeconds());
-		return isOnPrediction(ballPrediction, slicePosition, (int)(time * 60 - window / 2), (int)(time * 60 + window / 2)); // 10 frame window.
+		double windowTime = ((double)window / 120D);
+		for(int i = 0; i < ballPrediction.slicesLength(); i++){
+			PredictionSlice rawSlice = ballPrediction.slices(i);
+			if(globalPathTime - windowTime <= rawSlice.gameSeconds()){
+				return isOnPrediction(ballPrediction, slicePosition, i, i + window);
+			}
+		}
+		return false;
 	}
 	
 	public static CarData getGoalkeeper(CarData[] cars, int team, double maxGoalDistance){
@@ -291,7 +267,7 @@ public class Behaviour {
 
 	public static boolean nobodyElseIntersect(int ourIndex, CarData[] cars, BallPrediction ballPrediction){
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-			Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			Vector3 ballPosition = new Vector3(ballPrediction.slices(i).physics().location());
 			if(Math.abs(ballPosition.y) > Constants.PITCH_LENGTH + Constants.BALL_RADIUS + 10) break;
 			double time = (ballPrediction.slices(i).gameSeconds() - cars[0].elapsedSeconds);
 			
@@ -308,11 +284,15 @@ public class Behaviour {
 	public static boolean blocksPrediction(CarData car, BallPrediction ballPrediction){
 		Vector3 carPosition = car.position;
 		for(int i = 0; i < ballPrediction.slicesLength(); i++){
-			Vector3 ballPosition = Vector3.fromFlatbuffer(ballPrediction.slices(i).physics().location());
+			Vector3 ballPosition = new Vector3(ballPrediction.slices(i).physics().location());
 			if(Math.abs(ballPosition.y) > Constants.PITCH_LENGTH + Constants.BALL_RADIUS + 10) break;
 			if(ballPosition.distance(carPosition) < 400) return true;
 		}
 		return false;
+	}
+
+	public static double dodgeDistance(CarData car){
+		return (car.forwardVelocityAbs + Constants.DODGE_IMPULSE) * 1.45;
 	}
 
 }

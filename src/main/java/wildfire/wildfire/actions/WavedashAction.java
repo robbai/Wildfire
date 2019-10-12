@@ -46,15 +46,15 @@ public class WavedashAction extends Action {
 			this.jumped = true;
 			targetPitch = -0.42;
 		}else{
-			if(input.car.velocity.z < -1 && Physics.timeToHitGround(input.car) < 0.0775){
+			if(input.car.velocity.z < -1 && Physics.timeToHitGround(input.car) < 0.074){
 				targetPitch = -3;
-				controls.withJump(!input.car.doubleJumped);
+				controls.withJump(!input.car.hasDoubleJumped);
 			}else{
 				targetPitch = 0.38;
 			}
 		}
 		
-		Vector2 flatNose = input.car.orientation.noseVector.flatten();
+		Vector2 flatNose = input.car.orientation.forward.flatten();
 		Vector3 desiredNose = new Vector3(flatNose.x, flatNose.y, Math.tan(targetPitch) * flatNose.magnitude());
 		
 		double[] angles = AirControl.getPitchYawRoll(input.car, desiredNose);
@@ -64,12 +64,12 @@ public class WavedashAction extends Action {
 			controls.withYaw(0);
 		}
 		
-		return controls.withBoost(input.car.orientation.noseVector.z < 0).withThrottle(1);
+		return controls.withBoost(input.car.orientation.forward.z < 0).withThrottle(1);
 	}
 
 	@Override
 	public boolean expire(InfoPacket input){
-		return this.failed || this.timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact || input.car.doubleJumped ? 0.6 : 1.3);
+		return this.failed || this.timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact || input.car.hasDoubleJumped ? 0.6 : 1.3);
 	}
 
 }

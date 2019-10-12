@@ -2,7 +2,6 @@ package wildfire.wildfire.actions;
 
 import wildfire.output.ControlsOutput;
 import wildfire.vector.Vector2;
-import wildfire.vector.Vector3;
 import wildfire.wildfire.handling.AirControl;
 import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
@@ -26,7 +25,7 @@ public class HopAction extends Action {
 		
 		float timeDifference = timeDifference(input.elapsedSeconds);
 		
-		//Switch to recovery
+		// Switch to recovery.
 		if(timeDifference > 1.5 && input.car.position.z > 400){
 			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 		}
@@ -35,30 +34,24 @@ public class HopAction extends Action {
 		
 		if(timeDifference <= throttleTime){
 			controls.withThrottle(-Math.signum(input.car.forwardVelocity));
-		}else if(timeDifference < throttleTime + 0.0167){
+		}else if(timeDifference < throttleTime + 1D / 60){
 			controls.withJump(true);
 		}else{
 			double[] angles = AirControl.getPitchYawRoll(input.car, target.minus(input.car.position.flatten()));
+			if(Math.abs(input.car.orientation.pitch) < 0.02) angles[0] = 0;
 			
 			controls.withPitchYawRoll(angles);
 
-			//Avoid turtling 
+			// Avoid turtling.
 			controls.withThrottle(timeDifference > Math.min(0.44, throttleTime + 0.12) ? 1 : 0);
 		}
+		
 		return controls;
 	}
 
 	@Override
 	public boolean expire(InfoPacket input){
 		return timeDifference(input.elapsedSeconds) > 0.16 + throttleTime && input.car.hasWheelContact;
-	}
-	
-	@SuppressWarnings("unused")
-	private Vector3 aim(double pitch, double yaw, double roll){
-	    double x = -1 * Math.cos(pitch) * Math.cos(yaw);
-	    double y = Math.cos(pitch) * Math.sin(yaw);
-	    double z = Math.sin(pitch);
-	    return new Vector3(x, y, z);
 	}
 
 }

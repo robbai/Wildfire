@@ -1,5 +1,6 @@
 package wildfire.wildfire.actions;
 
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
@@ -10,17 +11,21 @@ public class DodgeAction extends Action {
 	
 //	private static DodgeTable table = new DodgeTable();
 	
-	private double angle;
+	private double angle, pitch, yaw;
 	
 	public DodgeAction(State state, double desiredAngle, InfoPacket input, boolean ignoreCooldown){
 		super("Dodge", state, input.elapsedSeconds);
 		
 		if(!ignoreCooldown && wildfire != null && (input.info.timeOnGround < 0.3 || input.car.velocity.z < -1)){
 			failed = true; 
-		}else{
-//			this.angle = table.getInputForAngle(desiredAngle, input.car.forwardVelocity, true);
-			this.angle = desiredAngle;
 		}
+		
+//		this.angle = table.getInputForAngle(desiredAngle, input.car.forwardVelocity, true);
+		this.angle = desiredAngle;
+		
+		double[] pitchYaw = pitchYaw(this.angle);
+		this.pitch = pitchYaw[0];
+		this.yaw = pitchYaw[1];
 	}
 	
 	public DodgeAction(State state, double angle, InfoPacket input){
@@ -29,26 +34,40 @@ public class DodgeAction extends Action {
 
 	@Override
 	public ControlsOutput getOutput(InfoPacket input){
-		ControlsOutput controller = new ControlsOutput().withThrottle(1).withBoost(false);
-		float timeDifference = timeDifference(input.elapsedSeconds) * 1000;
+		CarData car = input.car;
 		
-		if(timeDifference <= 160){
-			controller.withJump(timeDifference <= 90);
-			controller.withPitch(-Math.signum(Math.cos(angle)));
-		}else if(timeDifference <= 750){
-			controller.withJump(true);
-	        controller.withYaw(-Math.sin(angle));
-	        controller.withPitch(-Math.cos(angle)); 
-		}else if(input.car.position.z > 160 || timeDifference >= 2400){
-			if(this.state != null) Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+		double time = timeDifference(input.elapsedSeconds);
+		
+		ControlsOutput controls = new ControlsOutput().withThrottle(1).withBoost(false);
+		
+		if(time <= 0.16){
+			controls.withJump(time <= 0.09);
+			controls.withPitch(Math.signum(this.pitch));
+		}else{
+			if(time <= 0.75){
+				controls.withPitch(this.pitch);
+				controls.withYaw(this.yaw);
+			}
+			
+			if(!car.hasDoubleJumped){
+				controls.withJump(true);
+			}else if(this.state != null){
+				if(!input.info.isDodgeTorquing() || time >= (Math.abs(car.angularVelocity.pitch) + Math.abs(car.angularVelocity.yaw) < 1.8 ? 0.3 : 1.6)){
+					Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
+				}
+			}
 		}
 	        
-		return controller;
+		return controls;
 	}
 
 	@Override
 	public boolean expire(InfoPacket input){
 		return failed || (timeDifference(input.elapsedSeconds) > 0.4 && input.car.hasWheelContact);
+	}
+	
+	public static double[] pitchYaw(double angle){
+		return new double[] {-Math.cos(angle), -Math.sin(angle)};
 	}
 
 }

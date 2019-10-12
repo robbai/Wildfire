@@ -1,6 +1,6 @@
 package wildfire.wildfire.physics;
 
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.utils.Constants;

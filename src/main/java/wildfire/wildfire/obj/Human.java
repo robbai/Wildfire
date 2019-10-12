@@ -9,6 +9,8 @@ import com.studiohartman.jamepad.ControllerUnpluggedException;
 import wildfire.Main;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.Wildfire;
+import wildfire.wildfire.training.TrainingManager;
+import wildfire.wildfire.training.TrainingState;
 
 public class Human extends Thread {
 	
@@ -22,11 +24,11 @@ public class Human extends Thread {
 	public Human(Wildfire wildfire){
 		this.enabled = false;
 		
-		//Handle RLBot
+		// Handle RLBot.
 		this.wildfire = wildfire;
 		this.controls = new ControlsOutput().withNone();
 		
-		//Handle the controller
+		// Handle the controller.
 		this.controllers = new ControllerManager();		
 	}
 	
@@ -39,12 +41,16 @@ public class Human extends Thread {
 			
 			try{
 				/*
-				 * Use the controls provided
+				 * Use the controls provided.
 				 */
 				
-				//Toggle the human
+				// Toggle the human.
 				if(currController.isButtonJustPressed(ControllerButton.LEFTSTICK)){
-					this.setEnabled(!this.isEnabled());
+					if(Main.getArguments().contains("allow-human")){
+						this.setEnabled(!this.isEnabled());
+					}else{
+						TrainingManager.write(new TrainingState(this.wildfire.gameTickPacketAgo(5)));
+					}
 				}
 				
 				if(!this.isEnabled()) continue;
@@ -61,7 +67,7 @@ public class Human extends Thread {
 				controls.withYaw(yaw);
 				controls.withSteer(yaw);
 				
-				//Air roll left is bound to R1
+				// Air roll left is bound to R1.
 				if(currController.isButtonPressed(ControllerButton.RIGHTBUMPER)){
 					controls.withRoll(-1F);
 				}else{
@@ -83,7 +89,7 @@ public class Human extends Thread {
 	}
 
 	public Human setEnabled(boolean enabled){
-		this.enabled = (enabled && Main.getArguments().contains("allow-human") && this.wildfire.isTestVersion());
+		this.enabled = (enabled && this.wildfire.isTestVersion());
 		return this;
 	}
 

@@ -1,5 +1,7 @@
 package wildfire.output;
 
+import java.util.Random;
+
 import rlbot.ControllerState;
 
 public class ControlsOutput implements ControllerState {
@@ -24,7 +26,21 @@ public class ControlsOutput implements ControllerState {
     private boolean slideDepressed;
     private boolean useItemDepressed;
 
-    public ControlsOutput(){
+    public ControlsOutput(float steer, float pitch, float yaw, float roll, float throttle, boolean jumpDepressed,
+			boolean boostDepressed, boolean slideDepressed, boolean useItemDepressed){
+		this.steer = steer;
+		this.pitch = pitch;
+		this.yaw = yaw;
+		this.roll = roll;
+		this.throttle = throttle;
+		this.jumpDepressed = jumpDepressed;
+		this.boostDepressed = boostDepressed;
+		this.slideDepressed = slideDepressed;
+		this.useItemDepressed = useItemDepressed;
+	}
+
+	public ControlsOutput(){
+		// Empty.
     }
 
     public ControlsOutput withSteer(double steer){
@@ -160,5 +176,12 @@ public class ControlsOutput implements ControllerState {
     public ControlsOutput withPitchYawRoll(double[] angles){
     	return this.withPitchYawRoll(angles[0], angles[1], angles[2]);
     }
+    
+    private static final Random random = new Random();
+
+	public static ControlsOutput random(){
+		return new ControlsOutput(random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1, 
+				random.nextBoolean(), random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
+	}
     
 }

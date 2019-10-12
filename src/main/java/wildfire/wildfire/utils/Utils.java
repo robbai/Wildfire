@@ -1,7 +1,7 @@
 package wildfire.wildfire.utils;
 
-import wildfire.input.CarData;
-import wildfire.input.CarOrientation;
+import wildfire.input.car.CarData;
+import wildfire.input.car.CarOrientation;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.obj.Action;
@@ -16,14 +16,8 @@ public class Utils {
 		return aim != 0 ? aim + -Math.signum(aim) * Math.PI : Math.PI;
 	}
 	
-	@Deprecated
 	public static int teamSign(int team){
 		return (team == 0 ? 1 : -1);
-	}
-	
-	@Deprecated
-	public static int teamSign(CarData car){
-		return teamSign(car.team);
 	}
 
 	public static float round(float value){
@@ -108,9 +102,9 @@ public class Utils {
 	}
 	
 	public static Vector3 toLocalFromRelative(CarOrientation carOrientation, Vector3 relative){
-		double localRight = carOrientation.rightVector.x * relative.x + carOrientation.rightVector.y * relative.y + carOrientation.rightVector.z * relative.z;
-		double localNose = carOrientation.noseVector.x * relative.x + carOrientation.noseVector.y * relative.y + carOrientation.noseVector.z * relative.z;
-		double localRoof = carOrientation.roofVector.x * relative.x + carOrientation.roofVector.y * relative.y + carOrientation.roofVector.z * relative.z;
+		double localRight = carOrientation.right.x * relative.x + carOrientation.right.y * relative.y + carOrientation.right.z * relative.z;
+		double localNose = carOrientation.forward.x * relative.x + carOrientation.forward.y * relative.y + carOrientation.forward.z * relative.z;
+		double localRoof = carOrientation.up.x * relative.x + carOrientation.up.y * relative.y + carOrientation.up.z * relative.z;
 		
 		return new Vector3(localRight, localNose, localRoof);
 	}
@@ -155,10 +149,12 @@ public class Utils {
 		return closestPointToLineSegment(P.flatten(), new Pair<Vector2, Vector2>(lineSegment.getOne().flatten(), lineSegment.getTwo().flatten())).getTwo();
 	}
 
-	public static Vector3 toGlobal(CarData car, Vector3 localTarget){
-		Vector3 carPosition = car.position;
-		CarOrientation carOrientation = car.orientation;
-		return carPosition.plus(carOrientation.rightVector.scaledToMagnitude(localTarget.x)).plus(carOrientation.noseVector.scaledToMagnitude(localTarget.y)).plus(carOrientation.roofVector.scaledToMagnitude(localTarget.z));
+	public static Vector3 toGlobal(CarData car, Vector3 local){
+		return toGlobal(car.position, car.orientation, local);
+	}
+
+	public static Vector3 toGlobal(Vector3 position, CarOrientation orientation, Vector3 local){
+		return position.plus(orientation.right.scaledToMagnitude(local.x)).plus(orientation.forward.scaledToMagnitude(local.y)).plus(orientation.up.scaledToMagnitude(local.z));
 	}
 
 }

@@ -3,7 +3,7 @@ package wildfire.wildfire.states;
 import java.awt.Color;
 
 import rlbot.flat.QuickChatSelection;
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
@@ -59,7 +59,7 @@ public class ShootState extends State {
 		double ballDistance = input.ball.position.distance(car.position);
 		
 		// Smart-dodge.
-		if(input.info.impact.getPosition().z > 150){
+		if(input.info.jumpImpactHeight > 100){
 			SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
 			if(!smartDodge.failed){
 				return this.startAction(smartDodge, input);
@@ -88,12 +88,12 @@ public class ShootState extends State {
 		
 		// Rendering.
 		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.BLACK, 0, input.info.impact.getFrame());
-		wildfire.renderer.drawLine3d(Color.WHITE, car.position.flatten().toFramework(), Utils.traceToY(car.position.flatten(), input.info.impact.getPosition().minus(car.position).flatten(), car.sign * Constants.PITCH_LENGTH).toFramework());
+		wildfire.renderer.drawLine3d(Color.WHITE, car.position.flatten(), Utils.traceToY(car.position.flatten(), input.info.impact.getPosition().minus(car.position).flatten(), car.sign * Constants.PITCH_LENGTH));
 		wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition(), Color.LIGHT_GRAY, 125);
 		
 		// Controls.
 		double throttle = (Math.abs(Math.cos(impactRadians)) * (1D - minThrottle) + minThrottle);
-		if(car.orientation.roofVector.z < 0.7) throttle = Math.signum(throttle);
+		if(car.orientation.up.z < 0.7) throttle = Math.signum(throttle);
         ControlsOutput controls = Handling.forwardDrive(car, input.info.impact.getPosition());
         controls.withThrottle(throttle).withBoost(controls.holdBoost() && throttle > 0.9);
         return controls;

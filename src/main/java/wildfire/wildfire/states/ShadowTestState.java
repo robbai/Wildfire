@@ -1,6 +1,6 @@
 package wildfire.wildfire.states;
 
-import wildfire.input.CarData;
+import wildfire.input.car.CarData;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.input.InfoPacket;
@@ -24,9 +24,9 @@ public class ShadowTestState extends ShadowState {
 				(!Behaviour.correctSideOfTarget(car, impactPosition) && Math.abs(impactPosition.x) > 1400);
 	}
 	
-//	@Override
-//	public boolean expire(InfoPacket input){
-//		
-//	}
+	@Override
+	public boolean expire(InfoPacket input){
+		return !this.ready(input);
+	}
 
 }

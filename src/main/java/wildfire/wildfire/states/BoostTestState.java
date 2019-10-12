@@ -8,7 +8,7 @@ import wildfire.wildfire.obj.Impact;
 import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
-import wildfire.wildfire.utils.Utils;
+import wildfire.wildfire.utils.InterceptCalculator;
 
 public class BoostTestState extends BoostState {
 
@@ -20,6 +20,7 @@ public class BoostTestState extends BoostState {
 	
 	@Override
 	public boolean ready(InfoPacket input){
+		if(isPickupInevitable(input.car, BoostManager.getFullBoosts())) return false;
 		if(Math.abs(input.car.position.y) > Constants.PITCH_LENGTH) return false;
 		if(input.car.boost > maxBoost) return false;
 		boost = getBoost(input);
@@ -29,9 +30,9 @@ public class BoostTestState extends BoostState {
 	private BoostPad getBoost(InfoPacket input){
 		Impact impact = input.info.impact;
 		double impactTime = impact.getTime();
-		if(Math.abs(impact.getPosition().y) > (Constants.PITCH_LENGTH - 1100)) impactTime *= 1.2;
-		if(Math.abs(impact.getPosition().x) > (Constants.PITCH_WIDTH - 950)) impactTime *= 1.3;
-		if(impact.getPosition().z > 260) impactTime *= 1.35;
+		if(Math.abs(impact.getPosition().y) > (Constants.PITCH_LENGTH - 1100)) impactTime *= 1.15;
+		if(Math.abs(impact.getPosition().x) > (Constants.PITCH_WIDTH - 950)) impactTime *= 1.2;
+		if(impact.getPosition().z > 260) impactTime *= 1.2;
 		
 		boolean carCorrectSide = Behaviour.correctSideOfTarget(input.car, impact.getBallPosition());
 		
@@ -40,18 +41,20 @@ public class BoostTestState extends BoostState {
 		for(BoostPad boost : BoostManager.getFullBoosts()){
 			if(!boost.isActive()) continue;
 			
-			boolean boostCorrectSide = ((boost.getLocation().y - impact.getBallPosition().y) * Utils.teamSign(input.car) < 0);
-			
 			double distance = boost.getLocation().distance(input.car.position);
 			double maxVel = DrivePhysics.maxVelocityDist(input.car.velocityDir(boost.getLocation().minus(input.car.position)), input.car.boost, distance);
 			double travelTime = DrivePhysics.minTravelTime(input.car, distance);
-			Impact newImpact = Behaviour.getEarliestImpactPoint(boost.getLocation(), 100, boost.getLocation().minus(input.car.position).scaledToMagnitude(maxVel), input.car.elapsedSeconds + travelTime, wildfire.ballPrediction);
+			Impact newImpact = InterceptCalculator.getImpact(boost.getLocation(), 100, boost.getLocation().minus(input.car.position).scaledToMagnitude(maxVel).withZ(0), input.car.elapsedSeconds + travelTime);
 			if(newImpact == null) continue;
 			travelTime += newImpact.getTime();
 			
-			if(!boostCorrectSide) travelTime *= (carCorrectSide ? 1.4 : 1.3);
+			boolean boostCorrectSide = ((boost.getLocation().y - newImpact.getBallPosition().y) * input.car.sign < 0);
 			
-			if(travelTime < impactTime && (bestBoost == null || travelTime < bestBoostTime - 0.05)){
+//			if(!boostCorrectSide) travelTime *= (carCorrectSide ? 1.5 : 1.45);
+			if(!boostCorrectSide && carCorrectSide) continue;
+//			if(!boostCorrectSide) continue;
+			
+			if(travelTime < impactTime && (bestBoost == null || travelTime < bestBoostTime + 0.05)){
 				bestBoost = boost;
 				bestBoostTime = travelTime;
 			}

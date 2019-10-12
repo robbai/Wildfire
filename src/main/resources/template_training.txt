@@ -1,0 +1,40 @@
+from dataclasses import dataclass, field
+from typing import Any
+
+from rlbot.utils.game_state_util import *
+from rlbottraining.common_graders.goal_grader import *
+from rlbottraining.training_exercise import TrainingExercise
+
+@dataclass
+class {0}(TrainingExercise):
+	grader: Any = PassOnGoalForAllyTeam(ally_team=0)
+	
+	def make_game_state(self,rng):
+		return GameState(
+			ball=BallState(physics=Physics(
+				location=Vector3({1},{2},{3}),
+				velocity=Vector3({4},{5},{6}),
+				angular_velocity=Vector3({7},{8},{9}),
+				rotation=Rotator({10},{11},{12}))),
+			cars='{'
+				0: CarState(
+					physics=Physics(
+						location=Vector3({13},{14},{15}),
+						velocity=Vector3({16},{17},{18}),
+						angular_velocity=Vector3({19},{20},{21}),
+						rotation=Rotator({22},{23},{24})),
+					jumped={25},
+					double_jumped={26},
+					boost_amount={27}),
+				1: CarState(
+					physics=Physics(
+						location=Vector3({28},{29},{30}),
+						velocity=Vector3({31},{32},{33}),
+						angular_velocity=Vector3({34},{35},{36}),
+						rotation=Rotator({37},{38},{39})),
+					jumped={40},
+					double_jumped={41},
+					boost_amount={42})
+			'}',
+			boosts='{'i: BoostState(0) for i in range(34)'}',
+		)

@@ -2,6 +2,8 @@ package wildfire.input;
 
 import rlbot.flat.GameInfo;
 import rlbot.flat.GameTickPacket;
+import wildfire.input.ball.BallData;
+import wildfire.input.car.CarData;
 
 public class DataPacket {
 	
