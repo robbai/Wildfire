@@ -158,7 +158,7 @@ public class ClearState extends State {
 			}
 		}
 		
-		double offsetMagnitude = (65 + 35 * Math.pow(input.info.impact.getPosition().minus(car.position).normalized().y, 2));
+		double offsetMagnitude = (65 + 45 * Math.pow(input.info.impact.getPosition().minus(car.position).normalized().y, 2));
 		if(Behaviour.correctSideOfTarget(car, input.info.impact.getPosition().flatten())){
 			Vector2 goal = Behaviour.getTarget(car, input.ball);
 			offset = input.info.impact.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);
