@@ -149,9 +149,11 @@ public class Handling {
 		double fullDistance = carPosition.distanceFlat(ballPosition);
 		double initialVelocity = car.velocityDir(ballPosition.minus(carPosition).flatten());
 		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
-		double maxVelForTurn = DrivePhysics.maxVelForTurn(car, ballPosition);
-		finalVelocity = Math.signum(finalVelocity) * Math.min(Math.abs(finalVelocity), Math.abs(maxVelForTurn));
 		double acceleration = ((finalVelocity - initialVelocity) / driveTime);
+		double maxVelForTurn = DrivePhysics.maxVelForTurn(car, ballPosition);
+		if(Math.abs(finalVelocity) > maxVelForTurn){
+			acceleration = (Math.copySign(maxVelForTurn, finalVelocity) - initialVelocity) / 0.1;
+		}
 		
 		// Render.
 		if(renderer != null){
@@ -163,16 +165,17 @@ public class Handling {
 		}
 		
 		// Controls.
+		double radians = Handling.aim(car, ballPosition);
+		if(Math.abs(radians) > Math.toRadians(15)){
+			if(renderer != null) renderer.drawString2d("Turn", Color.WHITE, new Point(0, 120), 2, 2);
+			return turnOnSpot(car, ballPosition);
+		}
 		if(fullDistance > 0/* && Behaviour.correctSideOfTarget(car, ballPosition)*/){
 			double maxVel = DrivePhysics.maxVelocity(Math.max(0, driveTime - 3D / 120), 0, car.boost);
 			if(maxVel > finalVelocity){
 				acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(250, 550, finalVelocity / Constants.MAX_CAR_VELOCITY));
 //				acceleration = -initialVelocity / 0.15;
 			}
-		}
-		if(Math.abs(acceleration) < 800 && Math.abs(controls.getSteer()) > 0.3){
-			renderer.drawString2d("Turn", Color.WHITE, new Point(0, 120), 2, 2);
-			return turnOnSpot(car, ballPosition);
 		}
 		double throttle = produceAcceleration(car, acceleration); 
 		return controls.withThrottle(throttle).withBoost(throttle > 1);

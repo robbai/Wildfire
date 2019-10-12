@@ -105,7 +105,7 @@ public class PatientShootState extends State {
 			 *  We adjust our target acceleration so that our final velocity
 			 *  is closer to the maximum (so we hit the ball as hard as possible!).
 			 */
-			if(displacement < 200 || time < (this.jump ? (input.info.jumpImpact == null ? 10 : input.info.jumpImpact.getTime()) : input.info.impact.getTime()) + 0.12){
+			if(displacement < 200 || time < (this.jump ? (input.info.jumpImpact == null ? 10 : input.info.jumpImpact.getTime()) : input.info.impact.getTime()) + 0.15){
 				this.go = true;
 			}
 			if(!this.go){
@@ -129,7 +129,7 @@ public class PatientShootState extends State {
 		
 		// Controls.
 		double radians = Handling.aim(car, this.target.getPosition());
-		if(Math.abs(radians) > Math.toRadians(15) && !go) return Handling.turnOnSpot(car, targetPosition);
+		if(Math.abs(radians) > Math.toRadians(15)) return Handling.turnOnSpot(car, targetPosition);
 		if(this.jump){
 			SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
 			if(!smartDodge.failed){

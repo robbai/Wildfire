@@ -58,7 +58,7 @@ public class FallbackState extends State {
 		}
 
 		// Drive down the wall.
-		if(wall && Utils.toLocal(car, impactPosition).z < 130){
+		if(wall && Utils.toLocal(car, impactPosition).z > 140){
 			wildfire.renderer.drawString2d("Wall", Color.WHITE, new Point(0, 20), 2, 2);
 			return Handling.driveDownWall(input);
 		}
