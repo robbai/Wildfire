@@ -20,7 +20,7 @@ public class BoostTestState extends BoostState {
 	
 	@Override
 	public boolean ready(InfoPacket input){
-		if(isPickupInevitable(input.car, BoostManager.getFullBoosts())) return false;
+		if(input.info.isBoostPickupInevitable) return false;
 		if(Math.abs(input.car.position.y) > Constants.PITCH_LENGTH) return false;
 		if(input.car.boost > maxBoost) return false;
 		boost = getBoost(input);

@@ -1,8 +1,12 @@
 package wildfire.wildfire.input;
 
+import java.util.ArrayList;
+
 import rlbot.cppinterop.RLBotDll;
 import rlbot.cppinterop.RLBotInterfaceException;
 import rlbot.flat.BallPrediction;
+import wildfire.boost.BoostManager;
+import wildfire.boost.BoostPad;
 import wildfire.input.DataPacket;
 import wildfire.input.car.CarData;
 import wildfire.wildfire.Wildfire;
@@ -38,6 +42,8 @@ public class Info {
 	private double timeFirstDodged;
 	private boolean didDodgeLast;
 	private double timeSinceDodge;
+
+	public boolean isBoostPickupInevitable;
 
 	public Info(Wildfire wildfire){
 		this.wildfire = wildfire;
@@ -113,10 +119,28 @@ public class Info {
 		
 		this.jumpImpact = InterceptCalculator.getJumpImpact(car);
 		this.jumpImpactHeight = (this.jumpImpact == null ? 0 : this.jumpImpact.getBallPosition().minus(car.position).dotProduct(car.orientation.up));
+		
+		this.isBoostPickupInevitable = isPickupInevitable(car, BoostManager.getFullBoosts());
 	}
 	
 	public boolean isDodgeTorquing(){
 		return this.timeSinceDodge < Constants.DODGE_TORQUE_TIME;
+	}
+	
+	private boolean isPickupInevitable(CarData car, BoostPad boostPad){
+		double u = car.velocityDir(boostPad.getLocation().minus(car.position));
+		double s = boostPad.getLocation().distance(car.position);
+		double a = (Math.pow(u, 2) / (2 * s));
+		return Math.abs(a) > Constants.BRAKE_ACCELERATION;
+	}
+	
+	private boolean isPickupInevitable(CarData car, ArrayList<BoostPad> boostPads){
+		for(BoostPad boostPad : boostPads){
+			if(isPickupInevitable(car, boostPad)){
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

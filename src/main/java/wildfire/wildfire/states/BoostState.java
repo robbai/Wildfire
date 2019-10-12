@@ -40,7 +40,7 @@ public class BoostState extends State {
 
 	@Override
 	public boolean ready(InfoPacket input){
-		if(isPickupInevitable(input.car, BoostManager.getFullBoosts())) return false;
+		if(input.info.isBoostPickupInevitable) return false;
 			
 		if(Math.abs(input.car.position.y) > Constants.PITCH_LENGTH) return false;
 		
@@ -64,6 +64,7 @@ public class BoostState extends State {
 	
 	@Override
 	public boolean expire(InfoPacket input){
+		if(input.info.isBoostPickupInevitable) return true;
 		if(Behaviour.isKickoff(input) || boost == null || !boost.isActive() || input.car.boost > maxBoostMega) return true;
 		if(boost.getLocation().distanceFlat(input.car.position) < 2000) return false;
 		return input.car.boost > maxBoost || input.ball.velocity.magnitude() > 5000 || input.info.impact.getPosition().distanceFlat(input.car.position) < 1600 || input.info.impact.getPosition().distanceFlat(Constants.homeGoal(input.car.team)) < (Math.abs(input.info.impact.getPosition().x) < 1200 ? 3000 : 2100);
@@ -162,22 +163,6 @@ public class BoostState extends State {
 		}
 		
 		return bestBoost;
-	}
-	
-	protected boolean isPickupInevitable(CarData car, BoostPad boostPad){
-		double u = car.velocityDir(boostPad.getLocation().minus(car.position));
-		double s = boostPad.getLocation().distance(car.position);
-		double a = (Math.pow(u, 2) / (2 * s));
-		return Math.abs(a) > Constants.BRAKE_ACCELERATION;
-	}
-	
-	protected boolean isPickupInevitable(CarData car, ArrayList<BoostPad> boostPads){
-		for(BoostPad boostPad : boostPads){
-			if(isPickupInevitable(car, boostPad)){
-				return true;
-			}
-		}
-		return false;
 	}
 
 }
