@@ -205,7 +205,7 @@ public class FallbackState extends State {
 //			}
 		
 			Vector3 jumpImpact = input.info.jumpImpact.getBallPosition();
-			if(Utils.distanceToWall(jumpImpact) < (input.car.onFlatGround ? 160 : 140)) return false;
+			if(Utils.distanceToWall(jumpImpact) < (input.car.onFlatGround ? 220 : 180)) return false;
 
 			Vector3 carPosition = car.position;
 			Vector2 trace = Utils.traceToWall(carPosition.flatten(), jumpImpact.flatten());
