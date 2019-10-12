@@ -82,7 +82,7 @@ public class InterceptCalculator {
 			double goalAngle = enemyGoal.minus(slicePosition.flatten()).angle(slicePosition.flatten().minus(carPosition));
 			double hitboxDistance = Utils.lerp(hitboxDistanceForward, hitboxDistanceSide, Math.sin(goalAngle));
 //			hitboxDistance *= (Behaviour.correctSideOfTarget(car, slicePosition) ? (slicePosition.distanceFlat(enemyGoal) < 2500 ? 1.3 : 1.1 : 1.25);
-//			hitboxDistance *= Math.max(0.85, Math.cos(goalAngle) + 0.05);
+			hitboxDistance *= Math.max(0.85, Math.cos(goalAngle) + 0.1);
 //			hitboxDistance *= 1.1;
 			Vector3 impactPosition = slicePosition.plus(slicePosition.flatten().minus(enemyGoal).withZ(0).scaledToMagnitude(hitboxDistance));
 //			Vector3 impactPosition = slicePosition.plus(slicePosition.flatten().minus(enemyGoal).withZ(0).scaledToMagnitude(Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance * 0.405));
