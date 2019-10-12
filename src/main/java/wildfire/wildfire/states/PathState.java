@@ -77,7 +77,7 @@ public class PathState extends State {
 			Vector2 ballPosition = slicePosition.flatten();
 			ballPosition = offsetBall(ballPosition, enemyGoal);
 
-			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, 0, Constants.RIPPER.y * (dodge ? 1 : 0.75));
+			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, 0, Constants.RIPPER.y * (dodge ? 1.1 : 0.75));
 			results[middle - startLow] = compositeArc;
 
 			if(compositeArc.minTravelTime(input.car, true, true) > time){
