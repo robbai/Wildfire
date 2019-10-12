@@ -50,6 +50,7 @@ public class ReturnState extends State {
 		boolean opponentBehind = Behaviour.isOpponentBehindBall(input);
 		boolean centered = (Math.abs(impact.getPosition().x) < Constants.PITCH_WIDTH - 1100);
 		double impactY = (car.sign * car.position.y);
+		
 		// Just hit it instead.
 		if((impact.getPosition().distanceFlat(car.position) < Math.max(1100, car.velocity.magnitude() * 0.75) || impact.getTime() < 0.8) &&
 				!Behaviour.isTowardsOwnGoal(car, impact.getPosition())){
@@ -65,7 +66,7 @@ public class ReturnState extends State {
 			}
 		}
 		
-		if(impact.getPosition().distanceFlat(Constants.homeGoal(car)) < 2800){
+		if(impact.getPosition().distanceFlat(Constants.homeGoal(car)) < 2300){
 			return false;
 		}
 
@@ -85,9 +86,10 @@ public class ReturnState extends State {
 			double yAngle = teamSignVec.angle(car.position.minus(impact.getPosition()).flatten());
 			if(yAngle > Math.toRadians(70)){
 				return true;
-			}else{
-				return false;
 			}
+//			else{
+//				return false;
+//			}
 		}
 
 		// Check if we have a shot opportunity.
