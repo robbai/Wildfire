@@ -75,7 +75,7 @@ public class Handling {
 	
 	public static ControlsOutput forwardDrive(CarData car, Vector3 destination){
 		// Power-turn.
-		if(car.forwardVelocity < 350){
+		if(car.forwardVelocity < 450){
 			double angle = Handling.aim(car, destination);
 			if(Math.abs(angle) > Math.toRadians(car.forwardVelocity < 0 ? 70 : 90)){
 				angle = Utils.invertAim(angle);

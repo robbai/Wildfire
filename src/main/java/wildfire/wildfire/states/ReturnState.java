@@ -130,7 +130,7 @@ public class ReturnState extends State {
 //			if(Behaviour.isInCone(car, impact.getPosition(), 200)) return true;
 			if(Math.abs(impact.getBallPosition().x) < 1300) return true;
 		}
-		if(carGoalDistance < impactGoalDistance * 0.65 || impactGoalDistance < 2800){
+		if(carGoalDistance < impactGoalDistance * 0.6 || impactGoalDistance < 2600){
 			return true;
 		}
 		
