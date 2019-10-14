@@ -33,12 +33,12 @@ public class MixerState extends State {
 	@Override
 	public boolean ready(InfoPacket input){
 		Vector3 impactLocation = input.info.impact.getPosition();
-		Vector2 teamSignVec = new Vector2(0, input.car.sign);
+		Vector2 teamSignVec = new Vector2(0, -input.car.sign);
 		Vector2 carPosition = input.car.position.flatten();
 		
 //		// The ball must be on the wing.
-		if(Math.abs(impactLocation.x) < Constants.PITCH_WIDTH - 550 * 2) return false;
-		if(input.car.sign * impactLocation.y < -1000) return false;
+		if(Math.abs(impactLocation.x) < Constants.PITCH_WIDTH - 550 * 3) return false;
+		if(input.car.sign * impactLocation.y < -1500) return false;
 		if(input.car.sign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
 		
 		// We must be solidly behind the ball.
