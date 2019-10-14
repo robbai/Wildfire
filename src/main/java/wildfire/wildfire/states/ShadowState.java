@@ -187,7 +187,7 @@ public class ShadowState extends State {
 		if(input.car.boost <= 70 && input.ball.position.y * input.car.sign > 1000){
 			double bestBoostDistance = 0;
 			for(BoostPad b : BoostManager.getSmallBoosts()){
-				if(!b.isActive() || Math.signum(b.getLocation().y - target.y) == input.car.sign) continue;
+				if(!b.isActive() || Math.signum(b.getLocation().y - target.y) * input.car.sign > 0) continue;
 				double distance = b.getLocation().distanceFlat(target);
 				if(bestBoost == null || distance < bestBoostDistance){
 					bestBoost = b;
