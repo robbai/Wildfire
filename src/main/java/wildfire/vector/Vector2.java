@@ -146,6 +146,10 @@ public class Vector2 {
 	public Vector3 withZ(double z){
 		return new Vector3(x, y, z);
 	}
+	
+	public Vector3 withZ(){
+		return this.withZ(0);
+	}
 
 	@Override
 	public String toString(){

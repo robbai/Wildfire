@@ -48,12 +48,12 @@ public class CarData {
 		this.sign = (this.team == 0 ? 1 : -1);
 	}
 
-	public double velocityDir(Vector2 direction){
-		return this.velocity.dotProduct(direction.normalised().withZ(0));
-	}
-
 	public double velocityDir(Vector3 direction){
 		return this.velocity.dotProduct(direction.normalised());
+	}
+	
+	public double velocityDir(Vector2 direction){
+		return this.velocityDir(direction.withZ(0));
 	}
 
 }

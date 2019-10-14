@@ -69,7 +69,7 @@ public class PatientShootState extends State {
 			double offsetSize = (Constants.BALL_RADIUS + 0.95 * (Constants.RIPPER.y + Constants.RIPPER_OFFSET.y));
 			Vector3 targetPosition = slicePosition.plus(car.position.minus(slicePosition).withZ(0).scaledToMagnitude(offsetSize));
 			this.globalTargetTime = globalTime;
-			this.target = new Impact(targetPosition, rawSlice, globalTime - car.elapsedSeconds);
+			this.target = new Impact(targetPosition, slicePosition, globalTime - car.elapsedSeconds);
 			return true;
 		}
 		
@@ -95,10 +95,10 @@ public class PatientShootState extends State {
 		double acceleration = 0;
 		if(!this.jump || !go){
 			// Motion equations.
-			double displacement = (targetPosition.distanceFlat(car.position) - Constants.RIPPER.y);
+			double displacement = targetPosition.distanceFlat(car.position);
 			displacement *= Math.signum(car.orientation.forward.dotProduct(targetPosition.minus(car.position)));
-			double time = (globalTargetTime - car.elapsedSeconds);
-			double initialVelocity = car.velocityDir(targetPosition.minus(car.position).flatten());
+			double time = Math.max(0, globalTargetTime - car.elapsedSeconds);
+			double initialVelocity = car.velocityDir(targetPosition.minus(car.position));
 			double finalVelocity = ((2 * displacement) / time - initialVelocity);
 			acceleration = (finalVelocity - initialVelocity) / time;
 			
@@ -106,7 +106,7 @@ public class PatientShootState extends State {
 			 *  We adjust our target acceleration so that our final velocity
 			 *  is closer to the maximum (so we hit the ball as hard as possible!).
 			 */
-			if(displacement < 200 || time < (this.jump ? (input.info.jumpImpact == null ? 10 : input.info.jumpImpact.getTime()) : input.info.impact.getTime()) + 0.15){
+			if(displacement < 200 || time < (this.jump ? (input.info.jumpImpact == null ? 10 : input.info.jumpImpact.getTime()) : input.info.impact.getTime()) + 0.125){
 				this.go = true;
 			}
 			if(!this.go){
