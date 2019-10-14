@@ -62,8 +62,7 @@ public class PatientShootState extends State {
 			this.jump = (slicePosition.z > maxLowZ);
 			if(!Behaviour.isInCone(car, slicePosition, goalThreshold)) continue;
 			
-//			double globalTime = (rawSlice.gameSeconds() - 2D / 120);
-			double globalTime = rawSlice.gameSeconds();
+			double globalTime = (rawSlice.gameSeconds() - 3D / 120);
 			if(globalTime <= car.elapsedSeconds) continue;
 			
 			// Found a shot.
