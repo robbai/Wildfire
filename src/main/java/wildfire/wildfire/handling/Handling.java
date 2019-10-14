@@ -74,14 +74,14 @@ public class Handling {
 	}
 	
 	public static ControlsOutput forwardDrive(CarData car, Vector3 destination){
-		// Power-turn.
-		if(car.forwardVelocity < 450){
-			double angle = Handling.aim(car, destination);
-			if(Math.abs(angle) > Math.toRadians(car.forwardVelocity < 0 ? 70 : 90)){
-				angle = Utils.invertAim(angle);
-				return new ControlsOutput().withBoost(false).withThrottle(-1).withSlide(true).withSteer(-Math.signum(angle));
-			}
-		}
+//		// Power-turn.
+//		if(car.forwardVelocity < 450){
+//			double angle = Handling.aim(car, destination);
+//			if(Math.abs(angle) > Math.toRadians(car.forwardVelocity < 0 ? 70 : 90)){
+//				angle = Utils.invertAim(angle);
+//				return new ControlsOutput().withBoost(false).withThrottle(-1).withSlide(true).withSteer(-Math.signum(angle));
+//			}
+//		}
 		
 		ControlsOutput controls = steering(car, destination);
 		return controls.withThrottle(1);
@@ -187,10 +187,13 @@ public class Handling {
 
 	public static ControlsOutput turnOnSpot(CarData car, Vector3 destination){
 		ControlsOutput controls = forwardDrive(car, destination);
-		double targetVelocity = Math.abs(controls.getSteer()) * 500;
-		double acceleration = (targetVelocity - car.forwardVelocity) / 0.05;
+//		double targetVelocity = Math.abs(controls.getSteer()) * 500;
+		double targetVelocity = 700 * Math.max(0.3, 1 - Math.abs(controls.getSteer()));
+//		double initialVelocity = car.velocityDir(destination.minus(car.position));
+		double initialVelocity = car.forwardVelocityAbs;
+		double acceleration = (targetVelocity - initialVelocity) / 0.1;
 		double throttle = produceAcceleration(car, acceleration);
-		return controls.withThrottle(throttle).withBoost(throttle > 1).withSlide(Math.abs(controls.getSteer()) < 0.5);
+		return controls.withThrottle(throttle).withBoost(throttle > 1); //.withSlide(Math.abs(controls.getSteer()) < 0.5);
 	}
 	
 	public static ControlsOutput turnOnSpot(CarData car, Vector2 destination){

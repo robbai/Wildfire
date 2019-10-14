@@ -123,7 +123,7 @@ public class Wildfire implements Bot {
     }
 
     private ControlsOutput processInput(InfoPacket input){
-//    	this.stateSetting.airRoll(input);
+//    	this.stateSetting.shoot(input, true);
 //    	this.stateSetting.path(input, true, false);
 //    	this.renderer.drawString3d((int)input.info.jumpImpactHeight + "uu", Color.WHITE, input.car.position, 3, 3);
     	

@@ -36,7 +36,7 @@ public class PatientShootState extends State {
 		if(!car.onFlatGround) return false; 
 			
 		Impact earliestImpact = input.info.impact;
-		if(earliestImpact == null || earliestImpact.getBallPosition().y * car.sign < -4400) return false;
+		if(earliestImpact == null || earliestImpact.getBallPosition().y * car.sign < -3000) return false;
 		
 		// We already have an available shot!
 		if(earliestImpact.getBallPosition().z < maxLowZ && Behaviour.isInCone(car, earliestImpact.getPosition(), goalThreshold)) return false;
@@ -62,7 +62,8 @@ public class PatientShootState extends State {
 			this.jump = (slicePosition.z > maxLowZ);
 			if(!Behaviour.isInCone(car, slicePosition, goalThreshold)) continue;
 			
-			double globalTime = (rawSlice.gameSeconds() - 2D / 120);
+//			double globalTime = (rawSlice.gameSeconds() - 2D / 120);
+			double globalTime = rawSlice.gameSeconds();
 			if(globalTime <= car.elapsedSeconds) continue;
 			
 			// Found a shot.
@@ -80,8 +81,8 @@ public class PatientShootState extends State {
 	@Override
 	public boolean expire(InfoPacket input){
 		if(this.target == null) return true;
-//		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(), globalTargetTime, 12);
-		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
+		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(), globalTargetTime, 12);
+//		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
 		if(expire) this.go = false;
 		return expire;
 	}
@@ -106,7 +107,7 @@ public class PatientShootState extends State {
 			 *  We adjust our target acceleration so that our final velocity
 			 *  is closer to the maximum (so we hit the ball as hard as possible!).
 			 */
-			if(displacement < 200 || time < (this.jump ? (input.info.jumpImpact == null ? 10 : input.info.jumpImpact.getTime()) : input.info.impact.getTime()) + 0.125){
+			if(Math.abs(displacement) < 200 || time < (this.jump ? (input.info.jumpImpact == null ? 10 : input.info.jumpImpact.getTime()) : input.info.impact.getTime()) + 0.15){
 				this.go = true;
 			}
 			if(!this.go){
@@ -117,9 +118,9 @@ public class PatientShootState extends State {
 			}
 			
 			// Render.
-			wildfire.renderer.drawString2d("Final Velocity: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
-			wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
-//			wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new Point(0, 20), 2, 2);
+//			wildfire.renderer.drawString2d("Final Velocity: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
+//			wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
+////			wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new Point(0, 20), 2, 2);
 			wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition(), Color.RED, 40);
 		}
 		
@@ -130,7 +131,7 @@ public class PatientShootState extends State {
 		
 		// Controls.
 		double radians = Handling.aim(car, this.target.getPosition());
-		if(Math.abs(radians) > Math.toRadians(15)) return Handling.turnOnSpot(car, targetPosition);
+		if(Math.abs(acceleration) < 700 && Math.abs(radians) > Math.toRadians(10)) return Handling.turnOnSpot(car, targetPosition);
 		if(this.jump){
 			SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
 			if(!smartDodge.failed){
