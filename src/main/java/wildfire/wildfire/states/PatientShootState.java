@@ -97,7 +97,7 @@ public class PatientShootState extends State {
 		if(!this.jump || !go){
 			// Motion equations.
 			double displacement = targetPosition.distanceFlat(car.position);
-			displacement *= Math.signum(car.orientation.forward.dotProduct(targetPosition.minus(car.position)));
+//			displacement *= Math.signum(car.orientation.forward.dotProduct(targetPosition.minus(car.position)));
 			double time = Math.max(0, globalTargetTime - car.elapsedSeconds);
 			double initialVelocity = car.velocityDir(targetPosition.minus(car.position));
 			double finalVelocity = ((2 * displacement) / time - initialVelocity);
@@ -118,9 +118,9 @@ public class PatientShootState extends State {
 			}
 			
 			// Render.
-//			wildfire.renderer.drawString2d("Final Velocity: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
-//			wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
-////			wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new Point(0, 20), 2, 2);
+			wildfire.renderer.drawString2d("Final Velocity: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
+			wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
+//			wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new Point(0, 20), 2, 2);
 			wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition(), Color.RED, 40);
 		}
 		
@@ -131,7 +131,7 @@ public class PatientShootState extends State {
 		
 		// Controls.
 		double radians = Handling.aim(car, this.target.getPosition());
-		if(Math.abs(acceleration) < 700 && Math.abs(radians) > Math.toRadians(10)) return Handling.turnOnSpot(car, targetPosition);
+		if(Math.abs(acceleration) < 700 && Math.abs(radians) > Math.toRadians(15)) return Handling.turnOnSpot(car, targetPosition);
 		if(this.jump){
 			SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
 			if(!smartDodge.failed){
