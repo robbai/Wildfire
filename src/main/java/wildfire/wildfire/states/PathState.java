@@ -57,9 +57,9 @@ public class PathState extends State {
 		}else{
 			finalVelocity = Math.max(maxVelocityTime, 1);
 		}
-		
+
 		if(high <= low) return false;
-		
+
 		CompositeArc[] results = new CompositeArc[high - low + 1];
 
 		// Generate the path.
@@ -70,7 +70,7 @@ public class PathState extends State {
 
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
 			double time = (rawSlice.gameSeconds() - input.elapsedSeconds);
-			//			time -= 1D / 120;
+			time -= 1D / 120;
 
 			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -380);
 
