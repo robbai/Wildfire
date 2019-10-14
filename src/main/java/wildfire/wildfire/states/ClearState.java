@@ -107,7 +107,7 @@ public class ClearState extends State {
 				dodgeRadians = Utils.clamp(impactRadians, -Math.PI, Math.PI);
 			}
 			
-			boolean travellingToBall = (car.velocity.normalized().dotProduct(impactPosition.minus(car.position).normalized()) > 0.8 && car.forwardVelocityAbs > 700);
+			boolean travellingToBall = (car.velocity.normalised().dotProduct(impactPosition.minus(car.position).normalised()) > 0.8 && car.forwardVelocityAbs > 700);
 //			boolean backflip = (Math.abs(dodgeRadians) > 0.75 * Math.PI);
 			
 			if((input.info.impact.getTime() < (travellingToBall ? Behaviour.IMPACT_DODGE_TIME : Behaviour.IMPACT_DODGE_TIME - 0.08))
@@ -146,7 +146,7 @@ public class ClearState extends State {
 			if(ballTime < 1.5 && intersect != null){
 				// Check if our X-coordinate is close-by when we should intersect with the ball's path.
 				double xDifference = Math.abs(car.position.x - intersect.x);
-				boolean closeby = (xDifference < 0.45 * Utils.lerp(Constants.RIPPER.y, Constants.RIPPER.x, Math.abs(car.orientation.forward.flatten().normalized().x)));
+				boolean closeby = (xDifference < 0.45 * Utils.lerp(Constants.RIPPER.y, Constants.RIPPER.x, Math.abs(car.orientation.forward.flatten().normalised().x)));
 				wildfire.renderer.drawLine3d(closeby ? Color.CYAN : Color.BLUE, input.ball.position.flatten(), intersect);
 				wildfire.renderer.drawString2d("Stop" + (closeby ? " (" + (int)xDifference + "uu)" : ""), Color.WHITE, new Point(0, 20), 2, 2);
 				if(closeby){
@@ -158,7 +158,7 @@ public class ClearState extends State {
 			}
 		}
 		
-		double offsetMagnitude = (65 + 45 * Math.pow(input.info.impact.getPosition().minus(car.position).normalized().y, 2));
+		double offsetMagnitude = (65 + 45 * Math.pow(input.info.impact.getPosition().minus(car.position).normalised().y, 2));
 		if(Behaviour.correctSideOfTarget(car, input.info.impact.getPosition().flatten())){
 			Vector2 goal = Behaviour.getTarget(car, input.ball);
 			offset = input.info.impact.getPosition().flatten().minus(goal).scaledToMagnitude(offsetMagnitude);

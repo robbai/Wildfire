@@ -52,7 +52,7 @@ public class CarOrientation extends Rotator {
     
     // TODO
     public static CarOrientation fromVector(Vector3 nose){
-    	nose = nose.normalized();
+    	nose = nose.normalised();
     	double pitch = Math.asin(nose.z);
 		double yaw = Math.atan2(nose.y, nose.x) + Math.PI / 2;    	
 		return new CarOrientation(pitch, yaw, 0);

@@ -126,7 +126,7 @@ public class DiscreteCurve {
 		for(int i = 1; i < k.length - 1; i++){	
 			Vector2 A = this.points[i - 1], B = this.points[i], C = this.points[i + 1];
 			
-			if(B.minus(A).normalized().dotProduct(C.minus(B).normalized()) > 0.99999){
+			if(B.minus(A).normalised().dotProduct(C.minus(B).normalised()) > 0.99999){
 				k[i] = DrivePhysics.getTurnRadius(Constants.MAX_CAR_VELOCITY);
 				continue;
 			}

@@ -214,11 +214,11 @@ public class WRenderer extends Renderer {
 		if(!threeD) return;
 		
 		if(centre.z < minZ) centre = centre.withZ(minZ);
-		surface1 = surface1.normalized();
-		normal = normal.normalized();
+		surface1 = surface1.normalised();
+		normal = normal.normalised();
 		
 		// https://math.stackexchange.com/a/32602
-		Vector3 surface2 = normal.multiply(surface1).scaled(1D / normal.magnitudeSquared()).normalized();
+		Vector3 surface2 = normal.multiply(surface1).scaled(1D / normal.magnitudeSquared()).normalised();
 		
 		sideLength /= 2;
 		surface1 = surface1.scaled(sideLength);

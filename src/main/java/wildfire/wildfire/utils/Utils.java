@@ -61,7 +61,7 @@ public class Utils {
 
 		//Scale up the direction so the X meets the requirement
 		double xChange = x - start.x;
-		direction = direction.normalized();
+		direction = direction.normalised();
 		direction = direction.scaled(Math.abs(xChange / direction.x));
 		
 		return start.plus(direction);
@@ -73,7 +73,7 @@ public class Utils {
 
 		//Scale up the direction so the X meets the requirement
 		double yChange = y - start.y;
-		direction = direction.normalized();
+		direction = direction.normalised();
 		direction = direction.scaled(Math.abs(yChange / direction.y));
 		
 		return start.plus(direction);

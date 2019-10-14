@@ -147,9 +147,9 @@ public class ShadowState extends State {
 
 		// Actions.
 		if(input.car.hasWheelContact && distance > 2350 && !input.car.isSupersonic && input.car.position.z < 100){
-			double velocityNoseComponent = input.car.velocity.normalized().dotProduct(input.car.orientation.forward);
+			double velocityNoseComponent = input.car.velocity.normalised().dotProduct(input.car.orientation.forward);
 			if(input.car.velocity.magnitude() > (input.car.boost == 0 ? 1250 : 1500) && Math.abs(radians) < 0.3 && velocityNoseComponent > 0.95){
-				double componentTowardsBall = input.car.velocity.normalized().dotProduct(input.info.impact.getPosition().minus(input.car.position).normalized());
+				double componentTowardsBall = input.car.velocity.normalised().dotProduct(input.info.impact.getPosition().minus(input.car.position).normalised());
 				double dodgeRadians = (input.info.impact.getPosition().distance(input.car.position) > (componentTowardsBall > 0.9 ? 500 : 250) ? radians : Handling.aim(input.car, input.ball.position.flatten()));
 				currentAction = new DodgeAction(this, dodgeRadians, input);
 			}else if(Math.abs(radians) > Math.toRadians(120)){
@@ -168,9 +168,9 @@ public class ShadowState extends State {
 		}
 		
 		//  s = u * t + 0.5 * a * t^2
-		double t = 0.4;
-		double u = input.car.velocityDir(target.minus(input.car.position.flatten()));
-		double acceleration = ((2 * (distance - t * u)) / Math.pow(t, 2));
+		double desiredTime = 0.4;
+		double initialVelocity = input.car.velocityDir(target.minus(input.car.position.flatten()));
+		double acceleration = ((2 * (distance - desiredTime * initialVelocity)) / Math.pow(desiredTime, 2));
 		double throttle = Handling.produceAcceleration(input.car, acceleration);
 
 		ControlsOutput controls = (reverse ? Handling.steeringBackwards(input.car, target) : Handling.steering(input.car, target));

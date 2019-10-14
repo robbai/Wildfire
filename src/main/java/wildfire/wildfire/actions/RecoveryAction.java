@@ -71,7 +71,7 @@ public class RecoveryAction extends Action {
 		if(planWavedash){
 			desiredNose = desiredNose.withZ(0);
 			if(desiredNose.isZero()) desiredNose = input.car.velocity.withZ(0);
-			desiredNose = desiredNose.normalized().withZ(0.3);
+			desiredNose = desiredNose.normalised().withZ(0.3);
 			if(input.car.position.z < 50){
 				// Perform the wave-dash.
 				return new ControlsOutput().withPitch(-1).withJump(true)

@@ -72,7 +72,7 @@ public class StalkState extends State {
 		// Find the "optimal" position
 		Vector2 defenderImpact = input.info.impacts[defender].getPosition().flatten();
 		Vector2 defenderToBall = defenderImpact.minus(defenderPosition);
-		Vector2 destination = defenderImpact.normalized().plus(Vector2.Y.scaled(-car.sign)).plus(defenderToBall.scaledToMagnitude(sitbackDistance));
+		Vector2 destination = defenderImpact.normalised().plus(Vector2.Y.scaled(-car.sign)).plus(defenderToBall.scaledToMagnitude(sitbackDistance));
 		if(Math.abs(destination.x) > Constants.PITCH_WIDTH - confine) {
 			destination = destination.plus(new Vector2(-destination.x + Math.signum(destination.x) * (Constants.PITCH_WIDTH - confine), 
 					Math.signum(defenderToBall.y) * (Math.abs(destination.x) - (Constants.PITCH_WIDTH - confine))));

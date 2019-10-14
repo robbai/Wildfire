@@ -134,7 +134,7 @@ public class SmartDodgeAction extends Action {
 				// Point the car.
 				//				Vector3 forward = this.target.getPosition().lerp(input.ball.position, 0.15).withZ(input.ball.position.z + 80).minus(car.position).normalized();
 				//				Vector3 forward = this.target.getPosition().withZ(input.ball.position.z - 50).minus(car.position).normalized();
-				Vector3 forward = this.target.getPosition().withZ(this.target.getPosition().z + 70).minus(car.position).normalized();
+				Vector3 forward = this.target.getPosition().withZ(this.target.getPosition().z + 70).minus(car.position).normalised();
 				Vector3 roof = forward.scaled(-1).withZ(1 - forward.z);
 
 				double[] angles = AirControl.getPitchYawRoll(car, forward, roof);

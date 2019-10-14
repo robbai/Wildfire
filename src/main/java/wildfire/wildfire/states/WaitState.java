@@ -159,8 +159,8 @@ public class WaitState extends State {
 		
 		// Curve!
 		if(car.onFlatGround){
-			Vector2 bounceGoalDir = enemyGoal.minus(bounce).normalized();
-			Vector2 carBounceDir = bounce.minus(car.position.flatten()).normalized();
+			Vector2 bounceGoalDir = enemyGoal.minus(bounce).normalised();
+			Vector2 carBounceDir = bounce.minus(car.position.flatten()).normalised();
 			for(double offset = 1; offset >= 0; offset -= offsetDecrement){
 				Vector2 targetDirection = bounceGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
 				if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
@@ -260,8 +260,8 @@ public class WaitState extends State {
 	private DiscreteCurve findSmartDodgeCurve(CarData car, Slice candidate){
 		Vector2 carPosition = car.position.flatten();
 		Vector2 flatCandidate = candidate.getPosition().flatten();
-		Vector2 candidateGoalDir = enemyGoal.minus(flatCandidate).normalized();
-		Vector2 carBounceDir = flatCandidate.minus(car.position.flatten()).normalized();
+		Vector2 candidateGoalDir = enemyGoal.minus(flatCandidate).normalised();
+		Vector2 carBounceDir = flatCandidate.minus(car.position.flatten()).normalised();
 		
 		// Arrival constants.
 		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(car.position).dotProduct(car.orientation.up));

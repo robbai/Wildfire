@@ -106,7 +106,7 @@ public class Vector3 extends rlbot.vector.Vector3 {
 		return x * x + y * y + z * z;
 	}
 
-	public Vector3 normalized(){
+	public Vector3 normalised(){
 		//		if(isZero()) throw new IllegalStateException("Cannot normalize a vector with length zero!");
 		if(isZero()) return new Vector3();
 		return scaled(1 / magnitude());
@@ -193,6 +193,10 @@ public class Vector3 extends rlbot.vector.Vector3 {
 		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) return false;
 		if(Double.doubleToLongBits(z) != Double.doubleToLongBits(other.z)) return false;
 		return true;
+	}
+	
+	public double component(Vector3 other){
+		return normalised().dotProduct(other.normalised());
 	}
 
 }

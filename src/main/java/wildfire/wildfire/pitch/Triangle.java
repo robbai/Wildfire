@@ -66,7 +66,7 @@ public class Triangle implements Comparable<Triangle> {
 	public Vector3 getNormal(){
 		Vector3 v = this.vectors[1].minus(this.vectors[0]);
 		Vector3 w = this.vectors[2].minus(this.vectors[0]);
-		return v.crossProduct(w).normalized();
+		return v.crossProduct(w).normalised();
 	}
 	
 	/**

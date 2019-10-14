@@ -113,7 +113,7 @@ public class AerialAction extends Action {
 		
 		// Boost.
 		double boostThreshold = (input.car.position.z < 500 ? 20 : 70);
-		controls.withBoost(input.car.orientation.forward.normalized().dotProduct(acceleration.normalized()) > angleBoostThreshold && accelerationReqForwards > boostThreshold);
+		controls.withBoost(input.car.orientation.forward.normalised().dotProduct(acceleration.normalised()) > angleBoostThreshold && accelerationReqForwards > boostThreshold);
 		
 		return controls;
 	}
@@ -135,7 +135,7 @@ public class AerialAction extends Action {
 		}
 		
 		//Compensate for turning by reducing the time we have left
-		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalized();
+		Vector3 generalDirection = new Vector3(acceleration(s.x, u.x, 1), acceleration(s.y, u.y, 1), accelerationGravity(s.z, u.z, 1)).normalised();
 		double angleDifference = (2 - car.orientation.forward.dotProduct(generalDirection)) / 2;
 		double angleTime = (angleDifference * 1.05);
 //		System.out.println("Angular time: " + Utils.round(angleTime) + "s [" + Utils.round(car.orientation.noseVector.dotProduct(generalDirection)) + "]");

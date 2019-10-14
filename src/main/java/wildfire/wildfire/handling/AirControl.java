@@ -14,8 +14,8 @@ public class AirControl {
 		CarOrientation orient = car.orientation.step(1D / 60, car.angularVelocity);
 		//		CarOrientation orient = car.orientation;
 
-		forward = forward.normalized();
-		up = up.normalized();
+		forward = forward.normalised();
+		up = up.normalised();
 
 		Vector3 desiredFacingAngVel = orient.forward.crossProduct(forward);
 		Vector3 desiredUpVel = orient.up.crossProduct(up);
@@ -62,8 +62,8 @@ public class AirControl {
 	}
 
 	public static double[] getPitchYawRoll(CarData car, Vector2 forward, Vector3 up){
-		double upZ = up.normalized().z;
-		return getPitchYawRoll(car, forward.normalized().withZ(Math.max(1 - upZ, -1 + upZ)), up);
+		double upZ = up.normalised().z;
+		return getPitchYawRoll(car, forward.normalised().withZ(Math.max(1 - upZ, -1 + upZ)), up);
 	}
 
 	public static double[] getPitchYawRoll(CarData car, Vector2 forward){

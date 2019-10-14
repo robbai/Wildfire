@@ -90,7 +90,7 @@ public class FallbackState extends State {
 		Vector2 trace = Utils.traceToY(car.position.flatten(), impactPosition.minus(car.position).flatten(), car.sign * -Constants.PITCH_LENGTH);
 		boolean avoidOwnGoal = !Behaviour.correctSideOfTarget(car, input.ball.position) && trace != null;
 		if(avoidOwnGoal){
-			boolean tight = (Math.abs(impactPosition.minus(car.position).flatten().normalized().x) > 0.7 && Math.abs(impactPosition.y) > 3000);
+			boolean tight = (Math.abs(impactPosition.minus(car.position).flatten().normalised().x) > 0.7 && Math.abs(impactPosition.y) > 3000);
 			Vector3 avoidOffset = new Vector3(-Math.signum(trace.x) * Utils.clamp(impactDistance / 4.5, 60, 400), tight ? -car.sign * 50 : 0, 0);
 			impactPosition = impactPosition.plus(avoidOffset);
 			wildfire.renderer.drawCrosshair(car, impactPosition, Color.PINK, 125);

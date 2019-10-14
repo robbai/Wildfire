@@ -37,7 +37,7 @@ public class InterceptCalculator {
 			
 			if(!finalSlice){
 				double targetDistance = slicePosition.distance(carPosition) - (Constants.BALL_RADIUS + Constants.RIPPER.y + Constants.RIPPER_OFFSET.y - 25);
-				double initialVelocity = carVelocity.dotProduct(slicePosition.minus(carPosition).normalized());
+				double initialVelocity = carVelocity.dotProduct(slicePosition.minus(carPosition).normalised());
 								
 				Car1D sim = new Car1D(0, initialVelocity, carBoost, 0);
 				while(sim.getTime() < time){

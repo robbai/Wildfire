@@ -21,7 +21,7 @@ public class HalfFlipAction extends Action {
 		if(input.info.timeOnGround < 0.3){
 			failed = true; 
 		}else{
-			this.direction = car.orientation.forward.scaled(-1).normalized().withZ(-0.2);
+			this.direction = car.orientation.forward.scaled(-1).normalised().withZ(-0.2);
 		}
 	}
 

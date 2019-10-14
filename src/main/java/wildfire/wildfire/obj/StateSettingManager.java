@@ -236,8 +236,8 @@ public class StateSettingManager {
 			}
 			
 			//The direction that the car will face
-			Vector2 carDirection = carPosition.minus(enemyGoal).normalized();
-			if(!simpleRoll) carDirection = carDirection.plus(new Vector2(random(-1, 1), random(-1, 1)).scaledToMagnitude(2)).normalized();
+			Vector2 carDirection = carPosition.minus(enemyGoal).normalised();
+			if(!simpleRoll) carDirection = carDirection.plus(new Vector2(random(-1, 1), random(-1, 1)).scaledToMagnitude(2)).normalised();
 			
 			Vector2 ballPosition = null;
 			Vector2 ballDirection = null;
@@ -269,7 +269,7 @@ public class StateSettingManager {
 			
 			Vector3 carPosition = goal.withZ(30);
 //			Vector2 carDirection = carPosition.flatten().scaled(-1).normalized();
-			Vector2 carDirection = new Vector2(random(-1, 1), random(-1, 1)).normalized();
+			Vector2 carDirection = new Vector2(random(-1, 1), random(-1, 1)).normalised();
 			
 			double ballDistance = random(3600, 6000), ballSpeed = 2500;
 			Vector2 ballPosition = goal.plus(new Vector2(random(-1, 1), random(0.5, 1) * input.car.sign).scaledToMagnitude(ballDistance)).confine(Constants.BALL_RADIUS);

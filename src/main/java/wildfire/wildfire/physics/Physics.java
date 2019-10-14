@@ -21,7 +21,7 @@ public class Physics {
 	 * Ignore this, doesn't actually work, probably.
 	 */
 	public static double dodgeImpulse(double velocityForward, double forwards, double sideways){
-		Vector2 direction = new Vector2(Math.abs(sideways), forwards).normalized();
+		Vector2 direction = new Vector2(Math.abs(sideways), forwards).normalised();
 		double forwardsComponent = Math.acos(direction.y);
 		double sidewaysComponent = Math.asin(direction.x);
 		

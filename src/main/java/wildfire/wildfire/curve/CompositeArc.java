@@ -22,13 +22,13 @@ public class CompositeArc extends Curve {
 
 	private CompositeArc(double L0, Vector2 p1, Vector2 t1, double r1, double L4, Vector2 p2, Vector2 t2, double r2){
 		this.p1 = p1.plus(t1.scaledToMagnitude(L0));
-		this.t1 = t1.normalized();
+		this.t1 = t1.normalised();
 		this.n1 = this.t1.cross();
 		this.r1 = r1;
 		this.o1 = this.p1.plus(n1.scaledToMagnitude(r1));
 
 		this.p2 = p2.minus(t2.scaledToMagnitude(L4));
-		this.t2 = t2.normalized();
+		this.t2 = t2.normalised();
 		this.n2 = this.t2.cross();
 		this.r2 = r2;
 		this.o2 = this.p2.plus(n2.scaledToMagnitude(r2));
@@ -63,7 +63,7 @@ public class CompositeArc extends Curve {
 			}
 		}
 
-		Vector2 e1 = oDelta.normalized();
+		Vector2 e1 = oDelta.normalised();
 		Vector2 e2 = e1.cross().scaled(-Math.signum(this.r1));
 
 		double H = Math.sqrt(Math.pow(o1o2, 2) - Math.pow(R, 2));
@@ -71,11 +71,11 @@ public class CompositeArc extends Curve {
 		q1 = o1.plus((e1.scaled(R / o1o2).plus(e2.scaled(H / o1o2))).scaled(Math.abs(this.r1)));
 		q2 = o2.minus((e1.scaled(R / o1o2).plus(e2.scaled(H / o1o2)).scaled(Math.abs(this.r2) * sign)));
 
-		Vector2 pq1 = q1.minus(this.p1).normalized();
+		Vector2 pq1 = q1.minus(this.p1).normalised();
 		phi1 = 2D * Math.signum(pq1.dotProduct(this.t1)) * Math.asin(Math.abs(pq1.dotProduct(n1)));
 		if(phi1 < 0) phi1 += 2D * Math.PI;
 
-		Vector2 pq2 = q2.minus(this.p2).normalized();
+		Vector2 pq2 = q2.minus(this.p2).normalised();
 		phi2 = -2D * Math.signum(pq2.dotProduct(this.t2)) * Math.asin(Math.abs(pq2.dotProduct(n2)));
 		if(phi2 < 0) phi2 += 2D * Math.PI;
 
@@ -93,7 +93,7 @@ public class CompositeArc extends Curve {
 		L4 = Math.max(1, Math.abs(L4));
 		
 		Vector2 carDirection = car.orientation.forward.flatten(), carPosition = car.position/*.plus(car.velocity.scaled(1D / 60))*/.flatten();
-		Vector2 goalDirection = goal.minus(ball).normalized();
+		Vector2 goalDirection = goal.minus(ball).normalised();
 		double playerTurnRadius = DrivePhysics.getTurnRadius(Math.max(Constants.MAX_THROTTLE_VELOCITY, car.forwardVelocityAbs)), ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
 		
 		// Find the shortest composite-arc based on its length.

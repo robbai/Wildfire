@@ -35,7 +35,7 @@ public class Handling {
 				.withThrottle(1)
 				.withBoost(input.car.forwardVelocity < 1600 && Math.abs(radians) < Math.toRadians(40) && input.car.position.z > 300)
 				.withSteer(-4 * radians)
-				.withSlide(input.car.forwardVelocityAbs > 500 && Math.abs(radians) > Math.toRadians(70) && canHandbrake(input.car) && input.car.velocity.normalized().dotProduct(Vector3.Z) < 0.4); 
+				.withSlide(input.car.forwardVelocityAbs > 500 && Math.abs(radians) > Math.toRadians(70) && canHandbrake(input.car) && input.car.velocity.normalised().dotProduct(Vector3.Z) < 0.4); 
 	}
 
 	public static ControlsOutput atba(DataPacket input, Vector3 target){
@@ -200,7 +200,7 @@ public class Handling {
 	public static boolean canHandbrake(CarData car){
 		Vector2 localVel = Utils.toLocalFromRelative(car, car.velocity).flatten();
 		if(localVel.isZero()) return false;
-		return localVel.normalized().dotProduct(Vector2.Y) > 0.9 && localVel.magnitude() > 250;
+		return localVel.normalised().dotProduct(Vector2.Y) > 0.9 && localVel.magnitude() > 250;
 	}
 	
 	public static ControlsOutput steering(CarData car, Vector3 destination){

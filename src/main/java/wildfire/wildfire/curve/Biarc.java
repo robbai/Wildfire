@@ -26,9 +26,9 @@ public class Biarc extends Curve {
 
 	public Biarc(Vector2 start, Vector2 startDir, Vector2 end, Vector2 endDir){
 		this.start = start;
-		this.startDir = startDir.normalized();
+		this.startDir = startDir.normalised();
 		this.end = end;
-		this.endDir = endDir.normalized();
+		this.endDir = endDir.normalised();
 		
 		this.dOne = this.chooseD();
 		this.dTwo = this.solveD(this.dOne);

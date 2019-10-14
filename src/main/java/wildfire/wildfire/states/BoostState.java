@@ -99,7 +99,7 @@ public class BoostState extends State {
 		double forwardVelocity = car.forwardVelocity;
 		double dodgeDistance = Behaviour.dodgeDistance(car);
 		if(car.hasWheelContact && boostDistance > dodgeDistance && !car.isSupersonic){	
-			double velocityNoseComponent = car.velocity.normalized().dotProduct(car.orientation.forward);
+			double velocityNoseComponent = car.velocity.normalised().dotProduct(car.orientation.forward);
 			if(Behaviour.isOnWall(car)){
 				currentAction = new HopAction(this, input, boostLocation);
 			}else if(Math.abs(boostRadians) < Math.toRadians(10) && forwardVelocity > 1100 && velocityNoseComponent > 0.9 && car.boost < 1){

@@ -75,7 +75,7 @@ public class Vector2 {
 		return x * x + y * y;
 	}
 
-	public Vector2 normalized(){
+	public Vector2 normalised(){
 		//    	if(isZero()) throw new IllegalStateException("Cannot normalize a vector with length zero!");
 		if(isZero()) return new Vector2();
 		return scaled(1 / magnitude());
@@ -189,6 +189,10 @@ public class Vector2 {
 		if(Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) return false;
 		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) return false;
 		return true;
+	}
+	
+	public double component(Vector2 other){
+		return normalised().dotProduct(other.normalised());
 	}
 
 }
