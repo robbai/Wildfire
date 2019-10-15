@@ -8,6 +8,7 @@ import rlbot.manager.BotLoopRenderer;
 import rlbot.render.Renderer;
 import wildfire.input.car.CarData;
 import wildfire.input.car.CarOrientation;
+import wildfire.input.car.Hitbox;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
@@ -179,25 +180,23 @@ public class WRenderer extends Renderer {
 		drawUprightSquare(centre, colour, forward, Vector3.Z, size);
 	}
 	
-	public void drawRipperHitbox(Vector3 position, CarOrientation orientation, Color colour){
+	public void drawHitbox(Vector3 position, CarOrientation orientation, Hitbox hitbox, Color colour){
 		if(!threeD) return;
 		
-		Vector3 offset = Constants.RIPPER_OFFSET;
-		position = position.plus(orientation.right.scaled(offset.x)).plus(orientation.forward.scaled(offset.y)).plus(orientation.up.scaled(offset.z));
-		Vector3 shape = Constants.RIPPER;
+		Vector3 centre = position.plus(orientation.right.scaled(hitbox.offset.x)).plus(orientation.forward.scaled(hitbox.offset.y)).plus(orientation.up.scaled(hitbox.offset.z));
 		
 		for(double x = -1; x <= 1; x += 2){
 			for(double y = -1; y <= 1; y += 2){
 				for(double z = -1; z <= 1; z += 2){
-					if(x != 1) r.drawLine3d(colour, position.plus(orientation.right.scaled(shape.x / 2 * x)).plus(orientation.forward.scaled(shape.y / 2 * y)).plus(orientation.up.scaled(shape.z / 2 * z)), position.plus(orientation.right.scaled(shape.x / 2 * -x)).plus(orientation.forward.scaled(shape.y / 2 * y)).plus(orientation.up.scaled(shape.z / 2 * z)));
-					if(y != 1) r.drawLine3d(colour, position.plus(orientation.right.scaled(shape.x / 2 * x)).plus(orientation.forward.scaled(shape.y / 2 * y)).plus(orientation.up.scaled(shape.z / 2 * z)), position.plus(orientation.right.scaled(shape.x / 2 * x)).plus(orientation.forward.scaled(shape.y / 2 * -y)).plus(orientation.up.scaled(shape.z / 2 * z)));
-					if(z != 1) r.drawLine3d(colour, position.plus(orientation.right.scaled(shape.x / 2 * x)).plus(orientation.forward.scaled(shape.y / 2 * y)).plus(orientation.up.scaled(shape.z / 2 * z)), position.plus(orientation.right.scaled(shape.x / 2 * x)).plus(orientation.forward.scaled(shape.y / 2 * y)).plus(orientation.up.scaled(shape.z / 2 * -z)));
+					if(x != 1) r.drawLine3d(colour, centre.plus(orientation.right.scaled(hitbox.shape.x / 2 * x)).plus(orientation.forward.scaled(hitbox.shape.y / 2 * y)).plus(orientation.up.scaled(hitbox.shape.z / 2 * z)), centre.plus(orientation.right.scaled(hitbox.shape.x / 2 * -x)).plus(orientation.forward.scaled(hitbox.shape.y / 2 * y)).plus(orientation.up.scaled(hitbox.shape.z / 2 * z)));
+					if(y != 1) r.drawLine3d(colour, centre.plus(orientation.right.scaled(hitbox.shape.x / 2 * x)).plus(orientation.forward.scaled(hitbox.shape.y / 2 * y)).plus(orientation.up.scaled(hitbox.shape.z / 2 * z)), centre.plus(orientation.right.scaled(hitbox.shape.x / 2 * x)).plus(orientation.forward.scaled(hitbox.shape.y / 2 * -y)).plus(orientation.up.scaled(hitbox.shape.z / 2 * z)));
+					if(z != 1) r.drawLine3d(colour, centre.plus(orientation.right.scaled(hitbox.shape.x / 2 * x)).plus(orientation.forward.scaled(hitbox.shape.y / 2 * y)).plus(orientation.up.scaled(hitbox.shape.z / 2 * z)), centre.plus(orientation.right.scaled(hitbox.shape.x / 2 * x)).plus(orientation.forward.scaled(hitbox.shape.y / 2 * y)).plus(orientation.up.scaled(hitbox.shape.z / 2 * -z)));
 				}
 			}
 		}
 	}
 		
-	public void drawRipperHitbox(CarData car, Color colour){
+	public void drawHitbox(CarData car, Color colour){
 		if(!threeD) return;
 		
 		final double step = (1D / 60);
@@ -205,9 +204,7 @@ public class WRenderer extends Renderer {
 		CarOrientation orientation = car.orientation.step(step, car.angularVelocity);
 		Vector3 position = car.position.plus(car.velocity.scaled(step));
 
-		drawRipperHitbox(position, orientation, colour);
-		
-//		r.drawString3d("Angular Velocity: " + car.angularVelocity.toString(), colour, centre, 2, 2);
+		drawHitbox(position, orientation, car.hitbox, colour);
 	}
 
 	public void drawFlatSquare(Color colour, Vector3 centre, Vector3 surface1, Vector3 normal, double sideLength){

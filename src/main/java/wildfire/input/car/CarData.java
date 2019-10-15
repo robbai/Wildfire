@@ -4,6 +4,7 @@ package wildfire.input.car;
 import wildfire.input.Rotator;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
+import wildfire.wildfire.utils.Constants;
 
 public class CarData {
 
@@ -26,7 +27,8 @@ public class CarData {
 
 		this.angularVelocity = new Rotator(this.orientation, this.angularVelocityAxis);
 
-		this.hitbox = new Hitbox(this, playerInfo.hitbox());
+//		this.hitbox = new Hitbox(this, playerInfo.hitbox());
+		this.hitbox = new Hitbox(this, Constants.RIPPER, Constants.RIPPER_OFFSET, Constants.RIPPER_RESTING);
 
 		this.boost = playerInfo.boost();
 

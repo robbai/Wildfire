@@ -33,9 +33,16 @@ public class Hitbox extends BoxShape {
 
 	public Hitbox(Hitbox hitbox, Vector3 position, CarOrientation orientation){
 		super(position, hitbox);
-		this.orientation = orientation;
-		this.offset = hitbox.offset;
+		this.orientation = new CarOrientation(orientation);
+		this.offset = new Vector3(hitbox.offset);
 		this.restingHeight = hitbox.restingHeight;
+	}
+
+	public Hitbox(CarData car, Vector3 shape, Vector3 offset, double restingHeight){
+		super(car.position, shape);
+		this.orientation = new CarOrientation(car.orientation);
+		this.offset = new Vector3(offset);
+		this.restingHeight = restingHeight;
 	}
 
 	/**
@@ -67,8 +74,8 @@ public class Hitbox extends BoxShape {
 
 	private Vector3 nearestPoint(Vector3 vec){
 		// Transform to local coordinates.
-		Vector3 hitboxCentre = this.position.plus(this.offset);
-		Vector3 local = Utils.toLocal(hitboxCentre, orientation, vec);
+		Vector3 local = Utils.toLocal(this.position, this.orientation, vec);
+		
 		local = local.minus(this.offset);
 
 		// Clamp the local coordinates.
@@ -77,9 +84,11 @@ public class Hitbox extends BoxShape {
 				Utils.clamp(local.y, -this.length / 2, this.length / 2),
 				Utils.clamp(local.z, -this.height / 2, this.height / 2)
 				);
+		
+//		local = local.minus(this.offset);
 
 		// Transform back to global coordinates.
-		return Utils.toGlobal(hitboxCentre, orientation, closestLocal);
+		return Utils.toGlobal(this.position, this.orientation, closestLocal);
 	}
 
 }

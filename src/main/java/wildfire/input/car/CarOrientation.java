@@ -46,7 +46,11 @@ public class CarOrientation extends Rotator {
     			);
     }
     
-    public DesiredRotation toDesired(){
+    public CarOrientation(CarOrientation orientation){
+		this(orientation.forward, orientation.right, orientation.up);
+	}
+
+	public DesiredRotation toDesired(){
     	return new DesiredRotation((float)pitch, (float)yaw, (float)roll);
     }
     
