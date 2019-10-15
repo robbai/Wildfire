@@ -272,7 +272,9 @@ public class WaitState extends State {
 			Vector2 targetDirection = candidateGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
 			if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
 			
-			CompositeArc compositeArc = CompositeArc.create(car, flatCandidate, Utils.traceToWall(flatCandidate, targetDirection), Constants.RIPPER.y, lineup);
+			Vector2 end = flatCandidate.minus(targetDirection.scaledToMagnitude(Constants.BALL_RADIUS + car.hitbox.length + car.hitbox.offset.y));
+			
+			CompositeArc compositeArc = CompositeArc.create(car, end, Utils.traceToWall(flatCandidate, targetDirection), Constants.RIPPER.y, lineup);
 			Vector2[] points = compositeArc.discretise(DiscreteCurve.analysePoints);
 			
 			DiscreteCurve discreteCurve = new DiscreteCurve(car.forwardVelocity, car.boost, points, OptionalDouble.of(timeLeft));
