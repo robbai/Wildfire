@@ -82,7 +82,13 @@ public class PatientShootState extends State {
 		if(this.target == null) return true;
 		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(), globalTargetTime, 12);
 //		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
-		if(!expire) expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
+		if(!expire){
+			if(this.jump){
+				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
+			}else{
+				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
+			}
+		}
 		if(expire) this.go = false;
 		return expire;
 	}
