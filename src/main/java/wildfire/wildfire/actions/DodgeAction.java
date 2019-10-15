@@ -5,6 +5,7 @@ import wildfire.output.ControlsOutput;
 import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Action;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Utils;
 
 public class DodgeAction extends Action {
@@ -52,7 +53,8 @@ public class DodgeAction extends Action {
 			if(!car.hasDoubleJumped){
 				controls.withJump(true);
 			}else if(this.state != null){
-				if(!input.info.isDodgeTorquing() || time >= (Math.abs(car.angularVelocity.pitch) + Math.abs(car.angularVelocity.yaw) < 1.8 ? 0.3 : 1.6)){
+				double height = Utils.clamp(input.car.position.z / Constants.CEILING, 0, 1);
+				if(!input.info.isDodgeTorquing() || time >= (Math.abs(car.angularVelocity.pitch) + Math.abs(car.angularVelocity.yaw) < 1.8 - height ? 0.3 : 1.6)){
 					Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 				}
 			}

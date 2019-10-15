@@ -74,7 +74,7 @@ public class SmartDodgeAction extends Action {
 			double angle = Math.abs(Handling.aim(input.car, ballLocation));
 			double hitboxDistance = Utils.lerp(Constants.RIPPER.y / 2 + Constants.RIPPER_OFFSET.y, Constants.RIPPER.x / 2, Math.sin(angle));
 			//if(displace.flatten().magnitude() < Constants.BALL_RADIUS + hitboxDistance * 0.9){
-			if(distance < Constants.BALL_RADIUS + hitboxDistance * 0.9){
+			if(distance < Constants.BALL_RADIUS + hitboxDistance * 0.95){
 //			if(distance < Constants.BALL_RADIUS + dodgeDistance){
 				this.target = new Slice(ballLocation, time);
 				this.pressTime = press;
