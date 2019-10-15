@@ -121,7 +121,7 @@ public class SmartDodgeAction extends Action {
 				return controls;
 			}
 
-			boolean intersect = willIntersectNextTick(car, input.ball, wildfire.ballPrediction, 5, true);
+			boolean intersect = willIntersectNextTick(car, input.ball, wildfire.ballPrediction, 6, true);
 //			boolean intersect = input.ball.position.distance(car.position) < 200;
 
 			if(intersect){
@@ -170,16 +170,18 @@ public class SmartDodgeAction extends Action {
 		// chip refers to this as "?"
 		final double J = 10.5;
 		
+		final Vector3 gravity = Vector3.Z.scaled(-Constants.GRAVITY * step);
+		
 		boolean intersects = false, intersectsInTime = false;
 
 		for(int i = 0; i <= Math.max(20, ticks); i++){
 			// Car.
 			if(i != 0){
-				carVelocity = carVelocity.plus(Vector3.Z.scaled(-Constants.GRAVITY * step)).capMagnitude(Constants.MAX_CAR_VELOCITY);
+				carVelocity = carVelocity.plus(gravity).capMagnitude(Constants.MAX_CAR_VELOCITY);
 				carPosition = carPosition.plus(carVelocity.scaled(step));
 
 				Vector3 angularVelocityAxisLocal = Utils.toLocalFromRelative(carOrientation, angularVelocityAxis);
-				angularVelocityAxis = angularVelocityAxisLocal.plus(Utils.toLocalFromRelative(carOrientation, H.multiply(angularVelocityAxisLocal)).scaled(step / J));
+				angularVelocityAxis = angularVelocityAxis.plus(Utils.toGlobal(new Vector3(), carOrientation, angularVelocityAxisLocal.multiply(H).scaled(step / J)));
 				carOrientation = carOrientation.step(step, new Rotator(carOrientation, angularVelocityAxis));
 			}
 //			if(render) wildfire.renderer.drawRipperHitbox(carPosition, carOrientation, i <= ticks ? Color.WHITE : Color.GRAY);

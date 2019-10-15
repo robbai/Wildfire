@@ -29,6 +29,7 @@ public class Constants {
 	public static final double JUMP_VELOCITY = 300;
 	public static final double DODGE_TORQUE_TIME = 0.65;
 	public static final double DODGE_IMPULSE = 500;
+	public static final double MAX_CAR_ANGULAR_VELOCITY = 5.5;
 	
 	public static final Vector3 RIPPER = new Vector3(83.28, 127.93, 31.30); // https://discordapp.com/channels/348658686962696195/348661571297214465/617774276879056919
 	public static final Vector3 RIPPER_OFFSET = new Vector3(0, 9, 15.75);

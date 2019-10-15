@@ -148,6 +148,7 @@ public class PathState extends State {
 	}
 
 	private boolean requirements(InfoPacket input){
+		if(!input.car.onFlatGround) return false;
 		if(!this.runningMechanic()){
 			if(input.info.impactDistance < 1100 || input.info.impact.getTime() > input.info.enemyImpactTime) return false;
 			if(Behaviour.isInCone(input.car, input.info.impact.getPosition(), -50)) return false;
