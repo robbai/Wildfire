@@ -68,28 +68,24 @@ public class Behaviour {
 	 * it should be a good place to shoot relative to this car
 	 */
 	public static Vector2 getTarget(CarData car, Vector2 ballPosition, double threshold){
-		final double goalSafeZone = (700 + threshold);
-		
-		Vector2 target = null;
-		
 		Vector2 ballDifference = ballPosition.minus(car.position.flatten());
+		
+		if(ballDifference.y * car.sign < 0){
+			return Constants.enemyGoal(car.team);
+		}
+		
+		double goalSafeZone = Math.max(0, Constants.GOAL_WIDTH - 192.755 + threshold);
+		
 		ballDifference = ballDifference.scaled(1D / Math.abs(ballDifference.y)); //Make the Y-value 1
 		
-		if(car.team == 0 && ballDifference.y > 0){
-			double distanceFromGoal = Constants.PITCH_LENGTH - ballPosition.y;
-			ballDifference = ballDifference.scaled(distanceFromGoal);
-			target = ballPosition.plus(ballDifference);
-		}else if(car.team == 1 && ballDifference.y < 0){
-			double distanceFromGoal = Constants.PITCH_LENGTH + ballPosition.y;
-			ballDifference = ballDifference.scaled(distanceFromGoal);
-			target = ballPosition.plus(ballDifference);
-		}
+		double distanceFromGoal = Constants.PITCH_LENGTH - car.sign * ballPosition.y;
+		ballDifference = ballDifference.scaled(distanceFromGoal);
 		
-		if(target != null){
-			target = new Vector2(Utils.clamp(target.x, -goalSafeZone, goalSafeZone), target.y);
-			return target;
-		}
-		return Constants.enemyGoal(car.team);
+		Vector2 target = null;
+		target = ballPosition.plus(ballDifference);
+		
+		target = new Vector2(Utils.clamp(target.x, -goalSafeZone, goalSafeZone), target.y);
+		return target;
 	}
 	
 	public static Vector2 getTarget(CarData car, Vector2 ballPosition){

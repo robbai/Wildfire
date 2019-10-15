@@ -124,7 +124,6 @@ public class Wildfire implements Bot {
 
     private ControlsOutput processInput(InfoPacket input){
 //    	this.stateSetting.shoot(input, true);
-//    	this.stateSetting.airRoll(input);
 //    	this.stateSetting.speed(input.info.impact.getTime() > 1 || input.car.hasWheelContact ? 1 : 0.25);
 //    	this.renderer.drawString3d((int)input.info.jumpImpactHeight + "uu", Color.WHITE, input.car.position, 3, 3);
     	

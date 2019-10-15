@@ -11,7 +11,7 @@ import wildfire.wildfire.utils.Constants;
  */
 public class CompositeArc extends Curve {
 	
-	private static final boolean rescale = false;
+	private static final boolean rescale = true;
 
 	private static double[] signs = new double[] {1, -1};
 

@@ -27,7 +27,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state.
 	 */
-	private static final double dropoff = 0.175, scope = 0.4;
+	private static final double dropoff = 0.172, scope = 0.4;
 
 	/*
 	 * Yeah this one too, I guess.
