@@ -68,8 +68,8 @@ public class Hitbox extends BoxShape {
 	 * https://samuelpmish.github.io/notes/RocketLeague/car_ball_interaction/#hitboxes-and-collision-detection
 	 */
 	public boolean intersects(SphereShape sphere){
-		Vector3 p = nearestPoint(sphere.position);
-		return (p.distance(sphere.position) <= sphere.radius);
+		Vector3 point = nearestPoint(sphere.position);
+		return point.distance(sphere.position) <= sphere.radius;
 	}
 
 	private Vector3 nearestPoint(Vector3 vec){
@@ -85,7 +85,7 @@ public class Hitbox extends BoxShape {
 				Utils.clamp(local.z, -this.height / 2, this.height / 2)
 				);
 		
-//		local = local.minus(this.offset);
+		closestLocal = closestLocal.plus(this.offset);
 
 		// Transform back to global coordinates.
 		return Utils.toGlobal(this.position, this.orientation, closestLocal);

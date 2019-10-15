@@ -121,7 +121,7 @@ public class SmartDodgeAction extends Action {
 				return controls;
 			}
 
-			boolean intersect = willIntersectNextTick(car, input.ball, wildfire.ballPrediction, 8, true);
+			boolean intersect = willIntersectNextTick(car, input.ball, wildfire.ballPrediction, 4, true);
 //			boolean intersect = input.ball.position.distance(car.position) < 200;
 
 			if(intersect){
