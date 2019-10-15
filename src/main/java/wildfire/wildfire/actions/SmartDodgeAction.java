@@ -121,7 +121,7 @@ public class SmartDodgeAction extends Action {
 				return controls;
 			}
 
-			boolean intersect = willIntersectNextTick(car, input.ball, wildfire.ballPrediction, 4, true);
+			boolean intersect = willIntersectNextTick(car, input.ball, wildfire.ballPrediction, 5, true);
 //			boolean intersect = input.ball.position.distance(car.position) < 200;
 
 			if(intersect){
@@ -132,20 +132,21 @@ public class SmartDodgeAction extends Action {
 				controls.withRoll(-Math.sin(angle));
 
 				this.angleSet = true;
-			}else if(car.velocity.z > 40){
-				// Point the car.
-				//				Vector3 forward = this.target.getPosition().lerp(input.ball.position, 0.15).withZ(input.ball.position.z + 80).minus(car.position).normalized();
-				//				Vector3 forward = this.target.getPosition().withZ(input.ball.position.z - 50).minus(car.position).normalized();
-				Vector3 forward = this.target.getPosition().withZ(this.target.getPosition().z + 100).minus(car.position).normalised();
-				Vector3 roof = forward.scaled(-1).withZ(1 - forward.z);
-
-				double[] angles = AirControl.getPitchYawRoll(car, forward, roof);
-
-				wildfire.renderer.drawLine3d(Color.RED, car.position, car.position.plus(forward.scaledToMagnitude(200)));
-				wildfire.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(roof.scaledToMagnitude(200)));
-
-				controls.withPitchYawRoll(angles);
 			}
+//			else if(car.velocity.z > 40){
+//				// Point the car.
+//				//				Vector3 forward = this.target.getPosition().lerp(input.ball.position, 0.15).withZ(input.ball.position.z + 80).minus(car.position).normalized();
+//				//				Vector3 forward = this.target.getPosition().withZ(input.ball.position.z - 50).minus(car.position).normalized();
+//				Vector3 forward = this.target.getPosition().withZ(this.target.getPosition().z + 100).minus(car.position).normalised();
+//				Vector3 roof = forward.scaled(-1).withZ(1 - forward.z);
+//
+//				double[] angles = AirControl.getPitchYawRoll(car, forward, roof);
+//
+//				wildfire.renderer.drawLine3d(Color.RED, car.position, car.position.plus(forward.scaledToMagnitude(200)));
+//				wildfire.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(roof.scaledToMagnitude(200)));
+//
+//				controls.withPitchYawRoll(angles);
+//			}
 		}
 
 		return controls;

@@ -149,9 +149,10 @@ public class Handling {
 		double fullDistance = carPosition.distanceFlat(ballPosition);
 		double initialVelocity = car.velocityDir(ballPosition.minus(carPosition).flatten());
 		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
+		double driveDistance = (fullDistance - finalVelocity * peakTime);
 		double acceleration = ((finalVelocity - initialVelocity) / driveTime);
 		double maxVelForTurn = DrivePhysics.maxVelForTurn(car, ballPosition);
-		if(Math.abs(finalVelocity) > maxVelForTurn){
+		if(driveTime > 2 && Math.abs(finalVelocity) > maxVelForTurn){
 			acceleration = (Math.copySign(maxVelForTurn, finalVelocity) - initialVelocity) / 0.1;
 		}
 		
