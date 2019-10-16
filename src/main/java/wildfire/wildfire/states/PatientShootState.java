@@ -65,7 +65,7 @@ public class PatientShootState extends State {
 			boolean jump = (slicePosition.z > MAX_LOW_Z);
 
 			double globalTime = rawSlice.gameSeconds();
-			if(!jump) globalTime -= (2D / 120);
+			globalTime -= (2D / 120);
 			if(globalTime <= car.elapsedSeconds) continue;
 
 			// Found a shot.
