@@ -20,6 +20,7 @@ import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.mechanics.FollowDiscreteMechanic;
 import wildfire.wildfire.mechanics.FollowSmartDodgeMechanic;
+import wildfire.wildfire.obj.Impact;
 import wildfire.wildfire.obj.Slice;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.physics.DrivePhysics;
@@ -43,7 +44,7 @@ public class WaitState extends State {
 	private double bounceDistance;
 	private boolean planSmartDodge/**, planSmartDodgeCone*/, towardsOwnGoal;
 	private Vector2 enemyGoal;
-	private Slice smartDodgeCandidate;
+	private Impact smartDodgeCandidate;
 
 	public WaitState(Wildfire wildfire, boolean alwaysSmartDodge){
 		super("Wait", wildfire);
@@ -257,9 +258,9 @@ public class WaitState extends State {
 //		return jump.distanceFlat(car.position);
 //	}
 	
-	private DiscreteCurve findSmartDodgeCurve(CarData car, Slice candidate){
+	private DiscreteCurve findSmartDodgeCurve(CarData car, Impact candidate){
 		Vector2 carPosition = car.position.flatten();
-		Vector2 flatCandidate = candidate.getPosition().flatten();
+		Vector2 flatCandidate = candidate.getBallPosition().flatten();
 		Vector2 candidateGoalDir = enemyGoal.minus(flatCandidate).normalised();
 		Vector2 carBounceDir = flatCandidate.minus(car.position.flatten()).normalised();
 		
@@ -272,7 +273,7 @@ public class WaitState extends State {
 			Vector2 targetDirection = candidateGoalDir.scaled(offset).plus(carBounceDir.scaled(1 - offset));
 			if(targetDirection.isZero()) targetDirection = new Vector2(carBounceDir);
 			
-			Vector2 end = flatCandidate.minus(targetDirection.scaledToMagnitude(Constants.BALL_RADIUS + car.hitbox.length / 2 + car.hitbox.offset.y));
+			Vector2 end = flatCandidate.minus(targetDirection.scaledToMagnitude(Constants.BALL_RADIUS + 0.95 * (car.hitbox.length / 2 + car.hitbox.offset.y)));
 			
 			CompositeArc compositeArc = CompositeArc.create(car, end, Utils.traceToWall(flatCandidate, targetDirection), Constants.RIPPER.y, lineup);
 			Vector2[] points = compositeArc.discretise(DiscreteCurve.analysePoints);

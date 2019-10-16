@@ -70,7 +70,7 @@ public class PathState extends State {
 
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
 			double time = (rawSlice.gameSeconds() - input.elapsedSeconds);
-			time -= 5D / 120;
+			time -= 3D / 120;
 
 			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -300);
 //			Vector2 enemyGoal = Constants.enemyGoal(input.car);

@@ -71,7 +71,7 @@ public class PatientShootState extends State {
 			boolean jump = (slicePosition.z > MAX_LOW_Z);
 
 			double globalTime = rawSlice.gameSeconds();
-			globalTime -= (2D / 120);
+//			globalTime -= (2D / 120);
 			if(globalTime <= car.elapsedSeconds) continue;
 			double distance = (Utils.toLocal(car, slicePosition).flatten().magnitude() - offsetSize);
 			if(DrivePhysics.minTravelTime(car, distance) > (globalTime - car.elapsedSeconds)) continue;
