@@ -6,6 +6,7 @@ import java.awt.Point;
 import rlbot.flat.BallPrediction;
 import wildfire.input.car.CarData;
 import wildfire.output.ControlsOutput;
+import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.SmartDodgeAction;
@@ -25,6 +26,7 @@ public class PatientShootState extends State {
 	private Impact target;
 	private double globalTargetTime;
 	private boolean jump, go;
+	private Vector2 arrivalDirection;
 
 	public PatientShootState(Wildfire wildfire){
 		super("Patient Shoot", wildfire);
@@ -74,6 +76,7 @@ public class PatientShootState extends State {
 			this.globalTargetTime = globalTime;
 			this.target = new Impact(targetPosition, slicePosition, globalTime - car.elapsedSeconds);
 			this.jump = jump;
+			this.arrivalDirection = targetPosition.minus(car.position).flatten();
 			return true;
 		}
 
@@ -93,6 +96,10 @@ public class PatientShootState extends State {
 		//				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
 		//			}
 		//		}
+		if(!expire){
+			Vector2 targetDirection = this.target.getPosition().minus(input.car.position).flatten();
+			expire = (this.arrivalDirection.angle(targetDirection) > Math.toRadians(15));
+		}
 		if(expire) this.go = false;
 		return expire;
 	}
