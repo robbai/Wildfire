@@ -70,8 +70,8 @@ public class MixerState extends State {
 		double aimImpact = Handling.aim(car, impactLocation.flatten());
 		
 		// Dodge.
-		if((input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME
-				|| (impactDistance > Behaviour.dodgeDistance(car) && car.forwardVelocity > 1200 && car.forwardVelocity < 2000))
+		if(input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME
+				|| (impactDistance > Behaviour.dodgeDistance(car) && car.velocity.component(impactLocation.minus(car.position)) > 0.95 && car.forwardVelocity > (car.boost < 1 ? 1300 : 1500) && car.forwardVelocity < 2000) 
 				&& Math.abs(aimImpact) < 0.25){
 			if(car.forwardVelocity > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
 			currentAction = new DodgeAction(this, aimImpact, input);

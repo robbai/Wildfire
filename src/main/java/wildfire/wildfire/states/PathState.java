@@ -78,7 +78,7 @@ public class PathState extends State {
 			Vector2 ballPosition = slicePosition.flatten();
 			ballPosition = offsetBall(ballPosition, enemyGoal);
 
-			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, 0, Constants.RIPPER.y * (dodge ? 0.9 : 0.75));
+			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, input.car.forwardVelocityAbs * 0.1, Constants.RIPPER.y * (dodge ? 1.05 : 0.75));
 			results[middle - startLow] = compositeArc;
 
 			if(compositeArc.minTravelTime(input.car, true, true) > time){
@@ -117,7 +117,7 @@ public class PathState extends State {
 	}
 
 	private Vector2 offsetBall(Vector2 ballPosition, Vector2 enemyGoal){
-		return ballPosition.plus(ballPosition.minus(enemyGoal).scaledToMagnitude(Constants.BALL_RADIUS + Constants.RIPPER.y * 0.5 + Constants.RIPPER_OFFSET.y));
+		return ballPosition.plus(ballPosition.minus(enemyGoal).scaledToMagnitude(Constants.BALL_RADIUS + Constants.RIPPER.y / 2 + Constants.RIPPER_OFFSET.y));
 	}
 
 	public static boolean curveOutOfBounds(DiscreteCurve discreteCurve){

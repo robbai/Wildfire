@@ -16,8 +16,10 @@ import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Impact;
 import wildfire.wildfire.obj.Slice;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Utils;
 
 public class PatientShootState extends State {
 
@@ -46,6 +48,8 @@ public class PatientShootState extends State {
 		}else if(input.info.jumpImpact != null){
 			if(Behaviour.isInCone(car, input.info.jumpImpact.getPosition(), GOAL_THRESHOLD / 2)) return false;
 		}
+		
+		final double offsetSize = (Constants.BALL_RADIUS + (car.hitbox.length / 2 + car.hitbox.offset.y));
 
 		// Find if we are under pressure or not.
 		double enemyTime = determineEnemyTime(input);
@@ -69,9 +73,10 @@ public class PatientShootState extends State {
 			double globalTime = rawSlice.gameSeconds();
 			globalTime -= (2D / 120);
 			if(globalTime <= car.elapsedSeconds) continue;
+			double distance = (Utils.toLocal(car, slicePosition).flatten().magnitude() - offsetSize);
+			if(DrivePhysics.minTravelTime(car, distance) > (globalTime - car.elapsedSeconds)) continue;
 
 			// Found a shot.
-			double offsetSize = (Constants.BALL_RADIUS + (car.hitbox.length / 2 + car.hitbox.offset.y));
 			Vector3 targetPosition = slicePosition.plus(car.position.minus(slicePosition).withZ(0).scaledToMagnitude(offsetSize));
 			this.globalTargetTime = globalTime;
 			this.target = new Impact(targetPosition, slicePosition, globalTime - car.elapsedSeconds);
@@ -89,13 +94,13 @@ public class PatientShootState extends State {
 		if(this.target == null) return true;
 		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(), globalTargetTime, 12);
 		//		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
-		//		if(!expire){
-		//			if(this.jump){
-		//				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
-		//			}else{
-		//				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
-		//			}
-		//		}
+		if(!expire){
+			if(this.jump){
+				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
+			}else{
+				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
+			}
+		}
 		if(!expire){
 			Vector2 targetDirection = this.target.getPosition().minus(input.car.position).flatten();
 			expire = (this.arrivalDirection.angle(targetDirection) > Math.toRadians(15));
