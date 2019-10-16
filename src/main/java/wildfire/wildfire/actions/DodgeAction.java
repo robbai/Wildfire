@@ -54,7 +54,7 @@ public class DodgeAction extends Action {
 				controls.withJump(true);
 			}else if(this.state != null){
 				double height = Utils.clamp(input.car.position.z / Constants.CEILING, 0, 1);
-				if(!input.info.isDodgeTorquing() || time >= (Math.abs(car.angularVelocity.pitch) + Math.abs(car.angularVelocity.yaw) < 1.8 - height ? 0.3 : 1.6)){
+				if(!input.info.isDodgeTorquing() || time >= (Math.abs(car.angularVelocity.pitch) + Math.abs(car.angularVelocity.yaw) < 0.9 + height ? 0.3 : 1.6)){
 					Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 				}
 			}
