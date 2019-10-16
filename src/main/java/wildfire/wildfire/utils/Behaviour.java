@@ -104,7 +104,7 @@ public class Behaviour {
 	 * Returns whether the trace goes into the opponent's goal
 	 */
 	public static boolean isInCone(CarData car, Vector3 target, double threshold){
-		if(car.sign * car.position.y > Constants.PITCH_LENGTH) return false; //Inside enemy goal
+		if(car.sign * car.position.y > Constants.PITCH_LENGTH) return false; // Inside enemy goal.
 		Vector2 trace = Utils.traceToY(car.position.flatten(), target.minus(car.position).flatten(), car.sign * Constants.PITCH_LENGTH);
 		return trace != null && Math.abs(trace.x) < Constants.GOAL_WIDTH + threshold;
 	}

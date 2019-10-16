@@ -39,9 +39,10 @@ public class PatientShootState extends State {
 		if(earliestImpact == null || earliestImpact.getBallPosition().y * car.sign < -3000) return false;
 		
 		// We already have an available shot!
-		if(earliestImpact.getBallPosition().z < maxLowZ && Behaviour.isInCone(car, earliestImpact.getPosition(), goalThreshold)) return false;
-		if(input.info.jumpImpact != null){
-			if(input.info.jumpImpact.getBallPosition().z < maxLowZ && Behaviour.isInCone(car, input.info.jumpImpact.getPosition(), goalThreshold)) return false;
+		if(earliestImpact.getBallPosition().z < maxLowZ){
+			if(Behaviour.isInCone(car, earliestImpact.getPosition(), goalThreshold / 2)) return false;
+		}else if(input.info.jumpImpact != null){
+			if(Behaviour.isInCone(car, input.info.jumpImpact.getPosition(), goalThreshold / 2)) return false;
 		}
 		
 		// Find if we are under pressure or not.
@@ -69,7 +70,7 @@ public class PatientShootState extends State {
 			if(globalTime <= car.elapsedSeconds) continue;
 			
 			// Found a shot.
-			double offsetSize = (Constants.BALL_RADIUS + (car.hitbox.length + car.hitbox.offset.y));
+			double offsetSize = (Constants.BALL_RADIUS + (car.hitbox.length / 2 + car.hitbox.offset.y));
 			Vector3 targetPosition = slicePosition.plus(car.position.minus(slicePosition).withZ(0).scaledToMagnitude(offsetSize));
 			this.globalTargetTime = globalTime;
 			this.target = new Impact(targetPosition, slicePosition, globalTime - car.elapsedSeconds);
@@ -86,13 +87,13 @@ public class PatientShootState extends State {
 		if(this.target == null) return true;
 		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(), globalTargetTime, 12);
 //		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
-		if(!expire){
-			if(this.jump){
-				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
-			}else{
-				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
-			}
-		}
+//		if(!expire){
+//			if(this.jump){
+//				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
+//			}else{
+//				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
+//			}
+//		}
 		if(expire) this.go = false;
 		return expire;
 	}
@@ -121,9 +122,9 @@ public class PatientShootState extends State {
 				if(Math.abs(displacement) < 200){
 					this.go = true;
 				}else if(this.jump){
-					this.go = (time < (input.info.jumpImpact == null ? 10 : (input.info.jumpImpact.getTime() + 0.15)));
+					this.go = (time < (input.info.jumpImpact == null ? 10 : (input.info.jumpImpact.getTime() + 0.18)));
 				}else{
-					this.go = (time < (input.info.impact.getTime() + 0.12));
+					this.go = (time < (input.info.impact.getTime() + 0.15));
 				}
 			}
 			if(!this.go){
