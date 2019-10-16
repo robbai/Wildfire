@@ -25,7 +25,7 @@ public class PathState extends State {
 	 */
 
 	private static final OptionalDouble maxFinalVelocity = /*OptionalDouble.of(1650);*/ OptionalDouble.empty();
-	private static final boolean dodge = false;
+	private static final boolean dodge = true;
 
 	private boolean force;
 	private Vector3 slicePosition;
