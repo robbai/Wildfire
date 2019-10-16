@@ -19,8 +19,8 @@ import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
 
 public class PatientShootState extends State {
-	
-	private static final double maxLowZ = 150, goalThreshold = -210;
+
+	private static final double MAX_LOW_Z = 150, GOAL_THRESHOLD = -210;
 
 	private Impact target;
 	private double globalTargetTime;
@@ -34,41 +34,40 @@ public class PatientShootState extends State {
 	public boolean ready(InfoPacket input){
 		CarData car = input.car;
 		if(!car.onFlatGround) return false; 
-			
+
 		Impact earliestImpact = input.info.impact;
 		if(earliestImpact == null || earliestImpact.getBallPosition().y * car.sign < -3000) return false;
-		
+
 		// We already have an available shot!
-		if(earliestImpact.getBallPosition().z < maxLowZ){
-			if(Behaviour.isInCone(car, earliestImpact.getPosition(), goalThreshold / 2)) return false;
+		if(earliestImpact.getBallPosition().z < MAX_LOW_Z){
+			if(Behaviour.isInCone(car, earliestImpact.getPosition(), GOAL_THRESHOLD / 2)) return false;
 		}else if(input.info.jumpImpact != null){
-			if(Behaviour.isInCone(car, input.info.jumpImpact.getPosition(), goalThreshold / 2)) return false;
+			if(Behaviour.isInCone(car, input.info.jumpImpact.getPosition(), GOAL_THRESHOLD / 2)) return false;
 		}
-		
+
 		// Find if we are under pressure or not.
 		double enemyTime = determineEnemyTime(input);
 		if(enemyTime < earliestImpact.getTime()) return false;
-		
+
 		// Iterate through the ball prediction to find a good shot.
 		BallPrediction ballPrediction = wildfire.ballPrediction;
 		int end = Math.min(ballPrediction.slicesLength(), (int)(enemyTime * 60));
 		for(int i = earliestImpact.getFrame(); i < end; i++){
 			rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
-			
-			if(slicePosition.y * car.sign < -3000) break;
-			if(Math.abs(slicePosition.y) > Constants.PITCH_LENGTH) break;
-			
-			if(Math.abs(Handling.aim(car, slicePosition)) > Math.toRadians(100)) continue;
+
+			if(Math.abs(slicePosition.y) > Constants.PITCH_LENGTH - Constants.BALL_RADIUS) break;
+
+			if(slicePosition.y * car.sign < -2000) continue;
 			if(slicePosition.z > Info.maxJumpImpactZ) continue;
-			if(!Behaviour.isInCone(car, slicePosition, goalThreshold)) continue;
-			
-			boolean jump = (slicePosition.z > maxLowZ);
-			
+			if(!Behaviour.isInCone(car, slicePosition, GOAL_THRESHOLD)) continue;
+
+			boolean jump = (slicePosition.z > MAX_LOW_Z);
+
 			double globalTime = rawSlice.gameSeconds();
 			if(!jump) globalTime -= (2D / 120);
 			if(globalTime <= car.elapsedSeconds) continue;
-			
+
 			// Found a shot.
 			double offsetSize = (Constants.BALL_RADIUS + (car.hitbox.length / 2 + car.hitbox.offset.y));
 			Vector3 targetPosition = slicePosition.plus(car.position.minus(slicePosition).withZ(0).scaledToMagnitude(offsetSize));
@@ -77,7 +76,7 @@ public class PatientShootState extends State {
 			this.jump = jump;
 			return true;
 		}
-		
+
 		// No appropriate slice found.
 		return false;
 	}
@@ -86,34 +85,34 @@ public class PatientShootState extends State {
 	public boolean expire(InfoPacket input){
 		if(this.target == null) return true;
 		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(), globalTargetTime, 12);
-//		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
-//		if(!expire){
-//			if(this.jump){
-//				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
-//			}else{
-//				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
-//			}
-//		}
+		//		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
+		//		if(!expire){
+		//			if(this.jump){
+		//				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
+		//			}else{
+		//				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
+		//			}
+		//		}
 		if(expire) this.go = false;
 		return expire;
 	}
-	
+
 	@Override
 	public ControlsOutput getOutput(InfoPacket input){
 		CarData car = input.car;
 		Vector3 targetPosition = this.target.getPosition();
 		Vector3 targetBallPosition = this.target.getBallPosition();
-		
+
 		double acceleration = 0;
 		if(!this.jump || !go){
 			// Motion equations.
 			double displacement = targetPosition.distanceFlat(car.position);
-//			displacement *= Math.signum(car.orientation.forward.dotProduct(targetPosition.minus(car.position)));
+			//			displacement *= Math.signum(car.orientation.forward.dotProduct(targetPosition.minus(car.position)));
 			double time = Math.max(0, globalTargetTime - car.elapsedSeconds);
 			double initialVelocity = car.velocityDir(targetPosition.minus(car.position));
 			double finalVelocity = ((2 * displacement) / time - initialVelocity);
-			acceleration = (finalVelocity - initialVelocity) / time;
-			
+			acceleration = ((finalVelocity - initialVelocity) / time);
+
 			/*
 			 *  We adjust our target acceleration so that our final velocity
 			 *  is closer to the maximum (so we hit the ball as hard as possible!).
@@ -122,7 +121,7 @@ public class PatientShootState extends State {
 				if(Math.abs(displacement) < 200){
 					this.go = true;
 				}else if(this.jump){
-					this.go = (time < (input.info.jumpImpact == null ? 10 : (input.info.jumpImpact.getTime() + 0.18)));
+					this.go = (input.info.jumpImpact == null || time < (input.info.jumpImpact.getTime() + 0.18));
 				}else{
 					this.go = (time < (input.info.impact.getTime() + 0.15));
 				}
@@ -133,19 +132,19 @@ public class PatientShootState extends State {
 					acceleration = -initialVelocity * 60;
 				}
 			}
-			
+
 			// Render.
 			wildfire.renderer.drawString2d("Final Velocity: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
 			wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
-//			wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new Point(0, 20), 2, 2);
+			//			wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new Point(0, 20), 2, 2);
 			wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition(), Color.RED, 40);
 		}
-		
+
 		// Render.
 		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.GREEN, 0, (int)((globalTargetTime - car.elapsedSeconds) * 60));
 		wildfire.renderer.drawCrosshair(car, targetBallPosition, Color.ORANGE, 80);
 		wildfire.renderer.drawCrosshair(car, targetPosition, Color.YELLOW, 50);
-		
+
 		// Controls.
 		double radians = Handling.aim(car, this.target.getPosition());
 		if(Math.abs(radians) > Math.toRadians(15)) return Handling.turnOnSpot(car, targetPosition);
@@ -162,7 +161,7 @@ public class PatientShootState extends State {
 		double throttle = Handling.produceAcceleration(car, acceleration);
 		return Handling.forwardDrive(car, targetPosition).withThrottle(throttle).withBoost(throttle > 1);
 	}
-	
+
 	/**
 	 * Determines how patient we can be with this shot.
 	 */
