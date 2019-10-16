@@ -75,7 +75,7 @@ public class SmartDodgeAction extends Action {
 			double hitboxDistance = Utils.lerp(Constants.RIPPER.y / 2 + Constants.RIPPER_OFFSET.y, Constants.RIPPER.x / 2, Math.sin(angle));
 			//if(displace.flatten().magnitude() < Constants.BALL_RADIUS + hitboxDistance * 0.9){
 			if(distance < Constants.BALL_RADIUS + hitboxDistance * 0.95){
-//			if(distance < Constants.BALL_RADIUS + dodgeDistance){
+				//			if(distance < Constants.BALL_RADIUS + dodgeDistance){
 				this.target = new Slice(ballLocation, time);
 				this.pressTime = press;
 				break;
@@ -122,7 +122,7 @@ public class SmartDodgeAction extends Action {
 			}
 
 			boolean intersect = willIntersectNextTick(car, input.ball, wildfire.ballPrediction, 6, true);
-//			boolean intersect = input.ball.position.distance(car.position) < 200;
+			//			boolean intersect = input.ball.position.distance(car.position) < 200;
 
 			if(intersect){
 				// Dodge
@@ -132,24 +132,36 @@ public class SmartDodgeAction extends Action {
 				controls.withRoll(-Math.sin(angle));
 
 				this.angleSet = true;
+			}else{
+				double[] airControl = airControl(car, true);
+				controls.withPitchYawRoll(airControl);
 			}
-//			else if(car.velocity.z > 40){
-//				// Point the car.
-//				//				Vector3 forward = this.target.getPosition().lerp(input.ball.position, 0.15).withZ(input.ball.position.z + 80).minus(car.position).normalized();
-//				//				Vector3 forward = this.target.getPosition().withZ(input.ball.position.z - 50).minus(car.position).normalized();
-//				Vector3 forward = this.target.getPosition().withZ(this.target.getPosition().z + 100).minus(car.position).normalised();
-//				Vector3 roof = forward.scaled(-1).withZ(1 - forward.z);
-//
-//				double[] angles = AirControl.getPitchYawRoll(car, forward, roof);
-//
-//				wildfire.renderer.drawLine3d(Color.RED, car.position, car.position.plus(forward.scaledToMagnitude(200)));
-//				wildfire.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(roof.scaledToMagnitude(200)));
-//
-//				controls.withPitchYawRoll(angles);
-//			}
 		}
 
 		return controls;
+	}
+
+	/**
+	 * Point the car.
+	 */
+	private double[] airControl(Vector3 carPosition, Vector3 carVelocity, CarOrientation carOrientation, Rotator carAngularVelocity, boolean render){
+		if(carVelocity.z > 40){
+			Vector3 forward = this.target.getPosition().withZ(this.target.getPosition().z + 100).minus(carPosition).normalised();
+			Vector3 roof = forward.scaled(-1).withZ(1 - forward.z);
+
+			if(render){
+				wildfire.renderer.drawLine3d(Color.RED, carPosition, carPosition.plus(forward.scaledToMagnitude(200)));
+				wildfire.renderer.drawLine3d(Color.GREEN, carPosition, carPosition.plus(roof.scaledToMagnitude(200)));
+			}
+
+			double[] angles = AirControl.getPitchYawRoll(carOrientation, carAngularVelocity, forward, roof);
+			return angles;
+		}
+		return new double[3];
+	}
+	
+	private double[] airControl(CarData car, boolean render){
+		return airControl(car.position, car.velocity, car.orientation, car.angularVelocity, render);
 	}
 
 	@Override
@@ -157,41 +169,56 @@ public class SmartDodgeAction extends Action {
 		return this.failed || (timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact ? 0.5 : 2.5));
 	}
 
+	/*
+	 * Based on:
+	 * https://github.com/samuelpmish/RLUtilities/blob/master/src/simulation/car.cc#L97
+	 * It's important to mention that chip uses forward-left/right-up (roll-pitch-yaw),
+	 *  while I use right-forward-up (pitch-roll-yaw), and sometimes pitch-yaw-roll.
+	 */
 	private boolean willIntersectNextTick(CarData car, BallData initialBall, BallPrediction ballPrediction, int ticks, boolean render){
 		CarOrientation carOrientation = car.orientation;
 		Vector3 carPosition = car.position, carVelocity = car.velocity, angularVelocityAxis = car.angularVelocityAxis;
 
-		final double step = 1D / 120;
-
-		// Air damping torque coefficients.
-		final Vector3 H = new Vector3(-20, -30, -50);
-//		final Vector3 H = new Vector3(-30, -20, -50);
+		final double dt = 1D / 120;
+		
+		// Air control torque coefficients.
+		final Vector3 T = new Vector3(-130, -400, 95);
 
 		// chip refers to this as "?"
 		final double J = 10.5;
-		
-		final Vector3 gravity = Vector3.Z.scaled(-Constants.GRAVITY * step);
-		
+
+		final Vector3 gravity = Vector3.Z.scaled(-Constants.GRAVITY * dt);
+
 		boolean intersects = false, intersectsInTime = false;
 
 		for(int i = 0; i <= Math.max(20, ticks); i++){
 			// Car.
 			if(i != 0){
+				// Controls (pitch-yaw-roll).
+				double[] airControl = airControl(car, true);
+				Vector3 airControlVec = new Vector3(airControl[0], airControl[2], airControl[1]); // Pitch-roll-yaw.
+				
+				// Air damping torque coefficients.
+				final Vector3 H = new Vector3(-30D * (1D - Math.abs(airControl[0])), -50, -20D * (1D - Math.abs(airControl[1])));
+
 				carVelocity = carVelocity.plus(gravity).capMagnitude(Constants.MAX_CAR_VELOCITY);
-				carPosition = carPosition.plus(carVelocity.scaled(step));
+				carPosition = carPosition.plus(carVelocity.scaled(dt));
 
 				Vector3 angularVelocityAxisLocal = Utils.toLocalFromRelative(carOrientation, angularVelocityAxis);
-				angularVelocityAxis = angularVelocityAxis.plus(Utils.toGlobal(new Vector3(), carOrientation, angularVelocityAxisLocal.multiply(H).scaled(step / J)));
-				carOrientation = carOrientation.step(step, new Rotator(carOrientation, angularVelocityAxis));
+				angularVelocityAxis = angularVelocityAxis.plus(Utils.toGlobal(new Vector3(), carOrientation, angularVelocityAxisLocal.multiply(H).plus(T.multiply(airControlVec))).scaled(dt / J));
+				carOrientation = carOrientation.step(dt, angularVelocityAxis);
 			}
-//			if(render) wildfire.renderer.drawRipperHitbox(carPosition, carOrientation, i <= ticks ? Color.WHITE : Color.GRAY);
+			//			if(render) wildfire.renderer.drawRipperHitbox(carPosition, carOrientation, i <= ticks ? Color.WHITE : Color.GRAY);
 			if(render) wildfire.renderer.drawHitbox(carPosition, carOrientation, car.hitbox, intersects ? Color.RED : Color.WHITE);
 			Hitbox carHitbox = new Hitbox(car.hitbox, carPosition, carOrientation);
 
 			// Ball.
 			Vector3 ballPosition;
-			if(i >= (1D / 60) / step){
-				ballPosition = new Vector3(ballPrediction.slices((int)(i / ((1D / 60) / step)) - 1).physics().location());
+			double ballTick = ((double)i / ((1D / 60) / dt) - 1);
+			if(ballTick >= 0){
+				Vector3 ballA = new Vector3(ballPrediction.slices((int)Math.floor(ballTick)).physics().location());
+				Vector3 ballB = new Vector3(ballPrediction.slices((int)Math.floor(ballTick) + 1).physics().location());
+				ballPosition = ballA.lerp(ballB, ballTick - Math.floor(ballTick));
 			}else{
 				ballPosition = initialBall.position;
 			}
@@ -201,7 +228,7 @@ public class SmartDodgeAction extends Action {
 			if(carHitbox.intersects(ball)){
 				intersects = true;
 				if(i <= ticks) intersectsInTime = true;
-//				break;
+				//				break;
 			}
 		}
 

@@ -69,5 +69,9 @@ public class CarOrientation extends Rotator {
 	public CarOrientation step(double dt, Rotator angularVelocity){
 		return new CarOrientation(this.pitch + angularVelocity.pitch * dt, this.yaw + angularVelocity.yaw * dt, this.roll + angularVelocity.roll * dt);
 	}
+
+	public CarOrientation step(double dt, Vector3 angularVelocityAxis){
+		return this.step(dt, new Rotator(this, angularVelocityAxis));
+	}
     
 }
