@@ -18,7 +18,6 @@ import wildfire.wildfire.physics.JumpPhysics;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.InterceptCalculator;
-import wildfire.wildfire.utils.Utils;
 
 public class Info {
 

@@ -4,9 +4,11 @@ import wildfire.vector.Vector3;
 
 public class Slice {
 	
-	private Vector3 position;
-	private double time;
-	private int frame;
+	// TODO don't use 60Hz
+	
+	protected Vector3 position;
+	protected double time;
+	protected int frame;
 
 	public Slice(Vector3 position, int frame){
 		this.position = position;
@@ -36,6 +38,11 @@ public class Slice {
 
 	public double getTime(){
 		return time;
+	}
+
+	@Override
+	public String toString(){
+		return "Slice [position=" + position + ", time=" + time + ", frame=" + frame + "]";
 	}
 
 }
