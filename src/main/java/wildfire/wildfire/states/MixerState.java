@@ -37,9 +37,9 @@ public class MixerState extends State {
 		Vector2 carPosition = input.car.position.flatten();
 		
 //		// The ball must be on the wing.
-		if(Math.abs(impactLocation.x) < Constants.PITCH_WIDTH - 550 * 3) return false;
+		if(Math.abs(impactLocation.x) < Constants.GOAL_WIDTH + 300) return false;
 		if(input.car.sign * impactLocation.y < -1500) return false;
-		if(input.car.sign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
+//		if(input.car.sign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
 		
 		// We must be solidly behind the ball.
 		if(input.info.impact.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
