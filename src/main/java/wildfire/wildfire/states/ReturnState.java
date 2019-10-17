@@ -109,13 +109,13 @@ public class ReturnState extends State {
 			}
 		}
 
-		if(centered){
-			if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
-		}
+//		if(centered){
+//			if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
+//		}
 //		return car.sign * car.position.y > -3000/* || impact.getTime() > 1.4*/;
 		
-//		if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
-		return car.sign * car.position.y > 3000/* && impact.getTime() > 1.3*/;
+		if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
+		return car.sign * car.position.y > 3000 && impact.getTime() > 1.3;
 	}
 	
 	@Override

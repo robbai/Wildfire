@@ -98,7 +98,7 @@ public class StalkState extends State {
 	}
 	
 	private double getSitbackDistance(double carDistance){
-		return 1400 + (Math.max(this.defenderVelocity / 1.4, 1100) + this.defenderDistance / 1.8) * 0.75 + carDistance * 0.45;
+		return 1300 + (Math.max(this.defenderVelocity / 1.4, 1100) + this.defenderDistance / 1.8) * 0.4 + carDistance * 0.2;
 	}
 
 	private Pair<Integer, Pair<Double, Double>> getDefender(CarData[] cars, Impact[] impacts){

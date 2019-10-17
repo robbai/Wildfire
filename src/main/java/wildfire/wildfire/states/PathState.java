@@ -72,13 +72,13 @@ public class PathState extends State {
 			double time = (rawSlice.gameSeconds() - input.elapsedSeconds);
 			time -= 3D / 120;
 
-			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -300);
+			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -350);
 //			Vector2 enemyGoal = Constants.enemyGoal(input.car);
 
 			Vector2 ballPosition = slicePosition.flatten();
 			ballPosition = offsetBall(ballPosition, enemyGoal);
 
-			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, input.car.forwardVelocityAbs * 0.1, Constants.RIPPER.y * (dodge ? 1.05 : 0.75));
+			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, input.car.forwardVelocityAbs * 0.1, Constants.RIPPER.y * (dodge ? 1.2 : 0.75));
 			results[middle - startLow] = compositeArc;
 
 			if(compositeArc.minTravelTime(input.car, true, true) > time){
@@ -104,7 +104,7 @@ public class PathState extends State {
 		// Start the mechanic!
 		this.slicePosition = slicePosition;
 		this.globalPathTime = (pathTime + input.elapsedSeconds);
-		FollowDiscreteMechanic follow = new FollowDiscreteMechanic(this, discreteCurve, input.elapsedSeconds, dodge, pathTime - 1D / 120);
+		FollowDiscreteMechanic follow = new FollowDiscreteMechanic(this, discreteCurve, input.elapsedSeconds, dodge, pathTime);
 		follow.linearTarget = true;
 		follow.renderPredictionToTargetTime = true;
 		this.currentMechanic = follow;

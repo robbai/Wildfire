@@ -66,12 +66,12 @@ public class MixerState extends State {
 		Vector3 impactLocation = input.info.impact.getBallPosition();
 		double impactDistance = input.info.impactDistance;
 		
-		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCH_WIDTH - Constants.BALL_RADIUS), car.sign * (Constants.PITCH_LENGTH - 700));
+		Vector2 corner = new Vector2(Math.signum(impactLocation.x) * (Constants.PITCH_WIDTH - Constants.BALL_RADIUS), car.sign * (Constants.PITCH_LENGTH - 500));
 		double aimImpact = Handling.aim(car, impactLocation.flatten());
 		
 		// Dodge.
 		if(input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME
-				|| (impactDistance > Behaviour.dodgeDistance(car) && car.velocity.component(impactLocation.minus(car.position)) > 0.95 && car.forwardVelocity > (car.boost < 1 ? 1300 : 1500) && car.forwardVelocity < 2000) 
+				|| (impactDistance > Behaviour.dodgeDistance(car) && car.velocity.component(impactLocation.minus(car.position)) > 0.9 && car.forwardVelocity > (car.boost < 1 ? 1300 : 1500) && car.forwardVelocity < 2000) 
 				&& Math.abs(aimImpact) < 0.25){
 			if(car.forwardVelocity > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
 			currentAction = new DodgeAction(this, aimImpact, input);

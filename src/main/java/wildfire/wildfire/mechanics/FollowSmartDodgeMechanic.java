@@ -46,7 +46,7 @@ public class FollowSmartDodgeMechanic extends Mechanic {
 				
 		// Jump calculations.
 		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(input.car.position).dotProduct(input.car.orientation.up));
-		double driveTime = (candidate.getTime() - peakTime - timeElapsed - 2D / 120);
+		double driveTime = (candidate.getTime() - peakTime - timeElapsed - 1D / 120);
 		double jumpVelocity = (2 * (curve.getDistance() - carS) - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 //		double jumpDistance = (jumpVelocity * peakTime);
 		

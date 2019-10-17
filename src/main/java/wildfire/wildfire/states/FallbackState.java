@@ -27,7 +27,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state.
 	 */
-	private static final double dropoff = 0.174, scope = 0.4;
+	private static final double dropoff = 0.17, scope = 0.39;
 
 	/*
 	 * Yeah this one too, I guess.
@@ -193,10 +193,13 @@ public class FallbackState extends State {
 	private boolean isOkayToSmartDodge(InfoPacket input){
 		CarData car = input.car;
 		if(!car.onFlatGround) return false;
+		
+//		if(Utils.distanceToWall(input.info.jumpImpact.getBallPosition()) < (input.car.onFlatGround ? 220 : 180)) return false;
+//		return input.info.jumpImpact.getTime() < 2.5 && input.info.impact.getBallPosition().minus(car.position).dotProduct(car.orientation.up) > 170;
 
 		//return input.info.impact.getTime() < 4 && Utils.toLocal(car, input.info.impact.getBallPosition()).z > 205;
 
-		if(input.info.impact.getPosition().minus(car.position).dotProduct(car.orientation.up) + (Constants.RIPPER_RESTING - Constants.BALL_RADIUS) > 170 && input.info.impactDistance < 4000){
+		if(input.info.impact.getPosition().minus(car.position).dotProduct(car.orientation.up) + (Constants.RIPPER_RESTING - Constants.BALL_RADIUS) > 140 && input.info.impactDistance < 4000){
 
 //			if(Utils.toLocal(car, input.info.impact.getBallPosition()).z < 180){
 //				return false;
@@ -210,6 +213,9 @@ public class FallbackState extends State {
 			if(jumpImpact.getTime() > 2){
 				if(Utils.distanceToWall(jumpImpactPosition) < (input.car.onFlatGround ? 220 : 180)) return false;
 			}
+//			else if(jumpImpact.getTime() < 1){
+//				return true;
+//			}
 
 			Vector3 carPosition = car.position;
 			Vector2 trace = Utils.traceToWall(carPosition.flatten(), jumpImpactPosition.flatten());

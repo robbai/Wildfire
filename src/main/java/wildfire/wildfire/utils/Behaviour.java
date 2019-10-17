@@ -10,7 +10,7 @@ import wildfire.vector.Vector3;
 
 public class Behaviour {
 	
-	public static final double IMPACT_DODGE_TIME = 0.198; 
+	public static final double IMPACT_DODGE_TIME = 0.205; 
 
 	public static boolean isTeammateCloser(DataPacket input, Vector3 target){
 		double ourDistance = target.distance(input.car.position);
