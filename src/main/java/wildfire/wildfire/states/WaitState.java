@@ -21,7 +21,7 @@ import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.mechanics.FollowDiscreteMechanic;
 import wildfire.wildfire.mechanics.FollowSmartDodgeMechanic;
 import wildfire.wildfire.obj.Impact;
-import wildfire.wildfire.obj.Slice;
+import wildfire.wildfire.obj.Pair;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.physics.DrivePhysics;
 import wildfire.wildfire.physics.JumpPhysics;
@@ -138,9 +138,11 @@ public class WaitState extends State {
 		// Make use of the candidate position from the smart dodge.
 		if(planSmartDodge && input.car.onFlatGround){
 			if(car.onFlatGround){
-				DiscreteCurve discrete = findSmartDodgeCurve(car, smartDodgeCandidate);
-				if(discrete != null){
-					return this.startMechanic(new FollowSmartDodgeMechanic(this, discrete, input.elapsedSeconds, smartDodgeCandidate), input);
+				Pair<DiscreteCurve, Impact> result = findSmartDodgeCurve(car, smartDodgeCandidate);
+				if(result != null){
+					DiscreteCurve discrete = result.getOne();
+					Impact candidate = result.getTwo();
+					return this.startMechanic(new FollowSmartDodgeMechanic(this, discrete, input.elapsedSeconds, candidate), input);
 				}
 			}
 			
@@ -258,11 +260,11 @@ public class WaitState extends State {
 //		return jump.distanceFlat(car.position);
 //	}
 	
-	private DiscreteCurve findSmartDodgeCurve(CarData car, Impact candidate){
+	private Pair<DiscreteCurve, Impact> findSmartDodgeCurve(CarData car, Impact candidate){
 		Vector2 carPosition = car.position.flatten();
 		Vector2 flatCandidate = candidate.getBallPosition().flatten();
 		Vector2 candidateGoalDir = enemyGoal.minus(flatCandidate).normalised();
-		Vector2 carBounceDir = flatCandidate.minus(car.position.flatten()).normalised();
+		Vector2 carBounceDir = flatCandidate.minus(carPosition).normalised();
 		
 		// Arrival constants.
 		double peakTime = JumpPhysics.getFastestTimeZ(candidate.getPosition().minus(car.position).dotProduct(car.orientation.up));
@@ -293,7 +295,8 @@ public class WaitState extends State {
 			wildfire.renderer.drawPolyline3d(Color.PINK, points);
 			
 			if(!PathState.curveOutOfBounds(discreteCurve)){
-				return discreteCurve;
+				Impact curveCandidate = new Impact(end.withZ(candidate.getPosition().z), candidate.getBallPosition(), candidate.getTime());
+				return new Pair<DiscreteCurve, Impact>(discreteCurve, curveCandidate);
 			}else{
 				break;
 			}
