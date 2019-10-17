@@ -44,7 +44,7 @@ public class DrivePhysics {
 		double boostAcceleration = (boost ? Constants.BOOST_GROUND_ACCELERATION : 0);
 
 		// Coasting and braking.
-		boolean coast = (Math.abs(throttle) < 0.01);
+		boolean coast = (Math.abs(throttle) < Constants.COAST_THRESHOLD);
 		boolean brake = (!coast && velocityForward * throttle < 0);
 		if(coast){
 			return -Math.signum(velocityForward) * Constants.COAST_ACCELERATION;
@@ -53,7 +53,7 @@ public class DrivePhysics {
 		}
 
 		// Throttle.
-		velocityForward = Utils.clamp(Math.abs(velocityForward), 0, 2300);
+		velocityForward = Utils.clamp(Math.abs(velocityForward), 0, Constants.MAX_CAR_VELOCITY);
 		for(int i = 0; i < 3; i++){
 			if(throttleAcceleration[i][0] <= velocityForward && velocityForward < throttleAcceleration[i + 1][0]){
 				double u = (velocityForward - throttleAcceleration[i][0]) / (throttleAcceleration[i + 1][0] - throttleAcceleration[i][0]);

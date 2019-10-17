@@ -132,7 +132,11 @@ public class Handling {
 		}else if(throttleBoostTransition < acceleration){
 			return 10; // Boost.
 		}
-		return 0.02;
+		
+		if(Constants.COAST_ACCELERATION > Math.abs(throttleAcceleration)){
+			return Constants.COAST_THRESHOLD;
+		}
+		return 0;
 	}
 	
 	public static ControlsOutput arriveAtSmartDodgeCandidate(CarData car, Slice candidate, WRenderer renderer){

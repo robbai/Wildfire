@@ -61,6 +61,8 @@ public class PathState extends State {
 		if(high <= low) return false;
 
 		CompositeArc[] results = new CompositeArc[high - low + 1];
+		
+		Vector2 enemyGoal = Constants.enemyGoal(input.car);
 
 		// Generate the path.
 		while(low < high){
@@ -70,10 +72,9 @@ public class PathState extends State {
 
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
 			double time = (rawSlice.gameSeconds() - input.elapsedSeconds);
-			time -= 3D / 120;
+			time -= 4D / 120;
 
-			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -350);
-//			Vector2 enemyGoal = Constants.enemyGoal(input.car);
+//			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -350);
 
 			Vector2 ballPosition = slicePosition.flatten();
 			ballPosition = offsetBall(ballPosition, enemyGoal);
@@ -96,7 +97,7 @@ public class PathState extends State {
 		// Extra conditions.
 		double pathTime = (wildfire.ballPrediction.slices(low).gameSeconds() - input.elapsedSeconds);
 		Vector3 slicePosition = new Vector3(wildfire.ballPrediction.slices(low).physics().location());
-		if(slicePosition.z > 140) return false;
+		if(slicePosition.z > Constants.BALL_RADIUS + 45) return false;
 		if(curveOutOfBounds(discreteCurve)) return false;
 
 		//		System.out.println("startLow = " + startLow + ", low = " + low + ", high = " + high + ", mid = " + Math.floorDiv(low + high, 2));

@@ -20,6 +20,7 @@ import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Constants;
+import wildfire.wildfire.utils.Utils;
 
 public class ShadowState extends State {
 
@@ -168,7 +169,7 @@ public class ShadowState extends State {
 		}
 		
 		//  s = u * t + 0.5 * a * t^2
-		double desiredTime = 0.4;
+		double desiredTime = Utils.clamp(input.info.enemyImpactTime, 0.2, 4);
 		double initialVelocity = input.car.velocityDir(target.minus(input.car.position.flatten()));
 		double acceleration = ((2 * (distance - desiredTime * initialVelocity)) / Math.pow(desiredTime, 2));
 		double throttle = Handling.produceAcceleration(input.car, acceleration);

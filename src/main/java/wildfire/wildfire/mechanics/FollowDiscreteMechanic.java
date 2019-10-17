@@ -14,6 +14,7 @@ import wildfire.wildfire.handling.Handling;
 import wildfire.wildfire.input.InfoPacket;
 import wildfire.wildfire.obj.Mechanic;
 import wildfire.wildfire.obj.State;
+import wildfire.wildfire.utils.Behaviour;
 import wildfire.wildfire.utils.Utils;
 
 public class FollowDiscreteMechanic extends Mechanic {
@@ -109,9 +110,9 @@ public class FollowDiscreteMechanic extends Mechanic {
 		 */
 		double radians = Handling.aim(input.car, target);
 		
-		if(Math.abs(radians) < 0.4 && targetAcceleration > 0 && dodge){
+		if(Math.abs(radians) < 0.3 && targetAcceleration > 0 && dodge){
 			// Low time results in a chip shot, high time results in a low shot
-			boolean dodgeNow = (updatedTimeLeft < 0.15);
+			boolean dodgeNow = (updatedTimeLeft < Behaviour.IMPACT_DODGE_TIME - 0.05);
 			if(dodgeNow){
 //				double endRadians = Handling.aim(input.car, curve.T(1));
 				return this.startAction(new DodgeAction(this.state, input.info.impactRadians * 3, input), input);
