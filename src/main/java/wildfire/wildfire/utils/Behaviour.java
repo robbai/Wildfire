@@ -288,7 +288,7 @@ public class Behaviour {
 	}
 
 	public static double dodgeDistance(CarData car){
-		return (car.forwardVelocityAbs + Constants.DODGE_IMPULSE) * 1.45;
+		return (car.forwardVelocityAbs + Constants.DODGE_IMPULSE) * 1.5;
 	}
 
 }

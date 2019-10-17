@@ -48,17 +48,18 @@ public class MixerState extends State {
 		//		// The ball must be on the wing.
 		if(Math.abs(impactLocation.x) < Constants.GOAL_WIDTH + 300) return false;
 		if(input.car.sign * impactLocation.y < -1500) return false;
-		//		if(input.car.sign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
+//				if(input.car.sign * impactLocation.y > Constants.PITCH_LENGTH - 900) return false;
+		if(input.car.sign * impactLocation.y > Constants.PITCH_LENGTH - 1200 && Math.abs(impactLocation.x) > Constants.PITCH_WIDTH - 1400) goalkeeper = false;
 
 		// We must be solidly behind the ball.
 		if(input.info.impact.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
 		if(!input.car.onFlatGround) return false;
-		if(input.info.impact.getBallPosition().z > Constants.BALL_RADIUS + 60) return false;
+		if(input.info.impact.getBallPosition().z > Constants.BALL_RADIUS + 70) return false;
 		double yAngle = teamSignVec.angle(input.car.position.minus(impactLocation).flatten());
 		if(yAngle > Math.toRadians(60)) return false;
 
 		Vector2 backwallTrace = Utils.traceToY(carPosition, input.info.impact.getBallPosition().flatten().minus(carPosition), input.car.sign * Constants.PITCH_LENGTH);
-		if(backwallTrace == null || Math.abs(backwallTrace.x) < Constants.PITCH_WIDTH - 450) return false;
+		if(backwallTrace == null || Math.abs(backwallTrace.x) < Constants.PITCH_WIDTH - 550) return false;
 
 		//		// We must not have a (good) shot.
 		//		if(Behaviour.isInCone(input.car, input.info.impact.getPosition()) 
@@ -70,7 +71,7 @@ public class MixerState extends State {
 			//		return goalkeeper != null;
 			for(CarData car : input.cars){
 				if(car == null || car.team == input.car.team || car.isDemolished) continue;
-				if(Behaviour.isInCone(input.car, car.position, 100)){
+				if(Behaviour.isInCone(input.car, car.position, 200)){
 					return true;
 				}
 			}
@@ -92,7 +93,7 @@ public class MixerState extends State {
 
 		// Dodge.
 		if(input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME
-				|| (impactDistance > Behaviour.dodgeDistance(car) && car.velocity.component(impactLocation.minus(car.position)) > 0.9 && car.forwardVelocity > (car.boost < 1 ? 1300 : 1500) && car.forwardVelocity < 2000) 
+				|| (car.boost < 1 && impactDistance > Behaviour.dodgeDistance(car) && car.velocity.component(impactLocation.minus(car.position)) > 0.9 && car.forwardVelocity > 1250 && car.forwardVelocity < 2000) 
 				&& Math.abs(aimImpact) < 0.25){
 			if(car.forwardVelocity > 1600) wildfire.sendQuickChat(QuickChatSelection.Information_Centering);
 			currentAction = new DodgeAction(this, aimImpact, input);

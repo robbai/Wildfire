@@ -112,7 +112,7 @@ public class FollowDiscreteMechanic extends Mechanic {
 		
 		if(Math.abs(radians) < Math.toRadians(55)/* && targetAcceleration > 0*/ && dodge){
 			// Low time results in a chip shot, high time results in a low shot
-			boolean dodgeNow = (updatedTimeLeft < Behaviour.IMPACT_DODGE_TIME - 0.05);
+			boolean dodgeNow = (updatedTimeLeft < Behaviour.IMPACT_DODGE_TIME - 0.1);
 			if(dodgeNow){
 				double dodgeRadians = Handling.aim(input.car, curve.T(1)) * 2;
 //				double dodgeRadians = input.info.impactRadians * 2;

@@ -27,12 +27,12 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state.
 	 */
-	private static final double dropoff = 0.2, scope = 0.43;
+	private static final double dropoff = 0.18, scope = 0.38;
 
 	/*
 	 * Yeah this one too, I guess.
 	 */
-	private static final int targetPly = 6;
+	private static final int targetPly = 7;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);
@@ -91,7 +91,7 @@ public class FallbackState extends State {
 		boolean avoidOwnGoal = !Behaviour.correctSideOfTarget(car, input.ball.position) && trace != null;
 		if(avoidOwnGoal){
 			boolean tight = (Math.abs(impactPosition.minus(car.position).flatten().normalised().x) > 0.7 && Math.abs(impactPosition.y) > 3000);
-			Vector3 avoidOffset = new Vector3(-Math.signum(trace.x) * Utils.clamp(impactDistance / 4.5, 60, 400), tight ? -car.sign * 40 : 0, 0);
+			Vector3 avoidOffset = new Vector3(-Math.signum(trace.x) * Utils.clamp(impactDistance / 4.5, 60, 400), tight ? -car.sign * 30 : 0, 0);
 			impactPosition = impactPosition.plus(avoidOffset);
 			wildfire.renderer.drawCrosshair(car, impactPosition, Color.PINK, 125);
 		}
@@ -153,12 +153,9 @@ public class FallbackState extends State {
 		double acceleration = (maxVelocity - car.forwardVelocity) / 0.05;
 		double throttle = Handling.produceAcceleration(car, acceleration);
 
-		// TODO replace most of this with a method from Handling.java
-		return new ControlsOutput().withSteer(Handling.steering(car, target).getSteer()).withThrottle(throttle).withBoost(Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 1)
-				.withSlide(Handling.canHandbrake(input.car) && Math.abs(radians) > 1.2 && car.forwardVelocityAbs > 500);
-
-		//		return Handling.chaosDrive(car, target, true);
-		//		return Handling.forwardDrive(car, target);
+		ControlsOutput controls = Handling.forwardDrive(car, target);
+		if(controls.getThrottle() < 0) return controls;
+		return controls.withThrottle(throttle).withBoost(controls.holdBoost() && Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 0.9);
 	}
 
 	/**

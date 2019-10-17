@@ -9,6 +9,8 @@ import wildfire.wildfire.utils.Utils;
 
 public class AirControl {
 
+	private static boolean signum = false;
+
 	/**
 	 * https://github.com/DomNomNom/RocketBot/blob/32e69df4f2841501c5f1da97ce34673dccb670af/NomBot_v1.5/NomBot_v1_5.py#L56-L103
 	 */
@@ -51,15 +53,18 @@ public class AirControl {
 			roll = 0;
 		}
 
-		//	    return new double[] {pitch, yaw, roll};
-		final double threshold = 0.14;
-		return new double[] {
-				Math.abs(pitch) > threshold ? Math.signum(pitch) : Utils.clamp(pitch, -1, 1), 
-						Math.abs(yaw) > threshold ? Math.signum(yaw) : Utils.clamp(yaw, -1, 1), 
-								Math.abs(roll) > threshold ? Math.signum(roll) : Utils.clamp(roll, -1, 1)
-		};
+		if(signum){
+			final double threshold = 0.14;
+			return new double[] {
+					Math.abs(pitch) > threshold ? Math.signum(pitch) : Utils.clamp(pitch, -1, 1), 
+							Math.abs(yaw) > threshold ? Math.signum(yaw) : Utils.clamp(yaw, -1, 1), 
+									Math.abs(roll) > threshold ? Math.signum(roll) : Utils.clamp(roll, -1, 1)
+			};
+		}else{
+			return new double[] {pitch, yaw, roll};
+		}
 	}
-	
+
 	public static double[] getPitchYawRoll(CarData car, Vector3 forward, Vector3 up){
 		return getPitchYawRoll(car.orientation, car.angularVelocity, forward, up);
 	}
