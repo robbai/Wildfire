@@ -94,7 +94,7 @@ public class WallHitState extends State {
 				}
 				
 //				return new ControlsOutput().withThrottle(1).withBoost(Math.abs(radians) < 0.16).withSteer(radians * -4).withSlide(Math.abs(radians) > 1.2 && Handling.canHandbrake(car));
-				return Handling.forwardDrive(car, target);
+				return Handling.forwardDrive(car, target, false);
 			}
 		}else{
 			/*

@@ -70,16 +70,16 @@ public class ReturnState extends State {
 			return false;
 		}
 
-//		if(centered){
-//			if(impact.getTime() < input.info.enemyImpactTime - (opponentBehind ? 0.15 : 0.45)){
-//				return !Behaviour.correctSideOfTarget(car, impact.getBallPosition());
-//			}
-//		}
-//		else{
-//			if(car.sign * car.position.y > Math.max(4000, car.sign * impact.getPosition().y)){
-//				return true;
-//			}
-//		}
+		if(centered){
+			if(impact.getTime() < input.info.enemyImpactTime - (opponentBehind ? 0.15 : 0.45)){
+				return !Behaviour.correctSideOfTarget(car, impact.getBallPosition());
+			}
+		}
+		else{
+			if(car.sign * car.position.y > Math.max(4000, car.sign * impact.getPosition().y)){
+				return true;
+			}
+		}
 		
 		// Check if we have a shot opportunity.
 		if(impact.getPosition().distanceFlat(car.position) < 3000){

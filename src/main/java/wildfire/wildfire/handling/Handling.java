@@ -147,7 +147,7 @@ public class Handling {
 		Vector3 carPosition = car.position;
 		Vector3 ballPosition = candidate.getPosition();
 		
-		ControlsOutput controls = forwardDrive(car, ballPosition);
+		ControlsOutput controls = forwardDrive(car, ballPosition, false);
 		
 		double jumpHeight = candidate.getPosition().minus(car.position).dotProduct(car.orientation.up);
 		double peakTime = JumpPhysics.getFastestTimeZ(jumpHeight);
@@ -159,10 +159,10 @@ public class Handling {
 		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 //		double driveDistance = (fullDistance - finalVelocity * peakTime);
 		double acceleration = ((finalVelocity - initialVelocity) / driveTime);
-//		double maxVelForTurn = DrivePhysics.maxVelForTurn(car, ballPosition);
-//		if(driveTime > 2 && Math.abs(finalVelocity) > maxVelForTurn){
-//			acceleration = (Math.copySign(maxVelForTurn, finalVelocity) - initialVelocity) / 0.1;
-//		}
+		double maxVelForTurn = DrivePhysics.maxVelForTurn(car, ballPosition);
+		if(driveTime > 1.5 && Math.abs(finalVelocity) > maxVelForTurn){
+			acceleration = (Math.copySign(maxVelForTurn, finalVelocity) - initialVelocity) / 0.1;
+		}
 		
 		// Render.
 		if(renderer != null){
@@ -205,7 +205,7 @@ public class Handling {
 //	}
 	
 	public static ControlsOutput turnOnSpot(CarData car, Vector3 destination){
-		ControlsOutput controls = forwardDrive(car, destination);
+		ControlsOutput controls = forwardDrive(car, destination, false);
 		double targetVelocity = Math.abs(controls.getSteer()) * 400;
 		double acceleration = (targetVelocity - car.forwardVelocity) / 0.05;
 		double throttle = produceAcceleration(car, acceleration);

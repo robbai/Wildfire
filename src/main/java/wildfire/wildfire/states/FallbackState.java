@@ -157,7 +157,7 @@ public class FallbackState extends State {
 		double throttle = Handling.produceAcceleration(car, acceleration);
 
 //		ControlsOutput controls = Handling.forwardDrive(car, target, false);
-		ControlsOutput controls = Handling.chaosDrive(car, target, true);
+		ControlsOutput controls = (car.forwardVelocity < -200 ? Handling.forwardDrive(car, target, false) : Handling.chaosDrive(car, target, true));
 		if(controls.getThrottle() < -Constants.COAST_THRESHOLD) return controls;
 		return controls.withThrottle(throttle).withBoost(controls.holdBoost() && Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 1);
 	}

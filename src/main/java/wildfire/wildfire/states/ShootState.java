@@ -94,7 +94,7 @@ public class ShootState extends State {
 		// Controls.
 		double throttle = (Math.abs(Math.cos(impactRadians)) * (1D - minThrottle) + minThrottle);
 		if(car.orientation.up.z < 0.7) throttle = Math.signum(throttle);
-        ControlsOutput controls = Handling.forwardDrive(car, input.info.impact.getPosition());
+        ControlsOutput controls = Handling.forwardDrive(car, input.info.impact.getPosition(), false);
         controls.withThrottle(throttle).withBoost(controls.holdBoost() && throttle > 0.9);
         return controls;
 	}

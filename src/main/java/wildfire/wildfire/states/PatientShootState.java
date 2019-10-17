@@ -172,7 +172,7 @@ public class PatientShootState extends State {
 			}
 		}
 		double throttle = Handling.produceAcceleration(car, acceleration);
-		return Handling.forwardDrive(car, targetPosition).withThrottle(throttle).withBoost(throttle > 1);
+		return Handling.forwardDrive(car, targetPosition, false).withThrottle(throttle).withBoost(throttle > 1);
 	}
 
 	/**

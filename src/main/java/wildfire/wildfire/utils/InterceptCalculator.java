@@ -81,7 +81,7 @@ public class InterceptCalculator {
 			Vector2 enemyGoal = Behaviour.getTarget(car, slicePosition.flatten(), -300);
 			double goalAngle = enemyGoal.minus(slicePosition.flatten()).angle(slicePosition.flatten().minus(carPosition));
 			double hitboxDistance = Utils.lerp(hitboxDistanceForward, hitboxDistanceSide, Math.sin(goalAngle));
-			hitboxDistance *= Math.max(0.85, Math.cos(goalAngle) + 0.1);
+			hitboxDistance *= Math.max(0.8, Math.cos(goalAngle) + 0.2);
 			Vector3 impactPosition = slicePosition.plus(slicePosition.flatten().minus(enemyGoal).withZ(0).scaledToMagnitude(hitboxDistance));
 			
 			Vector3 localPosition = Utils.toLocal(car, impactPosition);
@@ -102,7 +102,7 @@ public class InterceptCalculator {
 			double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 //			double acceleration = ((finalVelocity - initialVelocity) / driveTime);
 			
-			if(finalVelocity < DrivePhysics.maxVelocity(initialVelocity, car.boost, time)){
+			if(finalVelocity < DrivePhysics.maxVelocity(initialVelocity, car.boost, time - 2D / 120)){
 //				Vector3 impactPosition = slicePosition.plus(car.position.minus(slicePosition).scaledToMagnitude(Constants.BALLRADIUS));
 //				Vector3 impactPosition = slicePosition.plus(slicePosition.minus(Constants.enemyGoal(car).withZ(slicePosition.z)).scaledToMagnitude(Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance * 0.4));
 				return new Impact(impactPosition, rawSlice, time);
