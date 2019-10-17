@@ -54,7 +54,7 @@ public class ReturnState extends State {
 		if((impact.getPosition().distanceFlat(car.position) < Math.max(1300, car.forwardVelocityAbs * 0.8) || impact.getTime() < Math.max(0.8, input.info.enemyImpactTime / 2)) &&
 				!Behaviour.isTowardsOwnGoal(car, impact.getPosition())){
 			if(impactY < -2000) return false;
-//			if(impactY > 4000 && centered) return true;
+			if(impactY > 4000 && !centered) return false;
 		}
 		
 		// Don't own goal.

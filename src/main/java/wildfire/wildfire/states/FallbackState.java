@@ -28,7 +28,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state.
 	 */
-	private static final double dropoff = 0.175, scope = 0.39;
+	private static final double dropoff = 0.176, scope = 0.385;
 
 	/*
 	 * Yeah this one too, I guess.
@@ -119,7 +119,7 @@ public class FallbackState extends State {
 			Vector2 traceGoal = Utils.traceToY(car.position.flatten(), input.info.impact.getPosition().minus(car.position).flatten(), car.sign * Constants.PITCH_LENGTH);
 			boolean shotOpportunity = (traceGoal != null && Math.abs(traceGoal.x) < 1300);
 
-			if(wall || !shotOpportunity ? (Math.abs(dodgeAngle) < 0.3) : (goalAngle < 0.5 || car.sign * input.ball.velocity.y < -500 || car.sign * car.position.y < -3000)){
+			if(Math.abs(input.ball.velocity.z) > 500 || wall || !shotOpportunity ? (Math.abs(dodgeAngle) < 0.3) : (goalAngle < 0.5 || car.sign * input.ball.velocity.y < -500 || car.sign * car.position.y < -3000)){
 				// If the dodge angle is small, make it big - trust me, it works.
 				if(Math.abs(dodgeAngle) < Math.toDegrees(85) && car.onFlatGround){
 					dodgeAngle = Utils.clamp(dodgeAngle * (wall ? 2 : 3.25), -Math.PI, Math.PI);
@@ -128,7 +128,7 @@ public class FallbackState extends State {
 			}
 		}else if(wall && Math.abs(car.position.x) < Constants.GOAL_WIDTH - 50){
 			currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
-		}else if(car.forwardVelocity < -800 && (input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME || Behaviour.dodgeDistance(input.car) < input.info.impactDistanceFlat)){
+		}else if(car.forwardVelocity < -800 && ((input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME && Math.abs(input.info.impactRadians) < 0.15) || Behaviour.dodgeDistance(input.car) < input.info.impactDistanceFlat)){
 			currentAction = new HalfFlipAction(this, input);
 		}else if(input.info.impact.getTime() > (avoidOwnGoal ? 1.45 : 2.25) && !car.isSupersonic 
 				&& car.forwardVelocity > (car.boost < 1 ? 1200 : 1500) && Math.abs(steerImpact) < 0.2){
@@ -157,7 +157,7 @@ public class FallbackState extends State {
 		double throttle = Handling.produceAcceleration(car, acceleration);
 
 //		ControlsOutput controls = Handling.forwardDrive(car, target, false);
-		ControlsOutput controls = (car.forwardVelocity < -200 ? Handling.forwardDrive(car, target, false) : Handling.chaosDrive(car, target, true));
+		ControlsOutput controls = (car.forwardVelocity > (car.boost > 10 ? -350 : -250) ? Handling.forwardDrive(car, target, false) : Handling.chaosDrive(car, target, true));
 		if(controls.getThrottle() < -Constants.COAST_THRESHOLD) return controls;
 		return controls.withThrottle(throttle).withBoost(controls.holdBoost() && Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 1);
 	}
@@ -228,6 +228,7 @@ public class FallbackState extends State {
 				//}
 				return Math.abs(trace.x) > (trace.x * jumpImpactPosition.x < 0 ? Constants.GOAL_WIDTH + 250 : Constants.PITCH_WIDTH - 1200);
 			}else{
+				if(jumpImpact.getTime() < 1.5) return true;
 				return Math.abs(trace.x) < Constants.GOAL_WIDTH + 50 || Math.abs(trace.x) > Constants.PITCH_WIDTH - 1300;
 			}
 		}

@@ -29,7 +29,7 @@ public class KickoffState extends State {
 	 * Used for enabling/disabling the chance of fake kickoffs
 	 */
 	private final boolean fakeKickoffs = false;
-	private final double fakeChance = 0.4;
+	private final double fakeChance = 0.3;
 	
 	private KickoffSpawn spawn;
 	private Random random;
@@ -123,6 +123,9 @@ public class KickoffState extends State {
 					// Line-up like a pro!
 					target = new Vector2(0, car.position.y * 0.15);
 				}else{
+					if(opponentFakingKickoff(input.car, input.cars) && Math.abs(randomOffset.x) < Constants.BALL_RADIUS * 0.8){
+						randomOffset = new Vector2(Constants.BALL_RADIUS * 0.8 * (randomOffset.x == 0 ? car.sign : Math.signum(randomOffset.x)), 0);
+					}
 					target = new Vector2(0, Constants.BALL_RADIUS * -car.sign).plus(randomOffset).scaledToMagnitude(Constants.BALL_RADIUS);
 				}
 				
@@ -195,6 +198,21 @@ public class KickoffState extends State {
 		}
 	}
 	
+	private boolean opponentFakingKickoff(CarData car, CarData[] cars){
+		if(spawn == KickoffSpawn.CORNER) return false;
+		double ourDistance = car.position.magnitude();
+		double closestOpponent = -1;
+		for(CarData opponent : cars){
+			if(opponent == null || opponent.team == car.team) continue;
+			double distance = opponent.position.magnitude();
+			if(closestOpponent < 0 || distance < closestOpponent){
+				closestOpponent = distance;
+			}
+		}
+		if(closestOpponent < 0) return false;
+		return ourDistance * 1.35 < closestOpponent;
+	}
+
 	/**
 	 * Identify whether one of the opponents has a much better position to reach
 	 * the kickoff before any of our teammates.

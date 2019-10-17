@@ -31,16 +31,16 @@ public class DemoState extends State {
 
 	@Override
 	public boolean ready(InfoPacket input){
-		if(Math.abs(input.ball.position.x) < 1200 && !Behaviour.isBallAirborne(input.ball)) return false;
+		if(Math.abs(input.ball.position.x) < 1200 && input.ball.position.z < 1000) return false;
 		if(Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team)) return false;
 		if(!isFastEnough(input.car)) return false;
-		if(Behaviour.hasTeammate(input) ? Math.abs(input.ball.position.y) < 2000 : input.car.sign * input.ball.position.y < 1000) return false;
+		if(Behaviour.hasTeammate(input) ? Math.abs(input.ball.position.y) < 2000 : input.car.sign * input.ball.position.y < -2000) return false;
 
-		if(Behaviour.isTeammateCloser(input)){
-			if(Behaviour.isInCone(input.car, input.info.impact.getPosition())) return false;
-		}else if(Behaviour.correctSideOfTarget(input.car, input.ball.position) && input.car.sign * input.ball.position.y < 4000){
-			return false;
-		}
+//		if(Behaviour.isTeammateCloser(input)){
+//			if(Behaviour.isInCone(input.car, input.info.impact.getPosition())) return false;
+//		}else if(Behaviour.correctSideOfTarget(input.car, input.ball.position) && input.car.sign * input.ball.position.y < 4000){
+//			return false;
+//		}
 
 		target = getTarget(input);
 

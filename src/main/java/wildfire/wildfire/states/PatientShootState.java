@@ -134,9 +134,9 @@ public class PatientShootState extends State {
 				if(Math.abs(displacement) < 200){
 					this.go = true;
 				}else if(this.jump){
-					this.go = (input.info.jumpImpact == null || time < (input.info.jumpImpact.getTime() + 0.18));
+					this.go = (input.info.jumpImpact == null || time < (input.info.jumpImpact.getTime() + 0.21));
 				}else{
-					this.go = (time < (input.info.impact.getTime() + 0.15));
+					this.go = (time < (input.info.impact.getTime() + 0.17));
 				}
 			}
 			if(!this.go){

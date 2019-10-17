@@ -81,7 +81,7 @@ public class InterceptCalculator {
 			Vector2 enemyGoal = Behaviour.getTarget(car, slicePosition.flatten(), -300);
 			double goalAngle = enemyGoal.minus(slicePosition.flatten()).angle(slicePosition.flatten().minus(carPosition));
 			double hitboxDistance = Utils.lerp(hitboxDistanceForward, hitboxDistanceSide, Math.sin(goalAngle));
-			hitboxDistance *= Math.max(0.8, Math.cos(goalAngle) + 0.2);
+			hitboxDistance *= Math.max(0.8, Math.cos(goalAngle) + 0.15);
 			Vector3 impactPosition = slicePosition.plus(slicePosition.flatten().minus(enemyGoal).withZ(0).scaledToMagnitude(hitboxDistance));
 			
 			Vector3 localPosition = Utils.toLocal(car, impactPosition);
