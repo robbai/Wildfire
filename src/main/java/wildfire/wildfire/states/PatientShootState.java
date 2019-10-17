@@ -41,7 +41,7 @@ public class PatientShootState extends State {
 
 		Impact earliestImpact = input.info.impact;
 		if(earliestImpact == null || earliestImpact.getBallPosition().y * car.sign < -3000) return false;
-		if(earliestImpact.getBallPosition().distance(input.car.position) < 250) return false;
+		if(earliestImpact.getBallPosition().distance(input.car.position) < 300) return false;
 
 		// We already have an available shot!
 		if(earliestImpact.getBallPosition().z < MAX_LOW_Z){

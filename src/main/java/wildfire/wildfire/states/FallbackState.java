@@ -9,6 +9,7 @@ import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
 import wildfire.wildfire.Wildfire;
 import wildfire.wildfire.actions.DodgeAction;
+import wildfire.wildfire.actions.HalfFlipAction;
 import wildfire.wildfire.actions.HopAction;
 import wildfire.wildfire.actions.RecoveryAction;
 import wildfire.wildfire.actions.SmartDodgeAction;
@@ -27,7 +28,7 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state.
 	 */
-	private static final double dropoff = 0.18, scope = 0.38;
+	private static final double dropoff = 0.175, scope = 0.39;
 
 	/*
 	 * Yeah this one too, I guess.
@@ -108,7 +109,9 @@ public class FallbackState extends State {
 		/*
 		 * Actions
 		 */
-		if(input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME && velocityTowardsImpact > (wall ? 900 : 1200) && Math.abs(car.forwardVelocity) > 0.95){
+		if(Behaviour.isCarAirborne(car)){
+			currentAction = new RecoveryAction(this, input.elapsedSeconds);
+		}else if(input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME && velocityTowardsImpact > (wall ? 900 : 1200) && Math.abs(car.forwardVelocity) > 0.95){
 			double dodgeAngle = steerImpact;
 			double goalAngle = Vector2.angle(input.info.impact.getPosition().minus(car.position).flatten(), goal.minus(car.position.flatten()));
 
@@ -123,10 +126,10 @@ public class FallbackState extends State {
 				}
 				currentAction = new DodgeAction(this, dodgeAngle, input);
 			}
-		}else if(Behaviour.isCarAirborne(car)){
-			currentAction = new RecoveryAction(this, input.elapsedSeconds);
 		}else if(wall && Math.abs(car.position.x) < Constants.GOAL_WIDTH - 50){
 			currentAction = new HopAction(this, input, input.info.impact.getPosition().flatten());
+		}else if(car.forwardVelocity < -800 && (input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME || Behaviour.dodgeDistance(input.car) < input.info.impactDistanceFlat)){
+			currentAction = new HalfFlipAction(this, input);
 		}else if(input.info.impact.getTime() > (avoidOwnGoal ? 1.45 : 2.25) && !car.isSupersonic 
 				&& car.forwardVelocity > (car.boost < 1 ? 1200 : 1500) && Math.abs(steerImpact) < 0.2){
 			// Front flip for speed.
@@ -145,7 +148,7 @@ public class FallbackState extends State {
 		 */
 		double radians = Handling.aim(car, target);
 
-		boolean movingSlow = (car.forwardVelocity < 900 && car.forwardVelocity > -900);
+		boolean movingSlow = (car.forwardVelocityAbs < 900);
 		boolean insideTurningRadius = (Handling.insideTurningRadius(car, target) && Math.abs(radians) > 0.24);
 		if(insideTurningRadius) wildfire.renderer.drawTurningRadius(Color.WHITE, car);
 
@@ -153,9 +156,10 @@ public class FallbackState extends State {
 		double acceleration = (maxVelocity - car.forwardVelocity) / 0.05;
 		double throttle = Handling.produceAcceleration(car, acceleration);
 
-		ControlsOutput controls = Handling.forwardDrive(car, target);
-		if(controls.getThrottle() < 0) return controls;
-		return controls.withThrottle(throttle).withBoost(controls.holdBoost() && Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 0.9);
+//		ControlsOutput controls = Handling.forwardDrive(car, target, false);
+		ControlsOutput controls = Handling.chaosDrive(car, target, true);
+		if(controls.getThrottle() < -Constants.COAST_THRESHOLD) return controls;
+		return controls.withThrottle(throttle).withBoost(controls.holdBoost() && Math.abs(radians) < 0.2 && !car.isSupersonic && throttle > 1);
 	}
 
 	/**

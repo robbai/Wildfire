@@ -73,11 +73,11 @@ public class Handling {
 		return chaosDrive(car, destination.withZ(Constants.RIPPER_RESTING), rush);
 	}
 	
-	public static ControlsOutput forwardDrive(CarData car, Vector3 destination){
+	public static ControlsOutput forwardDrive(CarData car, Vector3 destination, boolean powerTurn){
 		// Power-turn.
-		if(car.forwardVelocity < 450){
+		if(powerTurn && car.forwardVelocity < 450){
 			double angle = Handling.aim(car, destination);
-			if(Math.abs(angle) > Math.toRadians(car.forwardVelocity < 0 ? 70 : 90)){
+			if(Math.abs(angle) > Math.toRadians(80)){
 				angle = Utils.invertAim(angle);
 				return new ControlsOutput().withBoost(false).withThrottle(-1).withSlide(true).withSteer(-Math.signum(angle));
 			}
@@ -85,6 +85,10 @@ public class Handling {
 		
 		ControlsOutput controls = steering(car, destination);
 		return controls.withThrottle(1);
+	}
+	
+	public static ControlsOutput forwardDrive(CarData car, Vector3 destination){
+		return forwardDrive(car, destination, true);
 	}
 	
 	public static ControlsOutput forwardDrive(CarData car, Vector2 destination){

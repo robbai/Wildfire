@@ -25,7 +25,7 @@ public class PathState extends State {
 	 */
 
 	private static final OptionalDouble maxFinalVelocity = /*OptionalDouble.of(1650);*/ OptionalDouble.empty();
-	private static final boolean dodge = true;
+	private static final boolean bisect = false, dodge = true;
 
 	private boolean force;
 	private Vector3 slicePosition;
@@ -61,32 +61,36 @@ public class PathState extends State {
 		if(high <= low) return false;
 
 		CompositeArc[] results = new CompositeArc[high - low + 1];
-		
+
 		Vector2 enemyGoal = Constants.enemyGoal(input.car);
 
 		// Generate the path.
 		while(low < high){
-			int middle = Math.floorDiv(low + high, 2); 
+			int index = (bisect ? Math.floorDiv(low + high, 2) : low);
 
-			rlbot.flat.PredictionSlice rawSlice = wildfire.ballPrediction.slices(middle);
+			rlbot.flat.PredictionSlice rawSlice = wildfire.ballPrediction.slices(index);
 
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
 			double time = (rawSlice.gameSeconds() - input.elapsedSeconds);
 			time -= 4D / 120;
 
-//			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -350);
+			//			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -350);
 
 			Vector2 ballPosition = slicePosition.flatten();
 			ballPosition = offsetBall(ballPosition, enemyGoal);
 
 			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, input.car.forwardVelocityAbs * 0.1, Constants.RIPPER.y * (dodge ? 1.1 : 0.75));
-			results[middle - startLow] = compositeArc;
+			results[index - startLow] = compositeArc;
 
 			if(compositeArc.minTravelTime(input.car, true, true) > time){
 				//			if(compositeArc.getLength() / input.car.forwardVelocityAbs > time){
-				low = middle + 1;
+				low = index + 1;
 			}else{
-				high = middle;
+				if(bisect){
+					high = index;
+				}else{
+					break;
+				}
 			}
 		}
 
@@ -157,7 +161,7 @@ public class PathState extends State {
 			if(Behaviour.isInCone(input.car, input.info.impact.getPosition(), -50)) return false;
 		}
 		//		return input.car.forwardVelocity > (input.car.boost < 5 ? 1350 : 1550);
-		return input.car.forwardVelocity > 900;
+		return input.car.forwardVelocity > 1100;
 		//		return true;
 
 		//		if(Behaviour.isBallAirborne(input.ball) || Behaviour.isKickoff(input) || input.ball.velocity.flatten().magnitude() > 3200

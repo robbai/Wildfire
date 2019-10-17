@@ -2,7 +2,6 @@ package wildfire.wildfire.states;
 
 import java.awt.Color;
 import java.awt.Point;
-import java.util.ArrayList;
 
 import rlbot.flat.QuickChatSelection;
 import wildfire.boost.BoostManager;
