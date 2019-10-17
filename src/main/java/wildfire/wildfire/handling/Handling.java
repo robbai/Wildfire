@@ -134,7 +134,7 @@ public class Handling {
 		}
 		
 		if(Constants.COAST_ACCELERATION > Math.abs(throttleAcceleration)){
-			return Constants.COAST_THRESHOLD;
+			return Constants.COAST_THRESHOLD + 0.001;
 		}
 		return 0;
 	}

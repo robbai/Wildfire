@@ -27,12 +27,12 @@ public class FallbackState extends State {
 	/*
 	 * These two mystical values hold the secrets to this state.
 	 */
-	private static final double dropoff = 0.18, scope = 0.39;
+	private static final double dropoff = 0.2, scope = 0.43;
 
 	/*
 	 * Yeah this one too, I guess.
 	 */
-	private static final int targetPly = 7;
+	private static final int targetPly = 6;
 
 	public FallbackState(Wildfire wildfire){
 		super("Fallback", wildfire);

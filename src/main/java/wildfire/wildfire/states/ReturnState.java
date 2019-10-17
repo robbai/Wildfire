@@ -70,21 +70,21 @@ public class ReturnState extends State {
 			return false;
 		}
 
-//		if(centered){
-//			if(impact.getTime() < input.info.enemyImpactTime - (opponentBehind ? 0.15 : 0.45)){
-//				return !Behaviour.correctSideOfTarget(car, impact.getBallPosition());
-//			}
-//		}
-//		else{
-//			if(car.sign * car.position.y > Math.max(4000, car.sign * impact.getPosition().y)){
-//				return true;
-//			}
-//		}
+		if(centered){
+			if(impact.getTime() < input.info.enemyImpactTime - (opponentBehind ? 0.15 : 0.45)){
+				return !Behaviour.correctSideOfTarget(car, impact.getBallPosition());
+			}
+		}
+		else{
+			if(car.sign * car.position.y > Math.max(4000, car.sign * impact.getPosition().y)){
+				return true;
+			}
+		}
 		
 		// Check if we have a shot opportunity.
 		if(impact.getPosition().distanceFlat(car.position) < 3000){
 			if(impact.getTime() < input.info.enemyImpactTime + 0.1){
-				if(Behaviour.isInCone(car, impact.getPosition(), 300)) return false;
+				if(Behaviour.isInCone(car, impact.getPosition(), 200)) return false;
 			}
 		}
 		
@@ -109,13 +109,13 @@ public class ReturnState extends State {
 			}
 		}
 
-//		if(centered){
-//			if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
-//		}
+		if(centered){
+			if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
+		}
 //		return car.sign * car.position.y > -3000/* || impact.getTime() > 1.4*/;
 		
 		if(!opponentBehind || Behaviour.closestOpponentDistance(input, input.ball.position) > 3400) return false;
-		return car.sign * car.position.y > 3000 && impact.getTime() > 1.3;
+		return car.sign * car.position.y > 3000/* && impact.getTime() > 1.3*/;
 	}
 	
 	@Override
