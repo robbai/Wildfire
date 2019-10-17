@@ -110,12 +110,14 @@ public class FollowDiscreteMechanic extends Mechanic {
 		 */
 		double radians = Handling.aim(input.car, target);
 		
-		if(Math.abs(radians) < 0.5/* && targetAcceleration > 0*/ && dodge){
+		if(Math.abs(radians) < Math.toRadians(55)/* && targetAcceleration > 0*/ && dodge){
 			// Low time results in a chip shot, high time results in a low shot
-			boolean dodgeNow = (updatedTimeLeft < Behaviour.IMPACT_DODGE_TIME - 0.1);
+			boolean dodgeNow = (updatedTimeLeft < Behaviour.IMPACT_DODGE_TIME - 0.05);
 			if(dodgeNow){
-//				double endRadians = Handling.aim(input.car, curve.T(1));
-				return this.startAction(new DodgeAction(this.state, input.info.impactRadians * 3, input), input);
+				double dodgeRadians = Handling.aim(input.car, curve.T(1)) * 2;
+//				double dodgeRadians = input.info.impactRadians * 2;
+//				double dodgeRadians = radians * 2;
+				return this.startAction(new DodgeAction(this.state, dodgeRadians, input), input);
 			}
 		}
 		
@@ -138,7 +140,11 @@ public class FollowDiscreteMechanic extends Mechanic {
 		if(distanceError > 80) return true;
 		
 		double carS = curve.findClosestS(car.position.flatten(), false);
-//		return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 8) / curve.getDistance() >= 1;
+		
+		if(dodge){
+			return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 8) / curve.getDistance() >= 1;
+		}
+		
 		return getTarget(carS, car.forwardVelocityAbs) == null;
 	}
 

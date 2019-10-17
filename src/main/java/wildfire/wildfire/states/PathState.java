@@ -72,14 +72,14 @@ public class PathState extends State {
 
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
 			double time = (rawSlice.gameSeconds() - input.elapsedSeconds);
-			time -= 4D / 120;
+			time -= 2D / 120;
 
 //			Vector2 enemyGoal = Behaviour.getTarget(input.car, slicePosition.flatten(), -350);
 
 			Vector2 ballPosition = slicePosition.flatten();
 			ballPosition = offsetBall(ballPosition, enemyGoal);
 
-			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, input.car.forwardVelocityAbs * 0.1, Constants.RIPPER.y * (dodge ? 1.2 : 0.75));
+			CompositeArc compositeArc = CompositeArc.create(input.car, ballPosition, enemyGoal, finalVelocity, input.car.forwardVelocityAbs * 0.1, Constants.RIPPER.y * (dodge ? 1.05 : 0.75));
 			results[middle - startLow] = compositeArc;
 
 			if(compositeArc.minTravelTime(input.car, true, true) > time){
@@ -97,7 +97,7 @@ public class PathState extends State {
 		// Extra conditions.
 		double pathTime = (wildfire.ballPrediction.slices(low).gameSeconds() - input.elapsedSeconds);
 		Vector3 slicePosition = new Vector3(wildfire.ballPrediction.slices(low).physics().location());
-		if(slicePosition.z > Constants.BALL_RADIUS + 45) return false;
+		if(slicePosition.z > Constants.BALL_RADIUS + 55) return false;
 		if(curveOutOfBounds(discreteCurve)) return false;
 
 		//		System.out.println("startLow = " + startLow + ", low = " + low + ", high = " + high + ", mid = " + Math.floorDiv(low + high, 2));
@@ -105,7 +105,7 @@ public class PathState extends State {
 		// Start the mechanic!
 		this.slicePosition = slicePosition;
 		this.globalPathTime = (pathTime + input.elapsedSeconds);
-		FollowDiscreteMechanic follow = new FollowDiscreteMechanic(this, discreteCurve, input.elapsedSeconds, dodge, pathTime);
+		FollowDiscreteMechanic follow = new FollowDiscreteMechanic(this, discreteCurve, input.elapsedSeconds, dodge, pathTime - 1D / 120);
 		follow.linearTarget = true;
 		follow.renderPredictionToTargetTime = true;
 		this.currentMechanic = follow;
@@ -122,10 +122,12 @@ public class PathState extends State {
 	}
 
 	public static boolean curveOutOfBounds(DiscreteCurve discreteCurve){
+		final double border = 250;
 		Vector2[] points = discreteCurve.getPoints();
 		for(int i = 0; i < points.length; i += 5){
 			if(Math.abs(points[i].x) < Constants.GOAL_WIDTH) continue;
-			if(points[i].isOutOfBounds()) return true;
+			if(Math.abs(points[i].x) > Constants.PITCH_WIDTH - border) return true;
+			if(Math.abs(points[i].y) > Constants.PITCH_LENGTH - border) return true;
 		}
 		return false;
 	}

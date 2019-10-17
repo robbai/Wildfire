@@ -102,7 +102,7 @@ public class InterceptCalculator {
 			double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
 //			double acceleration = ((finalVelocity - initialVelocity) / driveTime);
 			
-			if(finalVelocity < DrivePhysics.maxVelocity(initialVelocity, car.boost, time - 2D / 120)){
+			if(finalVelocity < DrivePhysics.maxVelocity(initialVelocity, car.boost, time)){
 //				Vector3 impactPosition = slicePosition.plus(car.position.minus(slicePosition).scaledToMagnitude(Constants.BALLRADIUS));
 //				Vector3 impactPosition = slicePosition.plus(slicePosition.minus(Constants.enemyGoal(car).withZ(slicePosition.z)).scaledToMagnitude(Constants.BALL_RADIUS + SmartDodgeAction.dodgeDistance * 0.4));
 				return new Impact(impactPosition, rawSlice, time);

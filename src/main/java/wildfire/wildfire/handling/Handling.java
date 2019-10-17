@@ -153,12 +153,12 @@ public class Handling {
 		double fullDistance = carPosition.distanceFlat(ballPosition);
 		double initialVelocity = car.velocityDir(ballPosition.minus(carPosition).flatten());
 		double finalVelocity = (2 * fullDistance - driveTime * initialVelocity) / (driveTime + 2 * peakTime);
-		double driveDistance = (fullDistance - finalVelocity * peakTime);
+//		double driveDistance = (fullDistance - finalVelocity * peakTime);
 		double acceleration = ((finalVelocity - initialVelocity) / driveTime);
-		double maxVelForTurn = DrivePhysics.maxVelForTurn(car, ballPosition);
-		if(driveTime > 2 && Math.abs(finalVelocity) > maxVelForTurn){
-			acceleration = (Math.copySign(maxVelForTurn, finalVelocity) - initialVelocity) / 0.1;
-		}
+//		double maxVelForTurn = DrivePhysics.maxVelForTurn(car, ballPosition);
+//		if(driveTime > 2 && Math.abs(finalVelocity) > maxVelForTurn){
+//			acceleration = (Math.copySign(maxVelForTurn, finalVelocity) - initialVelocity) / 0.1;
+//		}
 		
 		// Render.
 		if(renderer != null){
@@ -178,7 +178,7 @@ public class Handling {
 		if(fullDistance > 0/* && Behaviour.correctSideOfTarget(car, ballPosition)*/){
 			double maxVel = DrivePhysics.maxVelocity(Math.max(0, driveTime - 3D / 120), 0, car.boost);
 			if(maxVel > finalVelocity){
-				acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(250, 550, finalVelocity / Constants.MAX_CAR_VELOCITY));
+				acceleration /= Math.max(1, (maxVel - finalVelocity) / Utils.lerp(350, 750, finalVelocity / Constants.MAX_CAR_VELOCITY));
 //				acceleration = -initialVelocity / 0.15;
 			}
 		}
@@ -202,7 +202,7 @@ public class Handling {
 	
 	public static ControlsOutput turnOnSpot(CarData car, Vector3 destination){
 		ControlsOutput controls = forwardDrive(car, destination);
-		double targetVelocity = Math.abs(controls.getSteer()) * 500;
+		double targetVelocity = Math.abs(controls.getSteer()) * 400;
 		double acceleration = (targetVelocity - car.forwardVelocity) / 0.05;
 		double throttle = produceAcceleration(car, acceleration);
 		return controls.withThrottle(throttle).withBoost(throttle > 1).withSlide(Math.abs(controls.getSteer()) < 0.5);
