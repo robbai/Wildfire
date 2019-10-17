@@ -43,7 +43,8 @@ public class MixerState extends State {
 		
 		// We must be solidly behind the ball.
 		if(input.info.impact.getTime() > 2.5 || Behaviour.isTeammateCloser(input)) return false;
-		if(Behaviour.isCarAirborne(input.car) || Behaviour.isBallAirborne(input.ball)) return false;
+		if(!input.car.onFlatGround) return false;
+		if(input.info.impact.getBallPosition().z > Constants.BALL_RADIUS + 60) return false;
 		double yAngle = teamSignVec.angle(input.car.position.minus(impactLocation).flatten());
 		if(yAngle > Math.toRadians(60)) return false;
 		
@@ -55,8 +56,15 @@ public class MixerState extends State {
 //				&& Math.abs(input.info.impact.getPosition().x) < Constants.PITCH_WIDTH - 1100) return false;
 		
 		// There must be a goalkeeper.
-		CarData goalkeeper = Behaviour.getGoalkeeper(input.cars, 1 - input.car.team, maxGoalArea);
-		return goalkeeper != null;
+//		CarData goalkeeper = Behaviour.getGoalkeeper(input.cars, 1 - input.car.team, maxGoalArea);
+//		return goalkeeper != null;
+		for(CarData car : input.cars){
+			if(car == null || car.team == input.car.team || car.isDemolished) continue;
+			if(Behaviour.isInCone(input.car, car.position, 100)){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

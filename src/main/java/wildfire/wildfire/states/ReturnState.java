@@ -51,7 +51,7 @@ public class ReturnState extends State {
 		double impactY = (car.sign * car.position.y);
 		
 		// Just hit it instead.
-		if((impact.getPosition().distanceFlat(car.position) < Math.max(1200, car.velocity.magnitude() * 0.75) || impact.getTime() < 0.8) &&
+		if((impact.getPosition().distanceFlat(car.position) < Math.max(1300, car.forwardVelocityAbs * 0.8) || impact.getTime() < Math.max(0.8, input.info.enemyImpactTime / 2)) &&
 				!Behaviour.isTowardsOwnGoal(car, impact.getPosition())){
 			if(impactY < -2000) return false;
 //			if(impactY > 4000 && centered) return true;
@@ -88,16 +88,16 @@ public class ReturnState extends State {
 			}
 		}
 		
-		if(!centered && impactY > (input.info.enemyImpactTime > 3 ? -1000 : 1200)){
-			Vector2 teamSignVec = new Vector2(0, -car.sign);
-			double yAngle = teamSignVec.angle(car.position.minus(impact.getPosition()).flatten());
-			if(yAngle > Math.toRadians(70)){
-				return true;
-			}
-//			else{
-//				return false;
+//		if(!centered && impactY > (input.info.enemyImpactTime > 3 ? -1000 : 1200)){
+//			Vector2 teamSignVec = new Vector2(0, -car.sign);
+//			double yAngle = teamSignVec.angle(car.position.minus(impact.getPosition()).flatten());
+//			if(yAngle > Math.toRadians(70)){
+//				return true;
 //			}
-		}
+////			else{
+////				return false;
+////			}
+//		}
 		
 		Vector2 homeGoal = Constants.homeGoal(car.team);
 		if(car.position.distanceFlat(homeGoal) < 2800){
