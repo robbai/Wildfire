@@ -3,6 +3,7 @@ package wildfire.wildfire;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Random;
 
 import rlbot.Bot;
@@ -67,8 +68,9 @@ public class Wildfire implements Bot {
 	public Info info;
 	public WRenderer renderer;
 	public BallPrediction ballPrediction;
-	
-	private ArrayList<GameTickPacket> gameTickPackets = new ArrayList<GameTickPacket>();
+
+	private static final int GAME_PACKET_HISTORY = 600;
+	private LinkedList<GameTickPacket> gameTickPackets = new LinkedList<>();
 
     public Wildfire(int playerIndex, int team, boolean test){
         this.playerIndex = playerIndex;
@@ -235,8 +237,8 @@ public class Wildfire implements Bot {
 	}
 
 	@Override
-    public ControllerState processInput(GameTickPacket packet){
-		if(this.gameTickPackets.size() > 36000) this.gameTickPackets.clear();
+	public ControllerState processInput(GameTickPacket packet){
+		while (this.gameTickPackets.size() > GAME_PACKET_HISTORY) this.gameTickPackets.removeFirst();
 		if(!packet.gameInfo().isKickoffPause() && packet.gameInfo().isRoundActive()) this.gameTickPackets.add(packet);
 		
         if(packet.playersLength() <= playerIndex || packet.ball() == null) return new ControlsOutput().withNone();
@@ -340,15 +342,14 @@ public class Wildfire implements Bot {
 		if(this.gameTickPackets.isEmpty()) return null;
 		
 		double currentSecondsElapsed = this.gameTickPackets.get(this.gameTickPackets.size() - 1).gameInfo().secondsElapsed();
-		
-		int i;
-		for(i = (this.gameTickPackets.size() - 1); i >= 0; i--){
+
+		for(int i = (this.gameTickPackets.size() - 1); i >= 0; i--){
 			GameTickPacket gameTickPacket = this.gameTickPackets.get(i);
 			if(currentSecondsElapsed - gameTickPacket.gameInfo().secondsElapsed() >= seconds){
-				break;
+				return gameTickPacket;
 			}
 		}
-		return this.gameTickPackets.get(i);
+		return gameTickPackets.getFirst();
 	}
 
 }
