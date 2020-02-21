@@ -13,7 +13,7 @@ public class PythonInterface extends SocketServer {
     }
 
     protected Bot initBot(int index, String botType, int team){
-    	Bot bot = (botType.toLowerCase().contains("grabby") ? new Grabby(index) : new Wildfire(index, team, botType.toLowerCase().contains("test")));
+    	Bot bot = (botType.toLowerCase().contains("grabby") ? new Grabby(index) : new Wildfire(index, team, botType.toLowerCase().contains("test"), Main.getArguments().contains("record-packets")));
     	System.out.println("Initialising " + bot.getClass().getSimpleName() + " [index = " + index + ", name = '" + botType + "', team = " + team + "]");
         return bot;
     }

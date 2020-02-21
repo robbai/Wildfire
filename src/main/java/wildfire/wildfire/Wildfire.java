@@ -71,13 +71,15 @@ public class Wildfire implements Bot {
 
 	private static final int GAME_PACKET_HISTORY = 600;
 	private LinkedList<GameTickPacket> gameTickPackets = new LinkedList<>();
+	private boolean recordPackets;
 
-    public Wildfire(int playerIndex, int team, boolean test){
+    public Wildfire(int playerIndex, int team, boolean test, boolean recordPackets){
         this.playerIndex = playerIndex;
         this.team = team;
         this.test = test;
         this.stateSetting = new StateSettingManager(this);
         this.unlimitedBoost = false;
+        this.recordPackets = recordPackets;
         this.info = new Info(this);
         
         // Human thread.
@@ -238,8 +240,10 @@ public class Wildfire implements Bot {
 
 	@Override
 	public ControllerState processInput(GameTickPacket packet){
-		while (this.gameTickPackets.size() > GAME_PACKET_HISTORY) this.gameTickPackets.removeFirst();
-		if(!packet.gameInfo().isKickoffPause() && packet.gameInfo().isRoundActive()) this.gameTickPackets.add(packet);
+		if(this.recordPackets){
+			while (this.gameTickPackets.size() > GAME_PACKET_HISTORY) this.gameTickPackets.removeFirst();
+			if(!packet.gameInfo().isKickoffPause() && packet.gameInfo().isRoundActive()) this.gameTickPackets.add(packet);
+		}
 		
         if(packet.playersLength() <= playerIndex || packet.ball() == null) return new ControlsOutput().withNone();
         
