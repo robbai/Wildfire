@@ -1,9 +1,6 @@
-build
-__pycache__
-
-Template/
-Wildfire (Wintertide v0.25)/
-Wildfire (S1W1)/
-Wildfire (Lightfall)/
-
+*/
 *.zip
+
+!Wildfire (Snowbot Showdown).zip
+!Wildfire (Wintertide).zip
+!Wildfire (Lightfall Fix).zip
