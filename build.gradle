@@ -6,9 +6,22 @@ apply plugin: 'application'
 
 sourceCompatibility = 1.8
 
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+    	// Spotless.
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:3.27.2"
+    }
+}
+
 repositories {
+    mavenCentral()
     jcenter()
-    
+
     // Jitpack (used to pull Jamepad)
     maven { url "https://jitpack.io" }
 }
@@ -19,6 +32,16 @@ mainClassName = 'wildfire.Main'
 // The end result is that the interface dll will be available for loading.
 def dllDirectory = 'build/dll'
 applicationDefaultJvmArgs = ["-Djna.library.path=" + dllDirectory]
+
+// Spotless.
+apply plugin: com.diffplug.gradle.spotless.SpotlessPlugin
+spotless {
+    java {
+        importOrderFile './spotless/importorder.importorder'  // An import ordering file, exported from Eclipse
+        removeUnusedImports()                                 // Removes any unused imports
+        eclipse().configFile './spotless/format.xml'          // XML file dumped out by the Eclipse formatter
+    }
+}
 
 dependencies {
     // Fetch the framework jar file
