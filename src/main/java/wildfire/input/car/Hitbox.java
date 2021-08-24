@@ -9,12 +9,14 @@ import wildfire.wildfire.utils.Utils;
 public class Hitbox extends BoxShape {
 
 	/*
-	 * https://discordapp.com/channels/348658686962696195/348661571297214465/617774276879056919
+	 * https://discordapp.com/channels/348658686962696195/348661571297214465/
+	 * 617774276879056919
 	 */
 
-	private static final double[] lengths = new double[] {118.01, 127.93, 128.82, 131.49, 127.02};
-	private static final Vector3[] offsets = new Vector3[] {new Vector3(0, 13.88, 20.75), new Vector3(0, 9.00, 15.75), new Vector3(0, 9.01, 12.09), new Vector3(0, 12.50, 11.75), new Vector3(0, 13.88, 20.75)};
-	private static final double[] restingHeights = new double[] {17.00, 17.05, 18.65, 18.33, 17.01};
+	private static final double[] lengths = new double[] { 118.01, 127.93, 128.82, 131.49, 127.02 };
+	private static final Vector3[] offsets = new Vector3[] { new Vector3(0, 13.88, 20.75), new Vector3(0, 9.00, 15.75),
+			new Vector3(0, 9.01, 12.09), new Vector3(0, 12.50, 11.75), new Vector3(0, 13.88, 20.75) };
+	private static final double[] restingHeights = new double[] { 17.00, 17.05, 18.65, 18.33, 17.01 };
 
 	public final double restingHeight;
 	public final Vector3 offset;
@@ -65,7 +67,8 @@ public class Hitbox extends BoxShape {
 	}
 
 	/*
-	 * https://samuelpmish.github.io/notes/RocketLeague/car_ball_interaction/#hitboxes-and-collision-detection
+	 * https://samuelpmish.github.io/notes/RocketLeague/car_ball_interaction/#
+	 * hitboxes-and-collision-detection
 	 */
 	public boolean intersects(SphereShape sphere){
 		Vector3 point = nearestPoint(sphere.position);
@@ -75,16 +78,14 @@ public class Hitbox extends BoxShape {
 	private Vector3 nearestPoint(Vector3 vec){
 		// Transform to local coordinates.
 		Vector3 local = Utils.toLocal(this.position, this.orientation, vec);
-		
+
 		local = local.minus(this.offset);
 
 		// Clamp the local coordinates.
-		Vector3 closestLocal = new Vector3(
-				Utils.clamp(local.x, -this.width / 2, this.width / 2),
+		Vector3 closestLocal = new Vector3(Utils.clamp(local.x, -this.width / 2, this.width / 2),
 				Utils.clamp(local.y, -this.length / 2, this.length / 2),
-				Utils.clamp(local.z, -this.height / 2, this.height / 2)
-				);
-		
+				Utils.clamp(local.z, -this.height / 2, this.height / 2));
+
 		closestLocal = closestLocal.plus(this.offset);
 
 		// Transform back to global coordinates.

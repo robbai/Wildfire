@@ -14,12 +14,14 @@ public class JumpPhysics {
 	public static final double maxPeakTime = getPeakTime(maxPressTime);
 
 	public static OptionalDouble getTimeToZ(double z, double press){
-		double velocity = Constants.JUMP_VELOCITY, acceleration = (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY);
+		double velocity = Constants.JUMP_VELOCITY,
+				acceleration = (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY);
 
 		double displacement = (velocity * press + 0.5 * acceleration * Math.pow(press, 2));
 		if(displacement > z){
 			double time = ((Math.sqrt(2 * acceleration * z + Math.pow(velocity, 2)) - velocity) / acceleration);
-			if(time < 0) return OptionalDouble.empty();
+			if(time < 0)
+				return OptionalDouble.empty();
 			return OptionalDouble.of(time);
 		}
 
@@ -27,18 +29,19 @@ public class JumpPhysics {
 		acceleration = -Constants.GRAVITY;
 
 		double square = (2 * acceleration * (z - displacement) + Math.pow(velocity, 2));
-		if(square < 0) return OptionalDouble.empty();
-		double time = press + 
-				((Math.sqrt(square) - velocity) / acceleration);
+		if(square < 0)
+			return OptionalDouble.empty();
+		double time = press + ((Math.sqrt(square) - velocity) / acceleration);
 		return OptionalDouble.of(time);
 	}
 
-	//	private static double clampPressTime(double pressTime){
-	//		return Utils.clamp(pressTime, tick, maxPressTime);
-	//	}
+	// private static double clampPressTime(double pressTime){
+	// return Utils.clamp(pressTime, tick, maxPressTime);
+	// }
 
 	public static double getMaxHeight(double press){
-		double velocity = Constants.JUMP_VELOCITY, acceleration = (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY);
+		double velocity = Constants.JUMP_VELOCITY,
+				acceleration = (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY);
 
 		double displacement = (velocity * press + 0.5 * acceleration * Math.pow(press, 2));
 
@@ -56,23 +59,28 @@ public class JumpPhysics {
 
 		double pressTime = ((Math.sqrt(g * (g - a) * (2 * a * z + Math.pow(u, 2))) - a * u + g * u) / (a * (a - g)));
 
-		if(pressTime < 0 || pressTime > maxPressTime) return OptionalDouble.empty();
+		if(pressTime < 0 || pressTime > maxPressTime)
+			return OptionalDouble.empty();
 		return OptionalDouble.of(pressTime);
 	}
 
 	public static OptionalDouble getPressForTimeToZ(double z, double time){
-		if(z < 0) return OptionalDouble.empty();
+		if(z < 0)
+			return OptionalDouble.empty();
 
 		final double epsilon = 0.001;
 
 		double low = tick, high = maxPressTime;
 
 		OptionalDouble highTime = getTimeToZ(z, high);
-		if(!highTime.isPresent()) return OptionalDouble.empty();
-		if(Math.abs(highTime.getAsDouble() - time) < epsilon) return OptionalDouble.of(low);
+		if(!highTime.isPresent())
+			return OptionalDouble.empty();
+		if(Math.abs(highTime.getAsDouble() - time) < epsilon)
+			return OptionalDouble.of(low);
 
-		//		OptionalDouble lowTime = getTimeToZ(z, low);
-		//		if(lowTime.isPresent() && Math.abs(lowTime.getAsDouble() - time) < epsilon) return OptionalDouble.of(low);
+		// OptionalDouble lowTime = getTimeToZ(z, low);
+		// if(lowTime.isPresent() && Math.abs(lowTime.getAsDouble() - time) < epsilon)
+		// return OptionalDouble.of(low);
 
 		while(low + epsilon < high){
 			double mid = ((low + high) / 2);
@@ -91,7 +99,8 @@ public class JumpPhysics {
 
 	public static double getPeakTimeZ(double z){
 		OptionalDouble press = getPressForPeak(z);
-		if(!press.isPresent()) press = OptionalDouble.of(z > 0 ? maxPressTime : 0);
+		if(!press.isPresent())
+			press = OptionalDouble.of(z > 0 ? maxPressTime : 0);
 		return getPeakTime(press.getAsDouble());
 	}
 
@@ -100,7 +109,8 @@ public class JumpPhysics {
 	}
 
 	public static double getPeakTime(double press){
-		return press + (Constants.JUMP_VELOCITY + (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY) * press) / Constants.GRAVITY;
+		return press + (Constants.JUMP_VELOCITY + (Constants.JUMP_HOLD_ACCELERATION - Constants.GRAVITY) * press)
+				/ Constants.GRAVITY;
 	}
 
 	public static Vector3 simCar(CarData car, double press, double time){
@@ -114,10 +124,11 @@ public class JumpPhysics {
 
 		double t = 0;
 		while(t < time){
-			if(t <= press) velocity = velocity.plus(jumpAcc);
+			if(t <= press)
+				velocity = velocity.plus(jumpAcc);
 			velocity = velocity.plus(gravity);
 
-			//			if(velocity.z < 0) break;
+			// if(velocity.z < 0) break;
 
 			position = position.plus(velocity.scaled(step));
 

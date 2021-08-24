@@ -13,7 +13,7 @@ import wildfire.wildfire.states.FallbackState;
 import wildfire.wildfire.utils.Behaviour;
 
 public class TestState extends FallbackState {
-	
+
 	private float randomTime;
 
 	/*
@@ -21,7 +21,8 @@ public class TestState extends FallbackState {
 	 */
 
 	public TestState(Wildfire wildfire){
-		super(/**"Test", */wildfire);
+		super(/** "Test", */
+				wildfire);
 	}
 
 	@Override
@@ -34,11 +35,12 @@ public class TestState extends FallbackState {
 	@Override
 	public ControlsOutput getOutput(InfoPacket input){
 		CarData car = input.car;
-		
+
 		Vector3 target = (input.info.impact == null ? input.ball.position : input.info.impact.getPosition());
-		
-		if(!car.hasWheelContact) this.startAction(new RecoveryAction(this, car.elapsedSeconds), input);
-		
+
+		if(!car.hasWheelContact)
+			this.startAction(new RecoveryAction(this, car.elapsedSeconds), input);
+
 		if(car.onFlatGround && Math.abs(car.angularVelocity.yaw) < 1){
 			if(car.forwardVelocity < -700){
 				HalfFlipAction halfFlip = new HalfFlipAction(this, input);
@@ -46,7 +48,8 @@ public class TestState extends FallbackState {
 					return this.startAction(halfFlip, input);
 				}
 			}else if(car.forwardVelocity > 1200 && car.forwardVelocity < 2000){
-				if((Behaviour.dodgeDistance(car) < target.distance(car.position) && car.boost < 1) || input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME){
+				if((Behaviour.dodgeDistance(car) < target.distance(car.position) && car.boost < 1)
+						|| input.info.impact.getTime() < Behaviour.IMPACT_DODGE_TIME){
 					DodgeAction dodge = new DodgeAction(this, Handling.aim(car, target), input);
 					if(!dodge.failed){
 						return this.startAction(dodge, input);
@@ -54,12 +57,13 @@ public class TestState extends FallbackState {
 				}
 			}
 		}
-		
-		if(((input.ball.hasBeenTouched && input.car.elapsedSeconds - input.ball.touch.gameSeconds > 20) || !input.ball.hasBeenTouched) && input.car.elapsedSeconds - this.randomTime > 20){
+
+		if(((input.ball.hasBeenTouched && input.car.elapsedSeconds - input.ball.touch.gameSeconds > 20)
+				|| !input.ball.hasBeenTouched) && input.car.elapsedSeconds - this.randomTime > 20){
 			this.randomTime = input.car.elapsedSeconds;
 			return ControlsOutput.random();
 		}
-		
+
 //		return Handling.backwardDrive(car, target);
 		return Handling.chaosDrive(car, target, true);
 	}

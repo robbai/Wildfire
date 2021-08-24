@@ -1,6 +1,5 @@
 package wildfire.input.car;
 
-
 import wildfire.input.Rotator;
 import wildfire.vector.Vector2;
 import wildfire.vector.Vector3;
@@ -53,7 +52,7 @@ public class CarData {
 	public double velocityDir(Vector3 direction){
 		return this.velocity.dotProduct(direction.normalised());
 	}
-	
+
 	public double velocityDir(Vector2 direction){
 		return this.velocityDir(direction.withZ(0));
 	}

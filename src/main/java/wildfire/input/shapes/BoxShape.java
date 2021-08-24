@@ -4,11 +4,11 @@ import wildfire.input.car.Hitbox;
 import wildfire.vector.Vector3;
 
 public class BoxShape {
-	
+
 	public final Vector3 position;
-	
+
 	public final double length, width, height;
-	
+
 	/**
 	 * Width, length, height
 	 */
@@ -16,11 +16,11 @@ public class BoxShape {
 
 	public BoxShape(Vector3 position, double length, double width, double height){
 		this.position = new Vector3(position);
-		
+
 		this.length = length;
 		this.width = width;
 		this.height = height;
-		
+
 		this.shape = new Vector3(width, length, height);
 	}
 
@@ -35,7 +35,7 @@ public class BoxShape {
 	public BoxShape(Vector3 position, Hitbox hitbox){
 		this(position, hitbox.length, hitbox.width, hitbox.height);
 	}
-	
+
 	public BoxShape(Vector3 position, Vector3 shape){
 		this(position, shape.x, shape.y, shape.z);
 	}

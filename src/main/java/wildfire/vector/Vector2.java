@@ -46,17 +46,20 @@ public class Vector2 {
 	public Vector2 scaled(double scale){
 		return new Vector2(x * scale, y * scale);
 	}
-	
+
 	public Vector2 multiply(Vector2 other){
 		return new Vector2(x * other.x, y * other.y);
 	}
 
 	/**
-	 * If magnitude is negative, we will return a vector facing the opposite direction.
+	 * If magnitude is negative, we will return a vector facing the opposite
+	 * direction.
 	 */
 	public Vector2 scaledToMagnitude(double magnitude){
-		//    	if(isZero()) throw new IllegalStateException("Cannot scale up a vector with length zero!");
-		if(isZero()) return new Vector2();
+		// if(isZero()) throw new IllegalStateException("Cannot scale up a vector with
+		// length zero!");
+		if(isZero())
+			return new Vector2();
 		double scaleRequired = magnitude / magnitude();
 		return scaled(scaleRequired);
 	}
@@ -76,8 +79,10 @@ public class Vector2 {
 	}
 
 	public Vector2 normalised(){
-		//    	if(isZero()) throw new IllegalStateException("Cannot normalize a vector with length zero!");
-		if(isZero()) return new Vector2();
+		// if(isZero()) throw new IllegalStateException("Cannot normalize a vector with
+		// length zero!");
+		if(isZero())
+			return new Vector2();
 		return scaled(1 / magnitude());
 	}
 
@@ -111,6 +116,7 @@ public class Vector2 {
 	public static double angle(Vector2 a, Vector2 b){
 		return Math.abs(a.correctionAngle(b));
 	}
+
 	public double angle(Vector2 other){
 		return Math.abs(correctionAngle(other));
 	}
@@ -120,7 +126,8 @@ public class Vector2 {
 	}
 
 	public Vector2 confine(double borderX, double borderY){
-		return new Vector2(Math.min(Constants.PITCH_WIDTH - borderX, Math.max(-Constants.PITCH_WIDTH + borderX, x)), Math.min(Constants.PITCH_LENGTH - borderY, Math.max(-Constants.PITCH_LENGTH + borderY, y)));
+		return new Vector2(Math.min(Constants.PITCH_WIDTH - borderX, Math.max(-Constants.PITCH_WIDTH + borderX, x)),
+				Math.min(Constants.PITCH_LENGTH - borderY, Math.max(-Constants.PITCH_LENGTH + borderY, y)));
 	}
 
 	public Vector2 confine(){
@@ -146,7 +153,7 @@ public class Vector2 {
 	public Vector3 withZ(double z){
 		return new Vector3(x, y, z);
 	}
-	
+
 	public Vector3 withZ(){
 		return this.withZ(0);
 	}
@@ -171,7 +178,8 @@ public class Vector2 {
 	}
 
 	public Vector2 capMagnitude(double max){
-		if(max < 0) max = 0;
+		if(max < 0)
+			max = 0;
 		double mag = magnitude();
 		return (mag > max ? scaledToMagnitude(max) : new Vector2(x, y));
 	}
@@ -183,18 +191,23 @@ public class Vector2 {
 	public Vector2 lerp(Vector2 other, double t){
 		return plus(other.minus(this).scaled(t));
 	}
-	
+
 	@Override
 	public boolean equals(Object obj){
-		if(this == obj) return true;
-		if(obj == null) return false;
-		if(getClass() != obj.getClass()) return false;
+		if(this == obj)
+			return true;
+		if(obj == null)
+			return false;
+		if(getClass() != obj.getClass())
+			return false;
 		Vector2 other = (Vector2)obj;
-		if(Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) return false;
-		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) return false;
+		if(Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x))
+			return false;
+		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y))
+			return false;
 		return true;
 	}
-	
+
 	public double component(Vector2 other){
 		return normalised().dotProduct(other.normalised());
 	}

@@ -27,7 +27,8 @@ public class Impact extends Slice {
 	private Impact withGoal(Vector2 goal){
 		Vector3 currentOffset = this.position.minus(this.ballPosition);
 		double originalFlatMagnitude = currentOffset.flatten().magnitude();
-		Vector3 position = this.ballPosition.plus(this.ballPosition.flatten().minus(goal).scaledToMagnitude(originalFlatMagnitude).withZ(currentOffset.z));
+		Vector3 position = this.ballPosition.plus(this.ballPosition.flatten().minus(goal)
+				.scaledToMagnitude(originalFlatMagnitude).withZ(currentOffset.z));
 		return new Impact(position, this.ballPosition, this.time);
 	}
 
@@ -41,11 +42,12 @@ public class Impact extends Slice {
 
 	@Override
 	public String toString(){
-		return "Impact [ballPosition=" + ballPosition + ", position=" + position + ", time=" + time + ", frame=" + frame + "]";
+		return "Impact [ballPosition=" + ballPosition + ", position=" + position + ", time=" + time + ", frame=" + frame
+				+ "]";
 	}
 
 	/**
-	 * The offset is corrected so the ball 
+	 * The offset is corrected so the ball
 	 */
 	private static Vector3 correctOffset(Vector3 position){
 		return position; // TODO

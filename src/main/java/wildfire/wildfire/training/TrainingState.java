@@ -24,17 +24,18 @@ public class TrainingState {
 	/*
 	 * Cars.
 	 */
-	public final Vector3 playerLocation, playerVelocity, playerAngularVelocity, opponentLocation, opponentVelocity, opponentAngularVelocity;
+	public final Vector3 playerLocation, playerVelocity, playerAngularVelocity, opponentLocation, opponentVelocity,
+			opponentAngularVelocity;
 	public final Rotator playerRotation, opponentRotation;
 	public final boolean playerJumped, playerDoubleJumped, opponentJumped, opponentDoubleJumped;
 	public final float playerBoost, opponentBoost;
 
-	//	/*
-	//	 * Boost pads.
-	//	 */
-	//	public final int boostPadCount;
-	//	public final boolean[] boostPadsActive;
-	//	public final float[] boostPadsTimer;
+	// /*
+	// * Boost pads.
+	// */
+	// public final int boostPadCount;
+	// public final boolean[] boostPadsActive;
+	// public final float[] boostPadsTimer;
 
 	public TrainingState(GameTickPacket packet){
 		/*
@@ -70,16 +71,16 @@ public class TrainingState {
 		this.opponentDoubleJumped = opponent.doubleJumped();
 		this.opponentBoost = opponent.boost();
 
-		//		/*
-		//		 * Boost pads.
-		//		 */
-		//		this.boostPadCount = packet.boostPadStatesLength();
-		//		this.boostPadsActive = new boolean[this.boostPadCount];
-		//		this.boostPadsTimer = new float[this.boostPadCount];
-		//		for(int i = 0; i < this.boostPadCount; i++){
-		//			this.boostPadsActive[i] = packet.boostPadStates(i).isActive();
-		//			this.boostPadsTimer[i] = packet.boostPadStates(i).timer();
-		//		}
+		// /*
+		// * Boost pads.
+		// */
+		// this.boostPadCount = packet.boostPadStatesLength();
+		// this.boostPadsActive = new boolean[this.boostPadCount];
+		// this.boostPadsTimer = new float[this.boostPadCount];
+		// for(int i = 0; i < this.boostPadCount; i++){
+		// this.boostPadsActive[i] = packet.boostPadStates(i).isActive();
+		// this.boostPadsTimer[i] = packet.boostPadStates(i).timer();
+		// }
 	}
 
 	public GameState toGameState(){
@@ -125,7 +126,7 @@ public class TrainingState {
 
 		return gameState;
 	}
-	
+
 	public GameStatePacket toGameStatePacket(){
 		return this.toGameState().buildPacket();
 	}

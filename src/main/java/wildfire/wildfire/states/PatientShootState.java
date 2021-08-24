@@ -37,24 +37,30 @@ public class PatientShootState extends State {
 	@Override
 	public boolean ready(InfoPacket input){
 		CarData car = input.car;
-		if(!car.onFlatGround) return false; 
+		if(!car.onFlatGround)
+			return false;
 
 		Impact earliestImpact = input.info.impact;
-		if(earliestImpact == null || earliestImpact.getBallPosition().y * car.sign < -3000) return false;
-		if(earliestImpact.getBallPosition().distance(input.car.position) < 300) return false;
+		if(earliestImpact == null || earliestImpact.getBallPosition().y * car.sign < -3000)
+			return false;
+		if(earliestImpact.getBallPosition().distance(input.car.position) < 300)
+			return false;
 
 		// We already have an available shot!
 		if(earliestImpact.getBallPosition().z < MAX_LOW_Z){
-			if(Behaviour.isInCone(car, earliestImpact.getPosition(), GOAL_THRESHOLD / 2)) return false;
+			if(Behaviour.isInCone(car, earliestImpact.getPosition(), GOAL_THRESHOLD / 2))
+				return false;
 		}else if(input.info.jumpImpact != null){
-			if(Behaviour.isInCone(car, input.info.jumpImpact.getPosition(), GOAL_THRESHOLD / 2)) return false;
+			if(Behaviour.isInCone(car, input.info.jumpImpact.getPosition(), GOAL_THRESHOLD / 2))
+				return false;
 		}
-		
+
 		final double offsetSize = (Constants.BALL_RADIUS + (car.hitbox.length / 2 + car.hitbox.offset.y));
 
 		// Find if we are under pressure or not.
 		double enemyTime = determineEnemyTime(input);
-		if(enemyTime < earliestImpact.getTime()) return false;
+		if(enemyTime < earliestImpact.getTime())
+			return false;
 
 		// Iterate through the ball prediction to find a good shot.
 		BallPrediction ballPrediction = wildfire.ballPrediction;
@@ -63,22 +69,29 @@ public class PatientShootState extends State {
 			rlbot.flat.PredictionSlice rawSlice = ballPrediction.slices(i);
 			Vector3 slicePosition = new Vector3(rawSlice.physics().location());
 
-			if(Math.abs(slicePosition.y) > Constants.PITCH_LENGTH - Constants.BALL_RADIUS) break;
+			if(Math.abs(slicePosition.y) > Constants.PITCH_LENGTH - Constants.BALL_RADIUS)
+				break;
 
-			if(slicePosition.y * car.sign < -2000) continue;
-			if(slicePosition.z > Info.maxJumpImpactZ) continue;
-			if(!Behaviour.isInCone(car, slicePosition, GOAL_THRESHOLD)) continue;
+			if(slicePosition.y * car.sign < -2000)
+				continue;
+			if(slicePosition.z > Info.maxJumpImpactZ)
+				continue;
+			if(!Behaviour.isInCone(car, slicePosition, GOAL_THRESHOLD))
+				continue;
 
 			boolean jump = (slicePosition.z > MAX_LOW_Z);
 
 			double globalTime = rawSlice.gameSeconds();
 //			globalTime -= (2D / 120);
-			if(globalTime <= car.elapsedSeconds) continue;
+			if(globalTime <= car.elapsedSeconds)
+				continue;
 			double distance = (Utils.toLocal(car, slicePosition).flatten().magnitude() - offsetSize);
-			if(DrivePhysics.minTravelTime(car, distance) > (globalTime - car.elapsedSeconds)) continue;
+			if(DrivePhysics.minTravelTime(car, distance) > (globalTime - car.elapsedSeconds))
+				continue;
 
 			// Found a shot.
-			Vector3 targetPosition = slicePosition.plus(car.position.minus(slicePosition).withZ(0).scaledToMagnitude(offsetSize));
+			Vector3 targetPosition = slicePosition
+					.plus(car.position.minus(slicePosition).withZ(0).scaledToMagnitude(offsetSize));
 			this.globalTargetTime = globalTime;
 			this.target = new Impact(targetPosition, slicePosition, globalTime - car.elapsedSeconds);
 			this.jump = jump;
@@ -92,12 +105,16 @@ public class PatientShootState extends State {
 
 	@Override
 	public boolean expire(InfoPacket input){
-		if(this.target == null) return true;
-		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(), globalTargetTime, 12);
-		//		boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction, target.getBallPosition());
+		if(this.target == null)
+			return true;
+		boolean expire = !Behaviour.isOnPredictionAroundGlobalTime(wildfire.ballPrediction, target.getBallPosition(),
+				globalTargetTime, 12);
+		// boolean expire = !Behaviour.isOnPrediction(wildfire.ballPrediction,
+		// target.getBallPosition());
 		if(!expire){
 			if(this.jump){
-				expire = (input.info.jumpImpact != null && this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
+				expire = (input.info.jumpImpact != null
+						&& this.globalTargetTime < (input.info.jumpImpact.getTime() + input.elapsedSeconds));
 			}else{
 				expire = (this.globalTargetTime < (input.info.impact.getTime() + input.elapsedSeconds));
 			}
@@ -106,7 +123,8 @@ public class PatientShootState extends State {
 			Vector2 targetDirection = this.target.getPosition().minus(input.car.position).flatten();
 			expire = (this.arrivalDirection.angle(targetDirection) > Math.toRadians(15));
 		}
-		if(expire) this.go = false;
+		if(expire)
+			this.go = false;
 		return expire;
 	}
 
@@ -120,15 +138,16 @@ public class PatientShootState extends State {
 		if(!this.jump || !go){
 			// Motion equations.
 			double displacement = targetPosition.distanceFlat(car.position);
-			//			displacement *= Math.signum(car.orientation.forward.dotProduct(targetPosition.minus(car.position)));
+			// displacement *=
+			// Math.signum(car.orientation.forward.dotProduct(targetPosition.minus(car.position)));
 			double time = Math.max(0, globalTargetTime - car.elapsedSeconds);
 			double initialVelocity = car.velocityDir(targetPosition.minus(car.position));
 			double finalVelocity = ((2 * displacement) / time - initialVelocity);
 			acceleration = ((finalVelocity - initialVelocity) / time);
 
 			/*
-			 *  We adjust our target acceleration so that our final velocity
-			 *  is closer to the maximum (so we hit the ball as hard as possible!).
+			 * We adjust our target acceleration so that our final velocity is closer to the
+			 * maximum (so we hit the ball as hard as possible!).
 			 */
 			if(!this.go){
 				if(Math.abs(displacement) < 200){
@@ -147,20 +166,25 @@ public class PatientShootState extends State {
 			}
 
 			// Render.
-			wildfire.renderer.drawString2d("Final Velocity: " + (int)finalVelocity + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
-			wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
-			//			wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new Point(0, 20), 2, 2);
+			wildfire.renderer.drawString2d("Final Velocity: " + (int)finalVelocity + "uu/s", Color.WHITE,
+					new Point(0, 20), 2, 2);
+			wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration + "uu/s^2", Color.WHITE,
+					new Point(0, 40), 2, 2);
+			// wildfire.renderer.drawString2d("Wait: " + Utils.round(wait), Color.WHITE, new
+			// Point(0, 20), 2, 2);
 			wildfire.renderer.drawCrosshair(car, input.info.impact.getPosition(), Color.RED, 40);
 		}
 
 		// Render.
-		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.GREEN, 0, (int)((globalTargetTime - car.elapsedSeconds) * 60));
+		wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.GREEN, 0,
+				(int)((globalTargetTime - car.elapsedSeconds) * 60));
 		wildfire.renderer.drawCrosshair(car, targetBallPosition, Color.ORANGE, 80);
 		wildfire.renderer.drawCrosshair(car, targetPosition, Color.YELLOW, 50);
 
 		// Controls.
 		double radians = Handling.aim(car, this.target.getPosition());
-		if(Math.abs(radians) > Math.toRadians(15)) return Handling.turnOnSpot(car, targetPosition);
+		if(Math.abs(radians) > Math.toRadians(15))
+			return Handling.turnOnSpot(car, targetPosition);
 		if(this.jump){
 			SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
 			if(!smartDodge.failed){
@@ -179,9 +203,11 @@ public class PatientShootState extends State {
 	 * Determines how patient we can be with this shot.
 	 */
 	private double determineEnemyTime(InfoPacket input){
-		if(input.info.impact.getBallPosition().y * input.car.sign > Constants.PITCH_LENGTH - 700) return 15;
+		if(input.info.impact.getBallPosition().y * input.car.sign > Constants.PITCH_LENGTH - 700)
+			return 15;
 		CarData enemy = input.info.earliestEnemy;
-		if(enemy == null) return 15;
+		if(enemy == null)
+			return 15;
 		boolean enemyCorrectSide = (Behaviour.correctSideOfTarget(enemy, input.info.earliestEnemyImpact.getPosition()));
 		return input.info.enemyImpactTime * (enemyCorrectSide ? 0.8 : 0.95);
 	}

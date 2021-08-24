@@ -31,10 +31,15 @@ public class DemoState extends State {
 
 	@Override
 	public boolean ready(InfoPacket input){
-		if(Math.abs(input.ball.position.x) < 1200 && input.ball.position.z < 1000) return false;
-		if(Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team)) return false;
-		if(!isFastEnough(input.car)) return false;
-		if(Behaviour.hasTeammate(input) ? Math.abs(input.ball.position.y) < 2000 : input.car.sign * input.ball.position.y < -2000) return false;
+		if(Math.abs(input.ball.position.x) < 1200 && input.ball.position.z < 1000)
+			return false;
+		if(Behaviour.isOnTarget(wildfire.ballPrediction, input.car.team))
+			return false;
+		if(!isFastEnough(input.car))
+			return false;
+		if(Behaviour.hasTeammate(input) ? Math.abs(input.ball.position.y) < 2000
+				: input.car.sign * input.ball.position.y < -2000)
+			return false;
 
 //		if(Behaviour.isTeammateCloser(input)){
 //			if(Behaviour.isInCone(input.car, input.info.impact.getPosition())) return false;
@@ -45,16 +50,20 @@ public class DemoState extends State {
 		target = getTarget(input);
 
 		if(target != null){
-			if(target.position.isOutOfBounds()) return false;
+			if(target.position.isOutOfBounds())
+				return false;
 
 			// Run-up
-			if(target.position.distance(input.car.position) < 3000) return false;
+			if(target.position.distance(input.car.position) < 3000)
+				return false;
 
 			// Vulnerable target (slow, or returning back to their half)
-			if(target.velocity.magnitude() > 1200 && input.car.sign * target.velocity.y > -800) return false;
+			if(target.velocity.magnitude() > 1200 && input.car.sign * target.velocity.y > -800)
+				return false;
 
 			// Face them
-			if(Math.abs(Handling.aim(input.car, target.position.flatten())) > Math.toRadians(85)) return false;
+			if(Math.abs(Handling.aim(input.car, target.position.flatten())) > Math.toRadians(85))
+				return false;
 		}
 
 		return target != null && isValidTarget(input, target);
@@ -62,9 +71,11 @@ public class DemoState extends State {
 
 	@Override
 	public boolean expire(InfoPacket input){
-		if(target != null && target.isDemolished) wildfire.sendQuickChat(QuickChatSelection.Apologies_Oops, QuickChatSelection.Apologies_Whoops);
+		if(target != null && target.isDemolished)
+			wildfire.sendQuickChat(QuickChatSelection.Apologies_Oops, QuickChatSelection.Apologies_Whoops);
 		boolean expire = target == null || !isValidTarget(input, target) || !isFastEnough(input.car);
-		if(expire) target = null;
+		if(expire)
+			target = null;
 		return expire;
 	}
 
@@ -79,18 +90,20 @@ public class DemoState extends State {
 		// Recovery
 		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
-			if(!currentAction.failed) return currentAction.getOutput(input);
+			if(!currentAction.failed)
+				return currentAction.getOutput(input);
 		}
 
 		// Target handling
-		if(target == null) target = getTarget(input);
+		if(target == null)
+			target = getTarget(input);
 		if(target == null){
 			wildfire.renderer.drawString2d("No Target", Color.WHITE, new Point(0, 20), 2, 2);
 			return new ControlsOutput();
 		}
 
 		// Update target info
-		// 		Vector3 lastTargetPosition = target.position;
+		// Vector3 lastTargetPosition = target.position;
 		Vector3 lastTargetVelocity = target.velocity;
 		float lastTargetElapsed = target.elapsedSeconds;
 		target = input.cars[target.index];
@@ -98,11 +111,13 @@ public class DemoState extends State {
 		// Infer info
 		double time = (target.elapsedSeconds - lastTargetElapsed);
 		Vector3 acceleration = target.velocity.minus(lastTargetVelocity).scaled(1D / time); // a = (v - u) / t
-		wildfire.renderer.drawString2d("Target Velocity: " + (int)input.car.velocity.magnitude() + "uu/s", Color.WHITE, new Point(0, 20), 2, 2);
-		wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration.magnitude() + "uu/s^2", Color.WHITE, new Point(0, 40), 2, 2);
+		wildfire.renderer.drawString2d("Target Velocity: " + (int)input.car.velocity.magnitude() + "uu/s", Color.WHITE,
+				new Point(0, 20), 2, 2);
+		wildfire.renderer.drawString2d("Target Acceleration: " + (int)acceleration.magnitude() + "uu/s^2", Color.WHITE,
+				new Point(0, 40), 2, 2);
 
 		// Prediction of the opponent
-		ArrayList<Vector3> prediction = new ArrayList<Vector3>(); 
+		ArrayList<Vector3> prediction = new ArrayList<Vector3>();
 		Vector3 velocity = new Vector3(target.velocity);
 		Vector3 position = new Vector3(target.position);
 		for(int i = 0; i < (predictionSeconds / DT); i++){
@@ -127,7 +142,8 @@ public class DemoState extends State {
 
 			// Position handling
 			position = position.plus(velocity.scaled(DT));
-			if(!target.position.isOutOfBounds()) position.confine();
+			if(!target.position.isOutOfBounds())
+				position.confine();
 		}
 
 		// Impact
@@ -138,7 +154,8 @@ public class DemoState extends State {
 		// Quick-chat
 		if(input.car.isSupersonic){
 			if(Behaviour.hasTeammate(input)){
-				wildfire.sendQuickChat(true, QuickChatSelection.Custom_Useful_Demoing, QuickChatSelection.Custom_Useful_Bumping);
+				wildfire.sendQuickChat(true, QuickChatSelection.Custom_Useful_Demoing,
+						QuickChatSelection.Custom_Useful_Bumping);
 			}else if(impactDistance < 1000){
 				wildfire.sendQuickChat(QuickChatSelection.Information_Incoming);
 			}
@@ -153,14 +170,17 @@ public class DemoState extends State {
 		// Controls
 		double steer = Handling.aim(input.car, target);
 		return new ControlsOutput().withSteer((float)-steer * 3F).withThrottle(1)
-				.withBoost((Math.abs(steer) < 0.3F || input.car.forwardVelocity > 1300) && !input.car.isSupersonic && input.car.hasWheelContact).withSlide(Math.abs(steer) > 1.5F && input.car.forwardVelocity > 0 && impactDistance > 500);
+				.withBoost((Math.abs(steer) < 0.3F || input.car.forwardVelocity > 1300) && !input.car.isSupersonic
+						&& input.car.hasWheelContact)
+				.withSlide(Math.abs(steer) > 1.5F && input.car.forwardVelocity > 0 && impactDistance > 500);
 	}
 
 	private CarData getTarget(InfoPacket input){
 		CarData closestCar = null;
 		double closestCarDistance = 0;
 		for(CarData car : input.cars){
-			if(car == null || car.team == input.car.team || car.isDemolished) continue;
+			if(car == null || car.team == input.car.team || car.isDemolished)
+				continue;
 			double carDistance = car.position.distanceFlat(input.ball.position);
 			if(closestCar == null || carDistance < closestCarDistance){
 				closestCarDistance = carDistance;
@@ -178,11 +198,12 @@ public class DemoState extends State {
 		Vector2 carEnemy = enemy.position.minus(input.car.position).flatten();
 		Vector2 carBall = input.ball.position.minus(input.car.position).flatten();
 		Vector2 enemyBall = input.ball.position.minus(enemy.position).flatten();
-		return !enemy.isDemolished && carEnemy.magnitude() < Math.min(enemyBall.magnitude() * 1.5, 4500) && carBall.angle(carEnemy) > 0.1 && enemy.position.z < 250;
+		return !enemy.isDemolished && carEnemy.magnitude() < Math.min(enemyBall.magnitude() * 1.5, 4500)
+				&& carBall.angle(carEnemy) > 0.1 && enemy.position.z < 250;
 	}
 
 	public static Vector3 getImpact(CarData car, ArrayList<Vector3> prediction){
-		Vector3 carPosition = car.position; 
+		Vector3 carPosition = car.position;
 		double initialVelocity = car.velocity.flatten().magnitude();
 		double maxVelocity = DrivePhysics.maxVelocity(initialVelocity, car.boost);
 
@@ -198,7 +219,7 @@ public class DemoState extends State {
 			}
 		}
 
-		// 		return prediction.get(prediction.size() - 1);
+		// return prediction.get(prediction.size() - 1);
 		return prediction.get(0);
 	}
 

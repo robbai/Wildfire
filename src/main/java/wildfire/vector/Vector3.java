@@ -2,11 +2,11 @@ package wildfire.vector;
 
 import java.util.Random;
 
-import com.google.flatbuffers.FlatBufferBuilder;
-
 import rlbot.gamestate.DesiredVector3;
 import wildfire.wildfire.utils.Constants;
 import wildfire.wildfire.utils.Utils;
+
+import com.google.flatbuffers.FlatBufferBuilder;
 
 public class Vector3 extends rlbot.vector.Vector3 {
 
@@ -72,17 +72,20 @@ public class Vector3 extends rlbot.vector.Vector3 {
 	public Vector3 scaled(double scale){
 		return new Vector3(x * scale, y * scale, z * scale);
 	}
-	
+
 	public Vector3 multiply(Vector3 other){
 		return new Vector3(x * other.x, y * other.y, z * other.z);
 	}
 
 	/**
-	 * If magnitude is negative, we will return a vector facing the opposite direction.
+	 * If magnitude is negative, we will return a vector facing the opposite
+	 * direction.
 	 */
 	public Vector3 scaledToMagnitude(double magnitude){
-		//		if(isZero()) throw new IllegalStateException("Cannot scale up a vector with length zero!");
-		if(isZero()) return new Vector3();
+		// if(isZero()) throw new IllegalStateException("Cannot scale up a vector with
+		// length zero!");
+		if(isZero())
+			return new Vector3();
 		return scaled(magnitude / magnitude());
 	}
 
@@ -107,8 +110,10 @@ public class Vector3 extends rlbot.vector.Vector3 {
 	}
 
 	public Vector3 normalised(){
-		//		if(isZero()) throw new IllegalStateException("Cannot normalize a vector with length zero!");
-		if(isZero()) return new Vector3();
+		// if(isZero()) throw new IllegalStateException("Cannot normalize a vector with
+		// length zero!");
+		if(isZero())
+			return new Vector3();
 		return scaled(1 / magnitude());
 	}
 
@@ -141,11 +146,14 @@ public class Vector3 extends rlbot.vector.Vector3 {
 	@Override
 	public String toString(){
 		boolean little = (magnitude() <= 1);
-		return "[x=" + (little ? x : Utils.round(x)) + ", y=" + (little ? y : Utils.round(y)) + ", z=" + (little ? z : Utils.round(z)) + "]";
+		return "[x=" + (little ? x : Utils.round(x)) + ", y=" + (little ? y : Utils.round(y)) + ", z="
+				+ (little ? z : Utils.round(z)) + "]";
 	}
 
 	public Vector3 confine(){
-		return new Vector3(Math.min(Constants.PITCH_WIDTH, Math.max(-Constants.PITCH_WIDTH, x)), Math.min(Constants.PITCH_LENGTH, Math.max(-Constants.PITCH_LENGTH, y)), Math.min(Constants.CEILING, Math.max(0, z)));
+		return new Vector3(Math.min(Constants.PITCH_WIDTH, Math.max(-Constants.PITCH_WIDTH, x)),
+				Math.min(Constants.PITCH_LENGTH, Math.max(-Constants.PITCH_LENGTH, y)),
+				Math.min(Constants.CEILING, Math.max(0, z)));
 	}
 
 	public Vector3 rotateHorizontal(double angle){
@@ -154,7 +162,8 @@ public class Vector3 extends rlbot.vector.Vector3 {
 
 	// TODO
 	public boolean isOutOfBounds(){
-		return Math.abs(x) > Constants.PITCH_WIDTH || Math.abs(y) > Constants.PITCH_LENGTH || z > Constants.CEILING || z < 0;
+		return Math.abs(x) > Constants.PITCH_WIDTH || Math.abs(y) > Constants.PITCH_LENGTH || z > Constants.CEILING
+				|| z < 0;
 	}
 
 	public Vector3 capMagnitude(double max){
@@ -168,7 +177,8 @@ public class Vector3 extends rlbot.vector.Vector3 {
 
 	public static Vector3 random(double mag){
 		Random random = new Random();
-		return new Vector3(random.nextDouble() - 0.5, random.nextDouble() - 0.5, random.nextDouble() - 0.5).scaledToMagnitude(mag);
+		return new Vector3(random.nextDouble() - 0.5, random.nextDouble() - 0.5, random.nextDouble() - 0.5)
+				.scaledToMagnitude(mag);
 	}
 
 	public Vector3 withX(double x){
@@ -185,16 +195,22 @@ public class Vector3 extends rlbot.vector.Vector3 {
 
 	@Override
 	public boolean equals(Object obj){
-		if(this == obj) return true;
-		if(obj == null) return false;
-		if(getClass() != obj.getClass()) return false;
+		if(this == obj)
+			return true;
+		if(obj == null)
+			return false;
+		if(getClass() != obj.getClass())
+			return false;
 		Vector3 other = (Vector3)obj;
-		if(Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) return false;
-		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) return false;
-		if(Double.doubleToLongBits(z) != Double.doubleToLongBits(other.z)) return false;
+		if(Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x))
+			return false;
+		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y))
+			return false;
+		if(Double.doubleToLongBits(z) != Double.doubleToLongBits(other.z))
+			return false;
 		return true;
 	}
-	
+
 	public double component(Vector3 other){
 		return normalised().dotProduct(other.normalised());
 	}

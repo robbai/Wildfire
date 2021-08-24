@@ -16,8 +16,8 @@ public class Rotator {
 
 	public Rotator(CarOrientation orientation, Vector3 angularVelocityAxis){
 		this.pitch = angularVelocityAxis.dotProduct(orientation.right);
-	    this.yaw = angularVelocityAxis.dotProduct(orientation.up); // * -1
-	    this.roll = angularVelocityAxis.dotProduct(orientation.forward);
+		this.yaw = angularVelocityAxis.dotProduct(orientation.up); // * -1
+		this.roll = angularVelocityAxis.dotProduct(orientation.forward);
 	}
 
 	@Override

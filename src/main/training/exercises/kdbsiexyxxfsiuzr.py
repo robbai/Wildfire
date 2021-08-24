@@ -8,7 +8,7 @@ from rlbottraining.training_exercise import TrainingExercise
 @dataclass
 class kdbsiexyxxfsiuzr(TrainingExercise):
 	grader: Any = PassOnGoalForAllyTeam(ally_team=0)
-	
+
 	def make_game_state(self,rng):
 		return GameState(
 			ball=BallState(physics=Physics(

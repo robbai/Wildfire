@@ -24,12 +24,13 @@ public class TestState2 extends FallbackState {
 	 */
 
 	public TestState2(Wildfire wildfire){
-		super(/**"Test", */wildfire);
+		super(/** "Test", */
+				wildfire);
 	}
 
 	@Override
 	public boolean ready(InfoPacket input){
-		//		return !Behaviour.isKickoff(input);
+		// return !Behaviour.isKickoff(input);
 		return false;
 	}
 
@@ -45,12 +46,16 @@ public class TestState2 extends FallbackState {
 		if(input.info.jumpImpact != null){
 			wildfire.renderer.drawLine3d(Color.WHITE, car.position, input.info.jumpImpact.getBallPosition());
 			wildfire.renderer.drawLine3d(Color.RED, car.position, input.info.jumpImpact.getPosition());
-			wildfire.renderer.drawLine3d(Color.BLACK, input.info.jumpImpact.getBallPosition(), input.info.jumpImpact.getPosition());
-			wildfire.renderer.drawString2d("Height: " + (int)input.info.jumpImpactHeight + "uu", Color.WHITE, new Point(0, 40), 2, 2);
+			wildfire.renderer.drawLine3d(Color.BLACK, input.info.jumpImpact.getBallPosition(),
+					input.info.jumpImpact.getPosition());
+			wildfire.renderer.drawString2d("Height: " + (int)input.info.jumpImpactHeight + "uu", Color.WHITE,
+					new Point(0, 40), 2, 2);
 		}
 
 		if(input.info.jumpImpact == null || input.info.jumpImpactHeight < 200){
-			Vector2 ourWallTrace = Utils.traceToY(car.position.flatten(), input.info.impact.getBallPosition().minus(car.position).flatten(), -car.sign * Constants.PITCH_LENGTH);
+			Vector2 ourWallTrace = Utils.traceToY(car.position.flatten(),
+					input.info.impact.getBallPosition().minus(car.position).flatten(),
+					-car.sign * Constants.PITCH_LENGTH);
 
 			Vector3 offset;
 			if(ourWallTrace == null){
@@ -62,7 +67,7 @@ public class TestState2 extends FallbackState {
 
 			return Handling.forwardDrive(car, input.info.impact.getBallPosition().plus(offset));
 		}
-		
+
 		SmartDodgeAction smartDodge = new SmartDodgeAction(this, input, false);
 		if(!smartDodge.failed){
 			return this.startAction(smartDodge, input);

@@ -14,19 +14,19 @@ import wildfire.wildfire.physics.Physics;
 import wildfire.wildfire.utils.Utils;
 
 public class WavedashAction extends Action {
-	
+
 	/*
 	 * Starts a wavedash from the ground
 	 */
-	
+
 	private boolean jumped;
 
 	public WavedashAction(State state, InfoPacket input){
 		super("Wavedash", state, input.elapsedSeconds);
-		
+
 		this.failed = (!input.car.hasWheelContact && input.car.position.z < 200 && input.info.timeOnGround > 1);
 //		this.failed = (!input.car.hasWheelContact || input.car.position.z > 100 || input.info.timeOnGround < 0.3);
-		
+
 		if(!this.failed){
 			this.jumped = false;
 		}
@@ -36,11 +36,11 @@ public class WavedashAction extends Action {
 	public ControlsOutput getOutput(InfoPacket input){
 		double timeDifference = this.timeDifference(input.elapsedSeconds);
 		wildfire.renderer.drawString2d("Time: " + Utils.round(timeDifference), Color.WHITE, new Point(0, 40), 2, 2);
-		
+
 		ControlsOutput controls = new ControlsOutput();
-		
+
 		double targetPitch = 0;
-		
+
 		if(timeDifference < 0.39){
 			controls.withJump(!this.jumped);
 			this.jumped = true;
@@ -53,23 +53,24 @@ public class WavedashAction extends Action {
 				targetPitch = 0.38;
 			}
 		}
-		
+
 		Vector2 flatNose = input.car.orientation.forward.flatten();
 		Vector3 desiredNose = new Vector3(flatNose.x, flatNose.y, Math.tan(targetPitch) * flatNose.magnitude());
-		
+
 		double[] angles = AirControl.getPitchYawRoll(input.car, desiredNose);
 		controls.withPitchYawRoll(angles);
 		if(controls.holdJump()){
 			controls.withRoll(0);
 			controls.withYaw(0);
 		}
-		
+
 		return controls.withBoost(input.car.orientation.forward.z < 0).withThrottle(1);
 	}
 
 	@Override
 	public boolean expire(InfoPacket input){
-		return this.failed || this.timeDifference(input.elapsedSeconds) > (input.car.hasWheelContact || input.car.hasDoubleJumped ? 0.6 : 1.3);
+		return this.failed || this.timeDifference(
+				input.elapsedSeconds) > (input.car.hasWheelContact || input.car.hasDoubleJumped ? 0.6 : 1.3);
 	}
 
 }

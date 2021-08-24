@@ -28,30 +28,34 @@ public class FollowDiscreteMechanic extends Mechanic {
 	public boolean renderPredictionToTargetTime = false;
 	public boolean linearTarget = false;
 
-	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge, OptionalDouble targetTime){
+	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge,
+			OptionalDouble targetTime){
 		super("Follow Discrete", state, timeStarted);
 		this.curve = curve;
 		this.dodge = dodge;
-		this.targetTime = (!targetTime.isPresent()/** || targetTime.getAsDouble() < curve.getTime()*/ ? OptionalDouble.empty() : targetTime);
+		this.targetTime = (!targetTime.isPresent()/** || targetTime.getAsDouble() < curve.getTime() */
+				? OptionalDouble.empty()
+				: targetTime);
 	}
 
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, OptionalDouble targetTime){
 		this(state, curve, timeStarted, false, targetTime);
 	}
-	
+
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted){
 		this(state, curve, timeStarted, false, OptionalDouble.empty());
 	}
-	
+
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge){
 		this(state, curve, timeStarted, dodge, OptionalDouble.empty());
 	}
-	
+
 	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, double targetTime){
 		this(state, curve, timeStarted, false, OptionalDouble.of(targetTime));
 	}
-	
-	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge, double targetTime){
+
+	public FollowDiscreteMechanic(State state, DiscreteCurve curve, double timeStarted, boolean dodge,
+			double targetTime){
 		this(state, curve, timeStarted, dodge, OptionalDouble.of(targetTime));
 	}
 
@@ -64,53 +68,68 @@ public class FollowDiscreteMechanic extends Mechanic {
 		double guessedTimeLeft = (curve.getTime() - timeElapsed);
 		double updatedTimeLeft = (curve.getTime() * (1 - carS / curve.getDistance()));
 		Vector2 target = getTarget(carS, initialVelocity);
-		double targetVelocity = curve.getSpeed(Utils.clamp((carS + initialVelocity * speedLookahead) / curve.getDistance(), 0, 1));
-		
+		double targetVelocity = curve
+				.getSpeed(Utils.clamp((carS + initialVelocity * speedLookahead) / curve.getDistance(), 0, 1));
+
 		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
 		if(this.targetTime.isPresent()){
 			double targetTimeLeft = (this.targetTime.getAsDouble() - timeElapsed);
-			
+
 			if(renderPredictionToTargetTime){
-				int endFrame = (int)Utils.clamp(Math.ceil(targetTimeLeft * 60), 0, wildfire.ballPrediction.slicesLength());
+				int endFrame = (int)Utils.clamp(Math.ceil(targetTimeLeft * 60), 0,
+						wildfire.ballPrediction.slicesLength());
 				wildfire.renderer.renderPrediction(wildfire.ballPrediction, Color.WHITE, 0, endFrame);
 				Vector3 slicePosition = new Vector3(wildfire.ballPrediction.slices(endFrame).physics().location());
 				if(slicePosition != null){
 					wildfire.renderer.drawCrosshair(input.car, slicePosition, Color.GRAY, 80);
 					Vector2 end = curve.T(1);
-					if(end != null) wildfire.renderer.drawCrosshair(input.car, end.withZ(slicePosition.z), Color.BLACK, 40);
+					if(end != null)
+						wildfire.renderer.drawCrosshair(input.car, end.withZ(slicePosition.z), Color.BLACK, 40);
 				}
 			}
-			
+
 			if(linearTarget){
 				targetAcceleration = ((curve.getDistance() - carS) / targetTimeLeft - initialVelocity) / 0.05; // Enforce!
 			}else{
-				double arrivalAcceleration = ((2 * (curve.getDistance() - carS - targetTimeLeft * initialVelocity)) / Math.pow(targetTimeLeft, 2));
+				double arrivalAcceleration = ((2 * (curve.getDistance() - carS - targetTimeLeft * initialVelocity))
+						/ Math.pow(targetTimeLeft, 2));
 				targetAcceleration = Math.min(targetAcceleration, arrivalAcceleration);
 			}
 		}
 
 		// Render.
-		wildfire.renderer.drawString2d("Distance: " + (int)curve.getDistance() + "uu", Color.WHITE, new Point(0, 40), 2, 2);
+		wildfire.renderer.drawString2d("Distance: " + (int)curve.getDistance() + "uu", Color.WHITE, new Point(0, 40), 2,
+				2);
 		if(!this.targetTime.isPresent()){
-			wildfire.renderer.drawString2d("Est Time: " + Utils.round(updatedTimeLeft) + "s (" + (guessedTimeLeft < updatedTimeLeft ? "+" : "") + Utils.round(updatedTimeLeft - guessedTimeLeft) + "s)", Color.WHITE, new Point(0, 60), 2, 2);
+			wildfire.renderer.drawString2d(
+					"Est Time: " + Utils.round(updatedTimeLeft) + "s (" + (guessedTimeLeft < updatedTimeLeft ? "+" : "")
+							+ Utils.round(updatedTimeLeft - guessedTimeLeft) + "s)",
+					Color.WHITE, new Point(0, 60), 2, 2);
 		}else{
-			wildfire.renderer.drawString2d("Est Time: " + Utils.round(updatedTimeLeft) + "s (Want: " + Utils.round(this.targetTime.getAsDouble() - timeElapsed) + "s)", Color.WHITE, new Point(0, 60), 2, 2);
+			wildfire.renderer.drawString2d(
+					"Est Time: " + Utils.round(updatedTimeLeft) + "s (Want: "
+							+ Utils.round(this.targetTime.getAsDouble() - timeElapsed) + "s)",
+					Color.WHITE, new Point(0, 60), 2, 2);
 		}
 		if(verboseRender){
-			wildfire.renderer.drawString2d("Current Vel.: " + (int)initialVelocity + "uu/s", Color.WHITE, new Point(0, 80), 2, 2);
-			wildfire.renderer.drawString2d("Target Vel.: " + (int)targetVelocity + "uu/s", Color.WHITE, new Point(0, 100), 2, 2);
-			wildfire.renderer.drawString2d("Target Acc.: " + (int)targetAcceleration + "uu/s^2", Color.WHITE, new Point(0, 120), 2, 2);
+			wildfire.renderer.drawString2d("Current Vel.: " + (int)initialVelocity + "uu/s", Color.WHITE,
+					new Point(0, 80), 2, 2);
+			wildfire.renderer.drawString2d("Target Vel.: " + (int)targetVelocity + "uu/s", Color.WHITE,
+					new Point(0, 100), 2, 2);
+			wildfire.renderer.drawString2d("Target Acc.: " + (int)targetAcceleration + "uu/s^2", Color.WHITE,
+					new Point(0, 120), 2, 2);
 		}
 		curve.render(wildfire.renderer, Color.BLUE);
 		wildfire.renderer.drawCircle(Color.CYAN, target, 10);
-		wildfire.renderer.drawCircle(Color.RED, curve.S(Math.min(curve.getDistance(), carS + initialVelocity * speedLookahead)), 5);
+		wildfire.renderer.drawCircle(Color.RED,
+				curve.S(Math.min(curve.getDistance(), carS + initialVelocity * speedLookahead)), 5);
 
 		/*
-		 *  Handling.
+		 * Handling.
 		 */
 		double radians = Handling.aim(input.car, target);
-		
-		if(Math.abs(radians) < Math.toRadians(55)/* && targetAcceleration > 0*/ && dodge){
+
+		if(Math.abs(radians) < Math.toRadians(55)/* && targetAcceleration > 0 */ && dodge){
 			// Low time results in a chip shot, high time results in a low shot
 			boolean dodgeNow = (updatedTimeLeft < Behaviour.IMPACT_DODGE_TIME - 0.08);
 			if(dodgeNow){
@@ -120,12 +139,13 @@ public class FollowDiscreteMechanic extends Mechanic {
 				return this.startAction(new DodgeAction(this.state, dodgeRadians, input), input);
 			}
 		}
-		
+
 		double throttle = Handling.produceAcceleration(input.car, targetAcceleration);
 		return Handling.forwardDrive(input.car, target).withSlide(false)
 //		return new ControlsOutput().withSteer(-Math.signum(radians))
 				.withThrottle(throttle)
-				.withBoost((throttle > 1 /**|| (input.car.isSupersonic && targetAcceleration > 0)*/) && input.car.hasWheelContact);
+				.withBoost((throttle > 1 /** || (input.car.isSupersonic && targetAcceleration > 0) */
+				) && input.car.hasWheelContact);
 	}
 
 	private Vector2 getTarget(double carS, double initialVelocity){
@@ -135,16 +155,17 @@ public class FollowDiscreteMechanic extends Mechanic {
 	@Override
 	public boolean expire(InfoPacket input){
 		CarData car = input.car;
-		
+
 		double distanceError = curve.findClosestS(car.position.flatten(), true);
-		if(distanceError > 80) return true;
-		
+		if(distanceError > 80)
+			return true;
+
 		double carS = curve.findClosestS(car.position.flatten(), false);
-		
+
 		if(dodge){
 			return (carS + Math.abs(car.forwardVelocity) * steerLookahead / 8) / curve.getDistance() >= 1;
 		}
-		
+
 		return getTarget(carS, car.forwardVelocityAbs) == null;
 	}
 

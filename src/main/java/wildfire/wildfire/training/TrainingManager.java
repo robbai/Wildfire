@@ -15,34 +15,36 @@ import wildfire.Main;
 
 public class TrainingManager {
 
-	private static final String TRAINING_FOLDER = "./src/main/training/", EXERCISES_FOLDER = (TRAINING_FOLDER + "exercises/"), TEMPLATE_FILE = "/template_training.txt";
-	
+	private static final String TRAINING_FOLDER = "./src/main/training/",
+			EXERCISES_FOLDER = (TRAINING_FOLDER + "exercises/"), TEMPLATE_FILE = "/template_training.txt";
+
 	private static final String template = readTemplate();
-	
+
 	private static final Random random = new Random();
-	
+
 	public static void write(TrainingState trainingState){
 		// Create the directories.
 //		File directory = new File(TRAINING_FOLDER);
 //		if(!directory.exists()) directory.mkdir();
 		File directory = new File(EXERCISES_FOLDER);
-		if(!directory.exists()) directory.mkdir();
-		
+		if(!directory.exists())
+			directory.mkdir();
+
 		Object[] format = getFormat(trainingState);
 
 		Path path = Paths.get(directory.getPath() + "/" + format[0] + ".py");
 		System.out.println("Saving to: " + path.toAbsolutePath());
 //		System.out.println(Arrays.toString(format));
-		
+
 		try{
 			// Write the training file.
 			String[] lines = MessageFormat.format(template, format).split("\\r?\\n");
 			Files.write(path, Arrays.asList(lines), StandardCharsets.UTF_8);
-		}catch (IOException e){
+		}catch(IOException e){
 			e.printStackTrace();
 		}
 	}
-	
+
 	private static String readTemplate(){
 		try{
 			URL url = Main.class.getClass().getResource(TEMPLATE_FILE);

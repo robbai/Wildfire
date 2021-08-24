@@ -1,3 +1,3 @@
-cd %cd% 
+cd %cd%
 .\gradlew.bat distZip
 PAUSE

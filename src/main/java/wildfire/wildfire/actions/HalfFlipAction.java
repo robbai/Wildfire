@@ -19,7 +19,7 @@ public class HalfFlipAction extends Action {
 		CarData car = input.car;
 
 		if(input.info.timeOnGround < 0.3){
-			failed = true; 
+			failed = true;
 		}else{
 			this.direction = car.orientation.forward.scaled(-1).normalised().withZ(-0.2);
 		}
@@ -35,22 +35,22 @@ public class HalfFlipAction extends Action {
 		// Stabilise.
 		double[] angles = AirControl.getPitchYawRoll(input.car, direction);
 
-
 		if(time <= 0.12){
 			controls.withJump(time <= 0.04);
 			controls.withPitch(1);
 		}else if(time <= 0.33){
 			controls.withJump(true);
 			controls.withPitch(1);
-			
-			if(!input.car.hasDoubleJumped) controls.withYaw(0.15 * -Math.signum(input.car.angularVelocity.yaw));
-			
+
+			if(!input.car.hasDoubleJumped)
+				controls.withYaw(0.15 * -Math.signum(input.car.angularVelocity.yaw));
+
 		}else if(time <= 1.25){
 			controls.withPitchYawRoll(angles);
 		}else{
 			Utils.transferAction(this, new RecoveryAction(this.state, input.elapsedSeconds));
 		}
-		
+
 		if(input.car.hasDoubleJumped || !controls.holdJump()){
 			controls.withRoll(angles[2]);
 		}

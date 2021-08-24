@@ -11,7 +11,7 @@ public class InfoPacket extends DataPacket {
 		super(request, playerIndex);
 		this.info = info;
 	}
-	
+
 	public InfoPacket(GameTickPacket request, int playerIndex){
 		this(request, playerIndex, null);
 	}

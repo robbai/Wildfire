@@ -15,11 +15,11 @@ import wildfire.output.ControlsOutput;
 public abstract class Grabber {
 
 	protected Grabby grabby;
-	
+
 	private final String fileName;
 
 	private final String[] headers;
-	
+
 	private ArrayList<Object[]> data;
 
 	public Grabber(Grabby grabby, String fileName, String[] headers){
@@ -46,11 +46,11 @@ public abstract class Grabber {
 			e.printStackTrace();
 		}
 	}
-	
+
 	protected void addData(Object[] data){
 		this.data.add(data);
 	}
-	
+
 	public abstract ControlsOutput processInput(DataPacket input);
 
 }

@@ -49,13 +49,13 @@ dependencies {
 
     // This is makes it easy to find the dll when running in intellij, where JVM args don't get passed from gradle.
     runtime files(dllDirectory)
-    
+
     // Jamepad
     compile 'com.github.WilliamAHartman:Jamepad:1.3.2'
-	
+
     // javagl's Obj
     compile group: 'de.javagl', name: 'obj', version: '0.3.0'
-	
+
 	// Apache Commons CSV
 	compile "org.apache.commons:commons-csv:1.5"
 }

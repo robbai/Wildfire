@@ -10,7 +10,7 @@ import wildfire.wildfire.obj.State;
 import wildfire.wildfire.utils.Behaviour;
 
 public class IdleState extends State {
-	
+
 	/*
 	 * Stays still when the game is not in play
 	 */
@@ -18,23 +18,30 @@ public class IdleState extends State {
 	public IdleState(Wildfire wildfire){
 		super("Idle", wildfire);
 	}
-	
+
 	@Override
 	public boolean ready(InfoPacket input){
-		if(Behaviour.isKickoff(input)) return false;
-		
-		if(!input.gameInfo.isRoundActive()) return true;
-		if(input.gameInfo.isMatchEnded()) return true;
-		
-		if(input.cars.length == 1) return false;
-		
+		if(Behaviour.isKickoff(input))
+			return false;
+
+		if(!input.gameInfo.isRoundActive())
+			return true;
+		if(input.gameInfo.isMatchEnded())
+			return true;
+
+		if(input.cars.length == 1)
+			return false;
+
 		boolean onTarget = Behaviour.isOnTarget(wildfire.ballPrediction, 1 - input.car.team);
-		if(!onTarget) return false;
-		
+		if(!onTarget)
+			return false;
+
 		boolean noIntersect = Behaviour.nobodyElseIntersect(input.car.index, input.cars, wildfire.ballPrediction);
-		if(!noIntersect) return false;
-		
-		boolean block = Behaviour.blocksPrediction(input.car, wildfire.ballPrediction) && !Behaviour.correctSideOfTarget(input.car, input.ball.position);
+		if(!noIntersect)
+			return false;
+
+		boolean block = Behaviour.blocksPrediction(input.car, wildfire.ballPrediction)
+				&& !Behaviour.correctSideOfTarget(input.car, input.ball.position);
 		return !block;
 	}
 
@@ -43,19 +50,21 @@ public class IdleState extends State {
 		if(input.gameInfo.isMatchEnded()){
 			return ControlsOutput.random();
 		}
-		
+
 		if(Behaviour.isCarAirborne(input.car)){
 			currentAction = new RecoveryAction(this, input.elapsedSeconds);
-			if(currentAction != null && !currentAction.failed) return currentAction.getOutput(input);
+			if(currentAction != null && !currentAction.failed)
+				return currentAction.getOutput(input);
 			currentAction = null;
 		}
-		
+
 		// ATBA
 		if(!input.gameInfo.isRoundActive()){
 			CarData opponent = Behaviour.closestOpponent(input, input.car.position);
-			if(opponent != null) return Handling.atba(input, opponent.position);
+			if(opponent != null)
+				return Handling.atba(input, opponent.position);
 		}
-		
+
 		return Handling.stayStill(input.car);
 	}
 

@@ -86,9 +86,9 @@ public class Main {
 		// Table.
 		JPanel tablePanel = new JPanel();
 		tablePanel.setLayout(new BoxLayout(tablePanel, BoxLayout.Y_AXIS));
-		tablePanel.setBounds(borderSize, borderSize, borderSize, borderSize);     
+		tablePanel.setBounds(borderSize, borderSize, borderSize, borderSize);
 		tablePanel.add(new JLabel("Bots Running:"), BorderLayout.CENTER);
-		final String columns[] = {"Index", "Name", "Team"};
+		final String columns[] = { "Index", "Name", "Team" };
 		JTable table = new JTable(new String[][] {}, columns);
 		JScrollPane scrollPane = new JScrollPane(table);
 		scrollPane.setPreferredSize(new Dimension(200, table.getHeight()));
@@ -107,20 +107,23 @@ public class Main {
 			if(maxIndex.isPresent()){
 				int maxIndexInt = maxIndex.getAsInt();
 				int botListSize = 0;
-				ArrayList<String[]> data = new ArrayList<String[]>(); 
+				ArrayList<String[]> data = new ArrayList<String[]>();
 
 				// Iterate through all the bots.
 				for(int i = 0; i <= maxIndexInt; i++){
 					Wildfire bot = getBotAtIndex(i);
-					if(bot == null || !runningBotIndices.contains(i)) continue;
-					data.add(new String[] {i + "", bot.isTestVersion() ? "WildfireTest" : "Wildfire", bot.team == 0 ? "Blue" : "Orange"});
-					botListSize ++;
+					if(bot == null || !runningBotIndices.contains(i))
+						continue;
+					data.add(new String[] { i + "", bot.isTestVersion() ? "WildfireTest" : "Wildfire",
+							bot.team == 0 ? "Blue" : "Orange" });
+					botListSize++;
 				}
 
 				// Update the table.
 				JTable newTable = new JTable(toDataArray(data), columns);
 				newTable.setRowHeight(newTable.getRowHeight() * 2);
-				scrollPane.setBounds(scrollPane.getX(), scrollPane.getY(), scrollPane.getWidth(), Math.max(newTable.getRowHeight() * (botListSize + 2), scrollPane.getHeight()));
+				scrollPane.setBounds(scrollPane.getX(), scrollPane.getY(), scrollPane.getWidth(),
+						Math.max(newTable.getRowHeight() * (botListSize + 2), scrollPane.getHeight()));
 				scrollPane.getViewport().add(newTable);
 				tablePanel.add(scrollPane);
 			}
@@ -138,7 +141,8 @@ public class Main {
 
 	private static Wildfire getBotAtIndex(int index){
 		for(Wildfire w : bots){
-			if(w != null && w.playerIndex == index) return w;
+			if(w != null && w.playerIndex == index)
+				return w;
 		}
 		return null;
 	}

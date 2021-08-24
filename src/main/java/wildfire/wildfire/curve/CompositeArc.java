@@ -10,14 +10,14 @@ import wildfire.wildfire.utils.Constants;
  * https://github.com/samuelpmish/RLUtilities/blob/7c645db1c7450ee793510c3acbb8bc61f8825b74/src/simulation/composite_arc.cc
  */
 public class CompositeArc extends Curve {
-	
+
 	private static final boolean rescale = true;
 
-	private static double[] signs = new double[] {1, -1};
+	private static double[] signs = new double[] { 1, -1 };
 
 	private Vector2 p1, p2, t1, t2, n1, n2, o1, o2, q1, q2;
 	private double length, r1, r2, phi1, phi2;
-	
+
 	private double[] L = new double[5];
 
 	private CompositeArc(double L0, Vector2 p1, Vector2 t1, double r1, double L4, Vector2 p2, Vector2 t2, double r2){
@@ -38,7 +38,7 @@ public class CompositeArc extends Curve {
 		double sign = -Math.signum(r1) * Math.signum(r2);
 		double R = Math.abs(r1) + sign * Math.abs(r2);
 		double o1o2 = oDelta.magnitude();
-		
+
 		if(rescale){
 			double beta = 0.97D;
 			if((Math.pow(R, 2) / Math.pow(o1o2, 2)) > beta){
@@ -73,11 +73,13 @@ public class CompositeArc extends Curve {
 
 		Vector2 pq1 = q1.minus(this.p1).normalised();
 		phi1 = 2D * Math.signum(pq1.dotProduct(this.t1)) * Math.asin(Math.abs(pq1.dotProduct(n1)));
-		if(phi1 < 0) phi1 += 2D * Math.PI;
+		if(phi1 < 0)
+			phi1 += 2D * Math.PI;
 
 		Vector2 pq2 = q2.minus(this.p2).normalised();
 		phi2 = -2D * Math.signum(pq2.dotProduct(this.t2)) * Math.asin(Math.abs(pq2.dotProduct(n2)));
-		if(phi2 < 0) phi2 += 2D * Math.PI;
+		if(phi2 < 0)
+			phi2 += 2D * Math.PI;
 
 		L[0] = L0;
 		L[1] = phi1 * Math.abs(this.r1);
@@ -86,41 +88,47 @@ public class CompositeArc extends Curve {
 		L[4] = L4;
 		length = L[0] + L[1] + L[2] + L[3] + L[4];
 	}
-	
-	public static CompositeArc create(CarData car, Vector2 ball, Vector2 goal, double finalVelocity, double L0, double L4){
+
+	public static CompositeArc create(CarData car, Vector2 ball, Vector2 goal, double finalVelocity, double L0,
+			double L4){
 		// Sanitise.
 		L0 = Math.max(1, Math.abs(L0));
 		L4 = Math.max(1, Math.abs(L4));
-		
-		Vector2 carDirection = car.orientation.forward.flatten(), carPosition = car.position/*.plus(car.velocity.scaled(1D / 60))*/.flatten();
+
+		Vector2 carDirection = car.orientation.forward.flatten(),
+				carPosition = car.position/* .plus(car.velocity.scaled(1D / 60)) */.flatten();
 		Vector2 goalDirection = goal.minus(ball).normalised();
-		double playerTurnRadius = DrivePhysics.getTurnRadius(Math.max(Constants.MAX_THROTTLE_VELOCITY, car.forwardVelocityAbs)), ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
-		
+		double playerTurnRadius = DrivePhysics
+				.getTurnRadius(Math.max(Constants.MAX_THROTTLE_VELOCITY, car.forwardVelocityAbs)),
+				ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
+
 		// Find the shortest composite-arc based on its length.
 		CompositeArc shortestCompositeArc = null;
 		for(double playerTurn : signs){
 			for(double ballTurn : signs){
 				CompositeArc compositeArc;
 				try{
-					compositeArc = new CompositeArc(L0, carPosition, carDirection, playerTurn * playerTurnRadius, L4, ball, goalDirection, ballTurn * ballTurnRadius);
+					compositeArc = new CompositeArc(L0, carPosition, carDirection, playerTurn * playerTurnRadius, L4,
+							ball, goalDirection, ballTurn * ballTurnRadius);
 				}catch(Exception e){
 					compositeArc = null;
 					e.printStackTrace();
 				}
-				
-				if(compositeArc != null && (shortestCompositeArc == null || compositeArc.length < shortestCompositeArc.length)){
+
+				if(compositeArc != null
+						&& (shortestCompositeArc == null || compositeArc.length < shortestCompositeArc.length)){
 					shortestCompositeArc = compositeArc;
 				}
 			}
 		}
-		
+
 		return shortestCompositeArc;
 	}
-	
+
 	public static CompositeArc create(CarData car, Vector2 ball, Vector2 goal, double L0, double L4){
 		return create(car, ball, goal, DrivePhysics.maxVelocity(car.forwardVelocityAbs, car.boost), L0, L4);
 	}
-	
+
 	@Override
 	public Vector2[] discretise(int n){
 		Vector2 r;
@@ -180,17 +188,15 @@ public class CompositeArc extends Curve {
 
 		return points;
 	}
-	
+
 	/**
 	 * Matrix 2x2
 	 */
 	private static Pair<Vector2, Vector2> rotation(double theta){
-		return new Pair<Vector2, Vector2>(
-				new Vector2(Math.cos(theta), -Math.sin(theta)),
-				new Vector2(Math.sin(theta), Math.cos(theta))
-				);
+		return new Pair<Vector2, Vector2>(new Vector2(Math.cos(theta), -Math.sin(theta)),
+				new Vector2(Math.sin(theta), Math.cos(theta)));
 	}
-	
+
 	/**
 	 * Matrix 2x2 dot product.
 	 */
@@ -220,7 +226,7 @@ public class CompositeArc extends Curve {
 	public double getR2(){
 		return r2;
 	}
-	
+
 	public double minTravelTime(CarData car, boolean includeL0, boolean includeL4){
 		double velocity = Math.max(car.forwardVelocity, 0), boost = car.boost;
 
@@ -239,11 +245,13 @@ public class CompositeArc extends Curve {
 		}
 
 		double secondArcMaxVel = DrivePhysics.getSpeedFromRadius(this.getR2());
-		
+
 		double distanceToTravel = (this.getLength() - (includeL0 ? 0 : this.getL(0)) - (includeL4 ? 0 : this.getL(4)));
-		double straightawayTime = (includeL4 ? DrivePhysics.minTravelTime(velocity, boost, distanceToTravel - traversed, secondArcMaxVel) : 0);
+		double straightawayTime = (includeL4
+				? DrivePhysics.minTravelTime(velocity, boost, distanceToTravel - traversed, secondArcMaxVel)
+				: 0);
 
 		return time + straightawayTime;
 	}
-	
+
 }

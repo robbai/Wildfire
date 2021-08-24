@@ -12,7 +12,7 @@ public class Car1D {
 		this.boost = boost;
 		this.time = time;
 	}
-	
+
 	public Car1D(Car1D car){
 		this(car.getDistance(), car.getVelocity(), car.getBoost(), car.getTime());
 	}
@@ -32,26 +32,26 @@ public class Car1D {
 	public double getBoost(){
 		return boost;
 	}
-	
+
 	public void step(double dt, double throttle, boolean boost){
 		if(this.boost <= 0){
 			boost = false;
 		}else{
 			this.boost -= Constants.BOOST_RATE * dt;
 		}
-		
+
 		double acceleration = DrivePhysics.determineAcceleration(this.velocity, throttle, boost);
-		
+
 		this.velocity += acceleration * dt;
 		if(Math.abs(this.velocity) > Constants.MAX_CAR_VELOCITY){
 			this.velocity = Math.signum(this.velocity) * Constants.MAX_CAR_VELOCITY;
 		}
-		
+
 		this.distance += this.velocity * dt;
-		
+
 		this.time += dt;
 	}
-	
+
 	public double distanceFrom(double targetDistance){
 		return Math.max(0, targetDistance - this.distance);
 	}

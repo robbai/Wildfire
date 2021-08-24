@@ -14,7 +14,8 @@ public class AirControl {
 	/**
 	 * https://github.com/DomNomNom/RocketBot/blob/32e69df4f2841501c5f1da97ce34673dccb670af/NomBot_v1.5/NomBot_v1_5.py#L56-L103
 	 */
-	public static double[] getPitchYawRoll(CarOrientation orientation, Rotator angularVelocity, Vector3 forward, Vector3 up){
+	public static double[] getPitchYawRoll(CarOrientation orientation, Rotator angularVelocity, Vector3 forward,
+			Vector3 up){
 		double pitchVel = angularVelocity.pitch;
 		double yawVel = -angularVelocity.yaw;
 		double rollVel = angularVelocity.roll;
@@ -31,17 +32,19 @@ public class AirControl {
 
 		// Avoid getting stuck in directly-opposite states
 		if(orientation.up.dotProduct(up) < -0.8 && orientation.forward.dotProduct(forward) > 0.8){
-			if(roll == 0) roll = 1;
+			if(roll == 0)
+				roll = 1;
 			roll *= 1e10;
 		}
 		if(orientation.forward.dotProduct(forward) < -0.8){
-			if(pitch == 0) pitch = 1;
+			if(pitch == 0)
+				pitch = 1;
 			pitch *= 1e10;
 		}
 
-		//	    if(orient.forward.dotProduct(forward) < 0){
-		//	    	pitchVel *= -1;
-		//	    }
+		// if(orient.forward.dotProduct(forward) < 0){
+		// pitchVel *= -1;
+		// }
 
 		// PID control to stop overshooting.
 		roll = 3 * roll + 0.30 * rollVel;
@@ -55,13 +58,11 @@ public class AirControl {
 
 		if(signum){
 			final double threshold = 0.14;
-			return new double[] {
-					Math.abs(pitch) > threshold ? Math.signum(pitch) : Utils.clamp(pitch, -1, 1), 
-							Math.abs(yaw) > threshold ? Math.signum(yaw) : Utils.clamp(yaw, -1, 1), 
-									Math.abs(roll) > threshold ? Math.signum(roll) : Utils.clamp(roll, -1, 1)
-			};
+			return new double[] { Math.abs(pitch) > threshold ? Math.signum(pitch) : Utils.clamp(pitch, -1, 1),
+					Math.abs(yaw) > threshold ? Math.signum(yaw) : Utils.clamp(yaw, -1, 1),
+					Math.abs(roll) > threshold ? Math.signum(roll) : Utils.clamp(roll, -1, 1) };
 		}else{
-			return new double[] {pitch, yaw, roll};
+			return new double[] { pitch, yaw, roll };
 		}
 	}
 
@@ -83,4 +84,3 @@ public class AirControl {
 	}
 
 }
-

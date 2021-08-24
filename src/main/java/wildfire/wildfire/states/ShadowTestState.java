@@ -20,10 +20,10 @@ public class ShadowTestState extends ShadowState {
 //		Vector3 toImpact = impactPosition.minus(car.position);
 //		return localImpact.normalized().y * Utils.teamSign(car) < (Constants.PITCHLENGTH - input.info.impact.getPosition().y * Utils.teamSign(car)) / Constants.PITCHLENGTH;
 //		return localImpact.normalized().y * Utils.teamSign(car) < Math.abs(impactPosition.x) / Constants.PITCHWIDTH;
-		return (Math.abs(input.info.impactRadians) > Math.toDegrees(110) && input.info.impact.getTime() > 1.1) ||
-				(!Behaviour.correctSideOfTarget(car, impactPosition) && Math.abs(impactPosition.x) > 1400);
+		return (Math.abs(input.info.impactRadians) > Math.toDegrees(110) && input.info.impact.getTime() > 1.1)
+				|| (!Behaviour.correctSideOfTarget(car, impactPosition) && Math.abs(impactPosition.x) > 1400);
 	}
-	
+
 	@Override
 	public boolean expire(InfoPacket input){
 		return !this.ready(input);
